@@ -1,0 +1,2292 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>ĐĂNG NHẬP - HERO MATH</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Roboto:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Firebase SDK Compat & Hero Auth (Chạy 100% cả file:/// lẫn Web Server) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./hero-firebase-compat.js"></script>
+    <script src="./hero-sha256.js"></script>
+    <script src="./hero-auth.js"></script>
+    <script src="./hero-danh-sach-chuan.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 12px;
+        font-family: "Roboto", sans-serif;
+        color: #ffffff;
+        background: linear-gradient(45deg, #090912, #240b36, #0d324d, #1a0b2e);
+        background-size: 400% 400%;
+        animation: gradientBG 12s ease infinite;
+        overflow-x: hidden;
+        position: relative;
+      }
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      #particle-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 440px;
+        background: rgba(15, 10, 30, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 2px solid rgba(0, 255, 255, 0.4);
+        border-radius: 24px;
+        padding: 30px 24px 24px;
+        box-shadow:
+          0 0 30px rgba(0, 255, 255, 0.15),
+          inset 0 0 20px rgba(0, 0, 0, 0.7);
+        position: relative;
+        z-index: 10;
+        transition: all 0.3s ease;
+      }
+      .login-card:hover {
+        box-shadow:
+          0 0 45px rgba(0, 255, 255, 0.3),
+          inset 0 0 25px rgba(0, 0, 0, 0.8);
+        border-color: rgba(0, 255, 255, 0.8);
+      }
+      .login-title {
+        font-family: "Montserrat", sans-serif;
+        font-weight: 900;
+        font-size: 1.8rem;
+        text-align: center;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow:
+          0 0 10px #00ffff,
+          0 0 20px #00bfff,
+          0 0 40px #0055ff;
+        margin-bottom: 5px;
+        line-height: 1.2;
+        animation: textGlow 2s ease-in-out infinite alternate;
+      }
+      @keyframes textGlow {
+        from {
+          text-shadow:
+            0 0 10px #00ffff,
+            0 0 20px #00bfff;
+        }
+        to {
+          text-shadow:
+            0 0 15px #00ffff,
+            0 0 30px #00bfff,
+            0 0 45px #0055ff;
+        }
+      }
+      .login-subtitle {
+        text-align: center;
+        font-size: 0.85rem;
+        color: #b3c6d6;
+        margin-bottom: 24px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .lore-box {
+        background: rgba(0, 20, 40, 0.5);
+        border: 1px solid rgba(0, 255, 255, 0.25);
+        border-left: 4px solid #00ffff;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.05);
+        position: relative;
+        overflow: hidden;
+      }
+      .lore-box::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(0, 255, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        animation: scan 3s linear infinite;
+        pointer-events: none;
+      }
+      @keyframes scan {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(100%);
+        }
+      }
+      .lore-title {
+        font-family: "Montserrat", sans-serif;
+        font-weight: 900;
+        color: #00ffff;
+        font-size: 0.95rem;
+        text-align: center;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+      }
+      .lore-box p {
+        font-family: "Roboto", sans-serif;
+        font-size: 0.82rem;
+        line-height: 1.7;
+        color: #e0eaff;
+        margin-bottom: 10px;
+      }
+      .lore-box p b {
+        color: #ff2a85;
+        font-weight: 900;
+        text-shadow: 0 0 5px rgba(255, 42, 133, 0.6);
+        letter-spacing: 0.5px;
+      }
+      .lore-call {
+        text-align: center !important;
+        color: #f1c40f !important;
+        font-weight: 700;
+        margin-bottom: 0 !important;
+        font-size: 0.9rem;
+        background: rgba(241, 196, 15, 0.15);
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px dashed rgba(241, 196, 15, 0.5);
+        text-shadow: 0 0 5px rgba(241, 196, 15, 0.4);
+      }
+      .tabs {
+        display: flex;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        border: 1px solid rgba(0, 255, 255, 0.15);
+        padding: 4px;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 12px 0;
+        background: transparent;
+        border: none;
+        color: #7b8b9b;
+        font-weight: 900;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 50px;
+        letter-spacing: 1px;
+        position: relative;
+        z-index: 2;
+      }
+      .tab-btn.active {
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(0, 198, 255, 0.4);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      .tab-btn:not(.active):hover {
+        color: #00ffff;
+        background: rgba(0, 255, 255, 0.05);
+      }
+      .form-group {
+        text-align: left;
+        margin-bottom: 18px;
+        position: relative;
+      }
+      .form-group label {
+        display: block;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: #a3c2db;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+      }
+      .form-group label i {
+        margin-right: 8px;
+        color: #00ffff;
+        text-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 14px 18px;
+        background: rgba(0, 10, 20, 0.5);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 12px;
+        color: #ffffff;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s ease;
+        font-family: "Roboto", sans-serif;
+        font-weight: 500;
+        position: relative;
+        z-index: 2;
+      }
+      .form-group input::placeholder {
+        color: #557799;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: #00ffff;
+        background: rgba(0, 20, 40, 0.8);
+        box-shadow:
+          0 0 15px rgba(0, 255, 255, 0.25),
+          inset 0 0 10px rgba(0, 255, 255, 0.15);
+        transform: translateY(-2px);
+      }
+      .form-group select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300ffff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 18px center;
+        padding-right: 45px;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+      .form-group select option {
+        background: #0f0a1e;
+        color: #fff;
+      }
+      .btn-enter {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #f107a3, #7b2ff7);
+        border: none;
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: "Montserrat", sans-serif;
+        font-weight: 900;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        box-shadow:
+          0 6px 0 #4a1596,
+          0 10px 20px rgba(123, 47, 247, 0.4);
+        transition: all 0.1s ease;
+        margin-top: 10px;
+        position: relative;
+        overflow: hidden;
+        z-index: 2;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      }
+      .btn-enter::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.5) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        transform: skewX(-25deg);
+        animation: shine 3s infinite;
+      }
+      @keyframes shine {
+        0% {
+          left: -100%;
+        }
+        20% {
+          left: 200%;
+        }
+        100% {
+          left: 200%;
+        }
+      }
+      .btn-enter:hover {
+        transform: translateY(2px);
+        box-shadow:
+          0 4px 0 #4a1596,
+          0 8px 15px rgba(123, 47, 247, 0.5);
+      }
+      .btn-enter:active {
+        transform: translateY(6px);
+        box-shadow:
+          0 0 0 #4a1596,
+          0 0 10px rgba(123, 47, 247, 0.6);
+      }
+      #form-register .btn-enter {
+        background: linear-gradient(135deg, #f1c40f, #e67e22);
+        box-shadow:
+          0 6px 0 #b9770e,
+          0 10px 20px rgba(241, 196, 15, 0.4);
+        color: #000;
+        text-shadow: none;
+      }
+      #form-register .btn-enter:hover {
+        transform: translateY(2px);
+        box-shadow:
+          0 4px 0 #b9770e,
+          0 8px 15px rgba(241, 196, 15, 0.5);
+      }
+      #form-register .btn-enter:active {
+        transform: translateY(6px);
+        box-shadow:
+          0 0 0 #b9770e,
+          0 0 10px rgba(241, 196, 15, 0.6);
+      }
+      .btn-exit-game {
+        width: 100%;
+        margin-top: 20px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #7b8b9b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 2;
+      }
+      .btn-exit-game:hover {
+        background: rgba(231, 76, 60, 0.15);
+        color: #ff4d4d;
+        border-color: rgba(231, 76, 60, 0.4);
+        box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+        text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+      }
+      #toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 10005;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 90%;
+      }
+      @media (max-width: 480px) {
+        .login-card {
+          padding: 24px 16px 20px;
+          border-radius: 20px;
+          border-width: 1px;
+        }
+        .login-title {
+          font-size: 1.5rem;
+        }
+        .lore-box p {
+          font-size: 0.75rem;
+        }
+        .tab-btn {
+          font-size: 0.8rem;
+          padding: 10px 0;
+        }
+        .form-group input,
+        .form-group select {
+          padding: 12px 16px;
+          font-size: 0.95rem;
+        }
+        .btn-enter {
+          font-size: 1rem;
+          padding: 14px;
+        }
+      }
+      @keyframes gentlePulse {
+        0%,
+        100% {
+          opacity: 0.8;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.02);
+          box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+        }
+      }
+      .lore-call {
+        animation: gentlePulse 2.5s infinite;
+      }
+    </style>
+    <style id="toast-styles"></style>
+  </head>
+  <body>
+    <canvas id="particle-canvas"></canvas>
+    <audio id="bg-fairy-music" src="thugian.mp3" loop autoplay></audio>
+
+    <div class="login-card">
+      <div class="login-title">CỔNG HỌC VIỆN HERO-MATH</div>
+      <div class="login-subtitle">
+        Rèn luyện tư duy • Kỷ luật tự giác • Bứt phá bản thân
+      </div>
+
+      <div class="lore-box">
+        <div class="lore-title">
+          <i class="fa-solid fa-compass"></i> HÀNH TRÌNH CHINH PHỤC BẢN THÂN
+        </div>
+        <p>
+          Hành trình trở thành Anh Hùng Toán Học không bắt đầu từ phép thuật, mà
+          bắt đầu từ <b>SỰ KỶ LUẬT VÀ KIÊN TRÌ MỖI NGÀY</b>.
+        </p>
+        <p>
+          Mỗi bài toán giải quyết trọn vẹn là một bước tiến. Mỗi thói quen tốt ở
+          nhà là một điểm sức mạnh. Bạn đã sẵn sàng chiến thắng sự lười biếng để
+          khai phá tiềm năng vô hạn của chính mình?
+        </p>
+        <p class="lore-call">
+          <i class="fa-solid fa-seedling"></i> Hãy ghi lại danh xưng hoặc đăng
+          ký tài khoản mới bên dưới!
+        </p>
+      </div>
+
+      <div class="tabs">
+        <button
+          class="tab-btn active"
+          id="btn-tab-login"
+          onclick="switchTab('login')"
+        >
+          Đăng Nhập
+        </button>
+        <button
+          class="tab-btn"
+          id="btn-tab-register"
+          onclick="switchTab('register')"
+        >
+          Đăng Ký
+        </button>
+      </div>
+
+      <div id="form-login">
+        <!-- CHỌN LỚP ĐỂ TÌM TÊN NHANH & TRÁNH SAI CHÍNH TẢ -->
+        <div class="form-group">
+          <label><i class="fa-solid fa-users"></i> Lớp học của em</label>
+          <select id="login-class-select" onchange="chonLopDangNhap()" style="width: 100%; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 10px; color: #fff; font-size: 0.95rem; font-family: inherit; outline: none; transition: all 0.2s ease;">
+            <option value="">-- Chọn Lớp (7A2, 7A4, 7A7, 9A4, 9A6) --</option>
+            <option value="7A2">Lớp 7A2 (Khối 7)</option>
+            <option value="7A4">Lớp 7A4 (Khối 7)</option>
+            <option value="7A7">Lớp 7A7 (Khối 7)</option>
+            <option value="9A4">Lớp 9A4 (Khối 9)</option>
+            <option value="9A6">Lớp 9A6 (Khối 9)</option>
+            <option value="ALL">-- Hiển thị tất cả học sinh --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-id-card-clip"></i> Danh tính (Họ và tên)</label>
+          <input
+            type="text"
+            id="login-name"
+            list="student-names-datalist"
+            placeholder="Gõ hoặc chọn tên từ gợi ý..."
+            autocomplete="off"
+          />
+          <datalist id="student-names-datalist"></datalist>
+          <div id="quick-student-select-box" style="display: none; margin-top: 6px;">
+            <select id="login-student-select" onchange="chonNhanhHocSinh()" style="width: 100%; padding: 9px 12px; background: rgba(30, 41, 59, 0.95); border: 1.5px dashed #38bdf8; border-radius: 8px; color: #38bdf8; font-size: 0.88rem; font-weight: 500; outline: none; cursor: pointer;">
+              <option value="">-- Bấm vào đây để chọn nhanh tên em --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> Mật mã</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input
+              type="password"
+              id="login-pass"
+              placeholder="Nhập mật mã (Mặc định: 123456)..."
+              autocomplete="off"
+              style="width: 100%; padding-right: 42px;"
+            />
+            <button type="button" onclick="toggleHienThiMatKhau('login-pass', this)" style="position: absolute; right: 10px; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 6px; font-size: 1.05rem;" title="Hiện / Ẩn mật mã">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            justify-content: flex-end;
+            margin-top: -6px;
+            margin-bottom: 14px;
+          "
+        >
+          <a
+            href="javascript:void(0)"
+            onclick="moModalQuenPass()"
+            style="
+              color: #00ffff;
+              font-size: 0.82rem;
+              text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              gap: 5px;
+              opacity: 0.85;
+              transition: opacity 0.2s;
+            "
+            onmouseover="this.style.opacity = '1'"
+            onmouseout="this.style.opacity = '0.85'"
+          >
+            <i class="fa-solid fa-circle-question"></i> Quên mật mã? Nhấn vào
+            đây
+          </a>
+        </div>
+        <button class="btn-enter" onclick="tienHanhDangNhap()">
+          BẮT ĐẦU HÀNH TRÌNH <i class="fa-solid fa-rocket"></i>
+        </button>
+      </div>
+
+      <div id="form-register" style="display: none">
+        <div
+          id="register-locked-box"
+          style="
+            display: none;
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid #e74c3c;
+            border-radius: 12px;
+            padding: 18px 14px;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.2);
+          "
+        >
+          <div style="font-size: 2rem; color: #ff7675; margin-bottom: 8px">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <div
+            style="
+              font-weight: 900;
+              color: #ff7675;
+              font-size: 1rem;
+              margin-bottom: 6px;
+              letter-spacing: 0.5px;
+            "
+          >
+            CỔNG ĐĂNG KÝ HIỆN ĐANG TẠM KHÓA
+          </div>
+          <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5">
+            Thầy/Cô hiện đang tạm khóa tính năng tự đăng ký tài khoản mới.<br />
+            Em vui lòng liên hệ trực tiếp Thầy/Cô để được cấp tài khoản nhé!
+          </div>
+        </div>
+
+        <div id="reg-form-fields">
+          <div class="form-group">
+            <label
+              ><i class="fa-solid fa-id-card-clip"></i> Danh tính mới (Họ và
+              tên)</label
+            >
+            <input
+              type="text"
+              id="reg-name"
+              placeholder="Ví dụ: Trần Văn Trong"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-graduation-cap"></i> Khối lớp</label>
+            <select id="reg-class">
+              <option value="">-- Chọn khối lớp đang học --</option>
+              <option value="Khối 6">Khối 6</option>
+              <option value="Khối 7">Khối 7</option>
+              <option value="Khối 8">Khối 8</option>
+              <option value="Khối 9">Khối 9</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label
+              ><i class="fa-solid fa-users-rectangle"></i> Lớp cụ thể (VD:
+              6A1)</label
+            >
+            <input
+              type="text"
+              id="reg-classroom"
+              placeholder="Ví dụ: 6A1"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label><i class="fa-solid fa-key"></i> Tạo mật mã</label>
+            <input
+              type="password"
+              id="reg-pass"
+              placeholder="Tạo mật mã dễ nhớ..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <button
+          class="btn-enter"
+          id="btn-submit-reg"
+          onclick="tienHanhDangKy()"
+        >
+          ĐĂNG KÝ HỌC VIÊN <i class="fa-solid fa-user-plus"></i>
+        </button>
+      </div>
+
+      <button class="btn-exit-game" onclick="thoatKhoiTroChoi()">
+        <i class="fa-solid fa-house"></i> Trở về trang chủ
+      </button>
+    </div>
+
+    <!-- MODAL HỌC SINH XIN CẤP LẠI MẬT MÃ -->
+    <div
+      id="modal-quen-pass"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 99999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+      "
+    >
+      <div
+        style="
+          background: linear-gradient(145deg, #0d1626, #060a12);
+          border: 1px solid rgba(0, 255, 255, 0.3);
+          box-shadow: 0 0 35px rgba(0, 255, 255, 0.2);
+          border-radius: 18px;
+          width: 100%;
+          max-width: 480px;
+          padding: 24px;
+          position: relative;
+          color: #fff;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+            padding-bottom: 12px;
+          "
+        >
+          <h3
+            style="
+              margin: 0;
+              font-size: 1.15rem;
+              color: #00ffff;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <i class="fa-solid fa-key"></i> Xin Cấp Lại Mật Mã
+          </h3>
+          <button
+            onclick="dongModalQuenPass()"
+            style="
+              background: transparent;
+              border: none;
+              color: #bdc3c7;
+              font-size: 1.4rem;
+              cursor: pointer;
+              line-height: 1;
+            "
+            title="Đóng"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div
+          id="box-gv-contact"
+          style="
+            background: rgba(0, 198, 255, 0.08);
+            border: 1px solid rgba(0, 198, 255, 0.25);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+          "
+        >
+          <div
+            style="
+              font-weight: bold;
+              color: #00ffff;
+              font-size: 0.9rem;
+              margin-bottom: 6px;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <i class="fa-solid fa-chalkboard-user"></i>
+            <span id="lbl-modal-gv-ten">Thầy Trọng Toán</span>
+          </div>
+          <div
+            id="lbl-modal-gv-ghichu"
+            style="
+              font-size: 0.82rem;
+              color: #bdc3c7;
+              margin-bottom: 10px;
+              line-height: 1.4;
+            "
+          >
+            Nhắn tin qua Zalo hoặc gửi yêu cầu bên dưới để Thầy cấp lại mật mã
+            cho em nhé!
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <a
+              id="btn-zalo-gv"
+              href="https://zalo.me"
+              target="_blank"
+              style="
+                flex: 1;
+                min-width: 140px;
+                text-decoration: none;
+                text-align: center;
+                background: #0068ff;
+                color: #fff;
+                font-weight: bold;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+              "
+            >
+              <i class="fa-solid fa-comment-dots"></i> Nhắn Tin Zalo
+            </a>
+            <a
+              id="btn-call-gv"
+              href="tel:"
+              style="
+                flex: 1;
+                min-width: 140px;
+                text-decoration: none;
+                text-align: center;
+                background: #2ecc71;
+                color: #000;
+                font-weight: bold;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+              "
+            >
+              <i class="fa-solid fa-phone"></i> Gọi Điện Thoại
+            </a>
+          </div>
+        </div>
+
+        <div
+          style="
+            text-align: center;
+            margin: 10px 0;
+            color: #7f9bb3;
+            font-size: 0.8rem;
+            position: relative;
+          "
+        >
+          <span
+            style="
+              background: #0a101d;
+              padding: 0 10px;
+              position: relative;
+              z-index: 1;
+            "
+            >HOẶC GỬI YÊU CẦU LÊN HỆ THỐNG</span
+          >
+          <div
+            style="
+              position: absolute;
+              top: 50%;
+              left: 0;
+              width: 100%;
+              height: 1px;
+              background: rgba(255, 255, 255, 0.1);
+              z-index: 0;
+            "
+          ></div>
+        </div>
+
+        <div style="margin-top: 12px">
+          <div class="form-group" style="margin-bottom: 12px">
+            <label style="font-size: 0.75rem"
+              ><i class="fa-solid fa-id-card-clip"></i> Họ và tên của em
+              (*)</label
+            >
+            <input
+              type="text"
+              id="qp-name"
+              placeholder="Ví dụ: Trần Văn Trong"
+              style="padding: 10px 14px; font-size: 0.9rem"
+            />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div class="form-group" style="margin-bottom: 12px">
+              <label style="font-size: 0.75rem"
+                ><i class="fa-solid fa-graduation-cap"></i> Khối lớp (*)</label
+              >
+              <select
+                id="qp-grade"
+                style="padding: 10px 14px; font-size: 0.9rem"
+              >
+                <option value="Khối 6">Khối 6</option>
+                <option value="Khối 7" selected>Khối 7</option>
+                <option value="Khối 8">Khối 8</option>
+                <option value="Khối 9">Khối 9</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px">
+              <label style="font-size: 0.75rem"
+                ><i class="fa-solid fa-users-rectangle"></i> Lớp cụ thể</label
+              >
+              <input
+                type="text"
+                id="qp-classroom"
+                placeholder="VD: 7A1"
+                style="padding: 10px 14px; font-size: 0.9rem"
+              />
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px">
+            <label style="font-size: 0.75rem"
+              ><i class="fa-solid fa-phone"></i> SĐT hoặc Zalo của em / phụ
+              huynh (nếu có)</label
+            >
+            <input
+              type="text"
+              id="qp-phone"
+              placeholder="Để Thầy báo mật mã mới khi đã reset..."
+              style="padding: 10px 14px; font-size: 0.9rem"
+            />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px">
+            <label style="font-size: 0.75rem"
+              ><i class="fa-solid fa-message"></i> Lời nhắn gửi Thầy Cô</label
+            >
+            <input
+              type="text"
+              id="qp-note"
+              placeholder="Ví dụ: Em lỡ quên mật mã, nhờ Thầy reset lại thành 123456 giúp em ạ"
+              style="padding: 10px 14px; font-size: 0.9rem"
+            />
+          </div>
+
+          <div style="display: flex; gap: 10px">
+            <button
+              onclick="dongModalQuenPass()"
+              type="button"
+              style="
+                flex: 1;
+                padding: 12px;
+                background: #2c3e50;
+                border: none;
+                border-radius: 10px;
+                color: #bdc3c7;
+                font-weight: bold;
+                cursor: pointer;
+              "
+            >
+              Hủy
+            </button>
+            <button
+              onclick="guiYeuCauQuenPass()"
+              type="button"
+              class="btn-enter"
+              style="flex: 2; margin: 0; padding: 12px; font-size: 0.9rem"
+            >
+              GỬI YÊU CẦU <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL BẢO VỆ TÀI KHOẢN (ĐỔI MẬT KHẨU LẦN ĐẦU) -->
+    <div id="modal-doi-mat-khau-dau-tien" class="custom-modal-overlay" style="display:none; position: fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px;">
+      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 1.5px solid #38bdf8; border-radius: 16px; width: 100%; max-width: 440px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); color: #fff;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #38bdf8; margin-bottom: 10px;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0;">BẢO VỆ TÀI KHOẢN CỦA EM</h3>
+          <p style="font-size: 0.85rem; color: #94a3b8; margin: 0; line-height: 1.5;">
+            Chào <strong id="lbl-first-login-student-name" style="color:#38bdf8;"></strong>!<br>
+            Mật khẩu của em đang là mặc định (<span style="color:#f59e0b; font-weight:bold;">123456</span>). Để <strong style="color:#f87171;">tránh bạn khác dùng tên em vào phá điểm</strong>, em hãy đặt mật khẩu riêng của mình nhé!
+          </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; color:#cbd5e1; margin-bottom:4px;"><i class="fa-solid fa-lock"></i> Mật khẩu mới của em (tối thiểu 4 ký tự):</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="password" id="first-new-pass" placeholder="Nhập mật khẩu mới..." style="width:100%; padding:10px 38px 10px 12px; background:rgba(15,23,42,0.8); border:1px solid #475569; border-radius:8px; color:#fff; font-size:0.9rem; outline:none;">
+              <button type="button" onclick="toggleHienThiMatKhau('first-new-pass', this)" style="position:absolute; right:8px; background:none; border:none; color:#94a3b8; cursor:pointer;"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; color:#cbd5e1; margin-bottom:4px;"><i class="fa-solid fa-check-double"></i> Nhập lại mật khẩu mới:</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="password" id="first-confirm-pass" placeholder="Xác nhận lại mật khẩu mới..." style="width:100%; padding:10px 38px 10px 12px; background:rgba(15,23,42,0.8); border:1px solid #475569; border-radius:8px; color:#fff; font-size:0.9rem; outline:none;">
+              <button type="button" onclick="toggleHienThiMatKhau('first-confirm-pass', this)" style="position:absolute; right:8px; background:none; border:none; color:#94a3b8; cursor:pointer;"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button id="btn-xac-nhan-doi-pass" onclick="xacNhanDoiMatKhauLanDau()" style="width:100%; padding:12px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#fff; font-weight:700; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 15px rgba(2,132,199,0.4);">
+            <i class="fa-solid fa-floppy-disk"></i> LƯU MẬT KHẨU & VÀO HỌC
+          </button>
+          <button onclick="boQuaDoiMatKhau()" style="width:100%; padding:8px; background:transparent; border:none; color:#94a3b8; font-size:0.8rem; cursor:pointer; text-decoration:underline;">
+            Để sau (Vẫn vào bằng mật khẩu 123456)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+      // ============================================================
+      // KHỞI TẠO HỆ THỐNG XÁC THỰC & ĐỒNG BỘ CLOUD (OFFLINE-FIRST)
+      // ============================================================
+      window.__fbDataReady = true;
+      window.__dangTrongTienTrinhForm = false;
+
+      function laKhoaDangKy() {
+        return localStorage.getItem("khoa_dang_ky_he_thong") === "true";
+      }
+
+      function capNhatGiaoDienKhoaDangKy() {
+        const locked = laKhoaDangKy();
+        const boxLocked = document.getElementById("register-locked-box");
+        const formFields = document.getElementById("reg-form-fields");
+        const btnSubmitReg = document.getElementById("btn-submit-reg");
+        const tabBtnReg = document.getElementById("btn-tab-register");
+
+        if (locked) {
+          if (boxLocked) boxLocked.style.display = "block";
+          if (formFields) {
+            formFields.style.opacity = "0.4";
+            formFields
+              .querySelectorAll("input, select")
+              .forEach((inp) => (inp.disabled = true));
+          }
+          if (btnSubmitReg) {
+            btnSubmitReg.disabled = true;
+            btnSubmitReg.style.opacity = "0.6";
+            btnSubmitReg.style.cursor = "not-allowed";
+            btnSubmitReg.style.filter = "grayscale(1)";
+            btnSubmitReg.innerHTML =
+              'CỔNG ĐĂNG KÝ ĐANG KHÓA <i class="fa-solid fa-lock"></i>';
+          }
+          if (tabBtnReg)
+            tabBtnReg.innerHTML =
+              'Đăng Ký <i class="fa-solid fa-lock" style="font-size:0.75rem; color:#ff7675;"></i>';
+        } else {
+          if (boxLocked) boxLocked.style.display = "none";
+          if (formFields) {
+            formFields.style.opacity = "1";
+            formFields
+              .querySelectorAll("input, select")
+              .forEach((inp) => (inp.disabled = false));
+          }
+          if (btnSubmitReg) {
+            btnSubmitReg.disabled = false;
+            btnSubmitReg.style.opacity = "1";
+            btnSubmitReg.style.cursor = "pointer";
+            btnSubmitReg.style.filter = "none";
+            btnSubmitReg.innerHTML =
+              'ĐĂNG KÝ HỌC VIÊN <i class="fa-solid fa-user-plus"></i>';
+          }
+          if (tabBtnReg) tabBtnReg.innerHTML = "Đăng Ký";
+        }
+      }
+
+      function khoiTaoHamDongBoVaAuth() {
+        const compat = window.HeroFirebaseCompat || window.FirebaseSync;
+        const auth = window.HeroAuth;
+        window.__fbTaiCauHinhToanCuc =
+          compat && typeof compat.taiCauHinhToanCuc === "function"
+            ? compat.taiCauHinhToanCuc.bind(compat)
+            : async () => {};
+        window.__fbDayCauHinhToanCuc =
+          compat && typeof compat.dayCauHinhToanCuc === "function"
+            ? compat.dayCauHinhToanCuc.bind(compat)
+            : async () => {};
+        window.__fbTaiDuLieuTuMay =
+          compat && typeof compat.taiDuLieuTuMay === "function"
+            ? compat.taiDuLieuTuMay.bind(compat)
+            : async () => {};
+        window.__authHashMatKhau =
+          auth && typeof auth.hashMatKhau === "function"
+            ? auth.hashMatKhau
+            : window.hashMatKhau || (async (p) => p);
+        window.__authLuuSessionToken =
+          auth && typeof auth.luuSessionToken === "function"
+            ? auth.luuSessionToken
+            : window.luuSessionToken || (async () => {});
+        window.__authChuyenDoiMatKhauCu =
+          auth && typeof auth.chuyenDoiMatKhauCu === "function"
+            ? auth.chuyenDoiMatKhauCu
+            : window.chuyenDoiMatKhauCu || (async () => false);
+      }
+
+      khoiTaoHamDongBoVaAuth();
+      capNhatGiaoDienKhoaDangKy();
+
+      // ============================================================
+      // HÀNG ĐỢI RETRY PUSH LÊN CLOUD
+      // ============================================================
+      const HERO_PENDING_SYNC_KEY = "hero_pending_sync_queue";
+
+      function layHangDoiRetry() {
+        try {
+          const raw = localStorage.getItem(HERO_PENDING_SYNC_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      function luuHangDoiRetry(q) {
+        try {
+          localStorage.setItem(
+            HERO_PENDING_SYNC_KEY,
+            JSON.stringify(Array.isArray(q) ? q : []),
+          );
+        } catch (e) {}
+      }
+      function themVaoHangDoiRetry(key) {
+        if (!key) return;
+        const q = layHangDoiRetry();
+        if (!q.find((x) => x && x.key === key)) {
+          q.push({ key: key, ts: Date.now(), retry: 0 });
+          luuHangDoiRetry(q);
+        }
+      }
+      function xoaKhoiHangDoiRetry(key) {
+        if (!key) return;
+        luuHangDoiRetry(layHangDoiRetry().filter((x) => x && x.key !== key));
+      }
+      async function dayLenCloudVoiRetry(key, soLanThuToiDa, timeoutMs) {
+        soLanThuToiDa = soLanThuToiDa || 2;
+        timeoutMs = timeoutMs || 2500;
+        if (!key || typeof window.__fbDayCauHinhToanCuc !== "function")
+          return false;
+        for (let i = 0; i < soLanThuToiDa; i++) {
+          try {
+            await Promise.race([
+              Promise.resolve(window.__fbDayCauHinhToanCuc(key)),
+              new Promise((_, rej) =>
+                setTimeout(() => rej(new Error("timeout")), timeoutMs),
+              ),
+            ]);
+            xoaKhoiHangDoiRetry(key);
+            return true;
+          } catch (e) {
+            console.warn(
+              `[Sync Retry] Lần ${i + 1}/${soLanThuToiDa} thất bại cho "${key}":`,
+              e && e.message,
+            );
+            if (i < soLanThuToiDa - 1)
+              await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+          }
+        }
+        themVaoHangDoiRetry(key);
+        console.warn(
+          `[Sync Retry] Đã đưa "${key}" vào hàng đợi để thử lại sau.`,
+        );
+        return false;
+      }
+      async function xuLyHangDoiRetry() {
+        const q = layHangDoiRetry();
+        if (!q.length || typeof window.__fbDayCauHinhToanCuc !== "function")
+          return;
+        console.log(
+          `[Sync Retry] Phát hiện ${q.length} mục còn tồn đọng, đang thử đẩy lại...`,
+        );
+        for (const item of q) {
+          if (!item || !item.key) continue;
+          try {
+            await Promise.race([
+              Promise.resolve(window.__fbDayCauHinhToanCuc(item.key)),
+              new Promise((_, rej) =>
+                setTimeout(() => rej(new Error("timeout")), 2500),
+              ),
+            ]);
+            xoaKhoiHangDoiRetry(item.key);
+            console.log(
+              `[Sync Retry] Đã đẩy thành công "${item.key}" tồn đọng.`,
+            );
+          } catch (e) {
+            console.warn(
+              `[Sync Retry] Vẫn chưa đẩy được "${item.key}", giữ lại trong hàng đợi.`,
+            );
+          }
+        }
+      }
+
+      // ============================================================
+      // IIFE INIT — BẢO VỆ DỮ LIỆU LOCAL KHI PULL CLOUD
+      // ============================================================
+      window.__fbInitPromise = (async () => {
+        try {
+          // [Mã đợt dữ liệu] Chờ kiểm tra/dọn máy cũ TRƯỚC khi chụp snapshot & xử lý hàng đợi.
+          // (Nếu chụp trước, "safety net" bên dưới sẽ phục hồi lại đúng những tài khoản cũ vừa bị xóa.)
+          try {
+            const cMaDot = window.HeroFirebaseCompat || window.FirebaseSync;
+            if (cMaDot && typeof cMaDot.kiemTraMaDotDuLieu === "function")
+              await cMaDot.kiemTraMaDotDuLieu();
+          } catch (e) {}
+          const snapshotUsersLocal = localStorage.getItem("math_hero_users_v2");
+          try {
+            await xuLyHangDoiRetry();
+          } catch (e) {}
+          const queueVanCon = layHangDoiRetry().length > 0;
+
+          if (queueVanCon) {
+            console.log(
+              "[Auth Init] Còn dữ liệu chờ đẩy lên Cloud → bỏ qua pull để tránh ghi đè dữ liệu local.",
+            );
+          } else {
+            if (typeof window.__fbTaiCauHinhToanCuc === "function") {
+              try {
+                await window.__fbTaiCauHinhToanCuc();
+              } catch (e) {
+                console.warn("[Auth Init] Lỗi pull:", e);
+              }
+            }
+            // Safety net users: nếu pull làm mất user local → phục hồi & đẩy lại
+            try {
+              let usersSau = JSON.parse(localStorage.getItem("math_hero_users_v2") || "{}");
+              if (!usersSau || Object.keys(usersSau).length === 0) {
+                // Khởi tạo 203 học sinh chuẩn từ 5 file Excel nếu máy mới chưa có dữ liệu
+                if (window.HERO_DANH_SACH_CHUAN_USERS) {
+                  usersSau = Object.assign({}, window.HERO_DANH_SACH_CHUAN_USERS);
+                  localStorage.setItem("math_hero_users_v2", JSON.stringify(usersSau));
+                  console.log("[Auth Init] Đã khởi tạo 203 học sinh chuẩn cho máy mới.");
+                }
+              }
+
+              // Bảo vệ tài khoản của chính học sinh đang dùng máy này (trừ khi đã bị Thầy xóa)
+              try {
+                const rawBk = localStorage.getItem("hero_my_account_backup");
+                if (rawBk) {
+                  const bk = JSON.parse(rawBk);
+                  let dsDaXoa = [];
+                  try { dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]'); } catch(e) {}
+                  const lowerName = String(bk?.name || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                  const daBiXoa = Array.isArray(dsDaXoa) && dsDaXoa.some(t => String(t || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase() === lowerName);
+                  if (daBiXoa) {
+                    localStorage.removeItem("hero_my_account_backup");
+                  } else if (bk && bk.name && bk.record) {
+                    if (!usersSau[bk.name]) {
+                      usersSau[bk.name] = bk.record;
+                      localStorage.setItem("math_hero_users_v2", JSON.stringify(usersSau));
+                      console.log("[Auth Init] Phục hồi tài khoản của học sinh này trên máy:", bk.name);
+                      await dayLenCloudVoiRetry("math_hero_users_v2", 3, 3000);
+                    }
+                  }
+                }
+              } catch (e) {}
+            } catch (e) {
+              console.warn("[Auth Init] Lỗi safety net users:", e);
+            }
+          }
+
+          if (typeof window.__authChuyenDoiMatKhauCu === "function") {
+            const coThayDoi = await window.__authChuyenDoiMatKhauCu();
+            if (
+              coThayDoi &&
+              typeof window.__fbDayCauHinhToanCuc === "function"
+            ) {
+              await dayLenCloudVoiRetry("math_hero_users_v2");
+            }
+          }
+        } catch (e) {
+          console.warn("[Auth Init Warning]", e);
+        } finally {
+          window.__fbDataReady = true;
+          capNhatGiaoDienKhoaDangKy();
+          if (typeof chonLopDangNhap === "function") {
+            try { chonLopDangNhap(); } catch(e) {}
+          }
+        }
+      })();
+    </script>
+
+    <script>
+      const canvas = document.getElementById("particle-canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      let particlesArray = [];
+      const colors = ["#00ffff", "#ff2a85", "#f1c40f", "#ffffff", "#8a2be2"];
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.6;
+          this.speedX = Math.random() * 0.8 - 0.4;
+          this.speedY = Math.random() * -1.2 - 0.3;
+          this.color = colors[Math.floor(Math.random() * colors.length)];
+          this.opacity = Math.random() * 0.4 + 0.3;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.y < 0) {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + 10;
+            this.size = Math.random() * 2 + 0.6;
+          }
+        }
+        draw() {
+          ctx.globalAlpha = this.opacity;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      function initParticles() {
+        particlesArray = [];
+        let n = Math.min(
+          60,
+          Math.max(20, Math.floor((canvas.width * canvas.height) / 16000)),
+        );
+        for (let i = 0; i < n; i++) particlesArray.push(new Particle());
+      }
+      function animateParticles() {
+        if (document.hidden) {
+          requestAnimationFrame(animateParticles);
+          return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+          particlesArray[i].update();
+          particlesArray[i].draw();
+        }
+        requestAnimationFrame(animateParticles);
+      }
+      initParticles();
+      animateParticles();
+      window.addEventListener("resize", function () {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+      });
+    </script>
+
+    <script>
+      const amThanhNenMedia = document.getElementById("bg-fairy-music");
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // 1) Circuit Breaker: Chống vòng lặp chuyển hướng vô tận giữa auth.html và index.html
+        const now = Date.now();
+        const lastRedirect = parseInt(sessionStorage.getItem("__hero_last_redirect") || "0", 10);
+        let redirectCount = parseInt(sessionStorage.getItem("__hero_redirect_count") || "0", 10);
+        if (now - lastRedirect < 3000) {
+          redirectCount++;
+        } else {
+          redirectCount = 1;
+        }
+        sessionStorage.setItem("__hero_last_redirect", String(now));
+        sessionStorage.setItem("__hero_redirect_count", String(redirectCount));
+
+        if (redirectCount >= 3) {
+          console.warn("[Hero Auth] Phát hiện vòng lặp chuyển trang! Xóa sạch phiên và dừng chuyển hướng.");
+          sessionStorage.removeItem("__hero_redirect_count");
+          localStorage.removeItem("hoc_school_student_name");
+          localStorage.removeItem("hoc_school_student_class");
+          localStorage.removeItem("hoc_school_student_classroom");
+          localStorage.removeItem("hero_session_token");
+          localStorage.removeItem("hero_my_account_backup");
+          sessionStorage.clear();
+          showToast("Phát hiện xung đột phiên đăng nhập. Vui lòng đăng nhập lại!", "error");
+          return;
+        }
+
+        // 2) Xử lý đăng xuất / đổi đợt dữ liệu / reset
+        const isLogout = urlParams.get("logout") === "true" || window.location.hash === "#logout";
+        const isReset = urlParams.get("reset") === "1";
+        const isMaDot = urlParams.get("maDot") === "1";
+
+        let vuaBiDonMay = false;
+        try {
+          const cMaDot = window.HeroFirebaseCompat || window.FirebaseSync;
+          if (cMaDot && typeof cMaDot.kiemTraMaDotDuLieu === "function") {
+            const kq = await cMaDot.kiemTraMaDotDuLieu();
+            vuaBiDonMay = !!(kq && kq.daDon && kq.coPhien);
+          }
+        } catch (e) {}
+
+        if (isLogout || isReset || isMaDot || vuaBiDonMay) {
+          localStorage.removeItem("hoc_school_student_name");
+          localStorage.removeItem("hoc_school_student_class");
+          localStorage.removeItem("hoc_school_student_classroom");
+          localStorage.removeItem("hero_session_token");
+          localStorage.removeItem("hero_my_account_backup");
+          sessionStorage.clear();
+
+          if (isMaDot || vuaBiDonMay) {
+            showToast("Hệ thống vừa chuyển sang đợt dữ liệu mới. Vui lòng đăng nhập lại!", "success");
+          } else if (isReset) {
+            showToast("Đã đặt lại phiên làm việc. Vui lòng đăng nhập lại!", "success");
+          }
+          // Dừng tại trang đăng nhập, tuyệt đối không chuyển hướng
+          return;
+        }
+
+        // 3) Kiểm tra phiên đăng nhập đã có: CHỈ tự động vào index.html nếu SessionToken HỢP LỆ
+        let tenLuu = localStorage.getItem("hoc_school_student_name") || sessionStorage.getItem("hoc_school_student_name");
+        if (tenLuu) {
+          let hopLe = false;
+          try {
+            if (window.HeroAuth && typeof window.HeroAuth.kiemTraSessionToken === "function") {
+              hopLe = await window.HeroAuth.kiemTraSessionToken(false);
+            } else if (typeof window.kiemTraSessionToken === "function") {
+              hopLe = await window.kiemTraSessionToken(false);
+            }
+          } catch (e) {
+            hopLe = false;
+          }
+
+          if (hopLe) {
+            sessionStorage.removeItem("__hero_redirect_count");
+            window.location.href = "index.html";
+            return;
+          } else {
+            // Phiên cũ không hợp lệ hoặc đã hết hạn -> xóa sạch để học sinh nhập mới
+            console.warn("[Hero Auth] Phiên cũ không còn hợp lệ, xóa để chuẩn bị đăng nhập mới.");
+            localStorage.removeItem("hoc_school_student_name");
+            localStorage.removeItem("hoc_school_student_class");
+            localStorage.removeItem("hoc_school_student_classroom");
+            localStorage.removeItem("hero_session_token");
+            localStorage.removeItem("hero_my_account_backup");
+            sessionStorage.clear();
+          }
+        }
+        let playPromise = amThanhNenMedia.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            document.body.addEventListener(
+              "click",
+              () => {
+                amThanhNenMedia.play().catch(() => {});
+              },
+              { once: true },
+            );
+          });
+        }
+        // Nạp danh sách học sinh theo lớp để gợi ý tên đăng nhập
+        chonLopDangNhap();
+      });
+
+      function phatAmThanhClick() {
+        try {
+          let ctx = new (window.AudioContext || window.webkitAudioContext)();
+          let osc = ctx.createOscillator();
+          let gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          gain.gain.setValueAtTime(0.05, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+        } catch (e) {}
+      }
+
+      function switchTab(tab) {
+        phatAmThanhClick();
+        document.getElementById("form-login").style.display =
+          tab === "login" ? "block" : "none";
+        document.getElementById("form-register").style.display =
+          tab === "register" ? "block" : "none";
+        document.getElementById("btn-tab-login").className =
+          tab === "login" ? "tab-btn active" : "tab-btn";
+        document.getElementById("btn-tab-register").className =
+          tab === "register" ? "tab-btn active" : "tab-btn";
+        if (tab === "register") capNhatGiaoDienKhoaDangKy();
+      }
+
+      function showToast(message, type = "success") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        const borderColor = type === "success" ? "#00ffff" : "#ff2a85";
+        toast.style.cssText = `
+                background: rgba(15, 10, 30, 0.95);
+                backdrop-filter: blur(10px);
+                border-left: 4px solid ${borderColor};
+                color: #fff;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(${type === "success" ? "0,255,255" : "255,42,133"}, 0.3);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-size: 0.9rem;
+                min-width: 250px;
+                animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                font-weight: 600;
+                letter-spacing: 0.5px;
+            `;
+        const icon = type === "success" ? "fa-circle-check" : "fa-circle-xmark";
+        toast.innerHTML = `<i class="fa-solid ${icon}" style="color: ${borderColor}; font-size: 1.2rem; text-shadow: 0 0 8px ${borderColor};"></i> <span>${message}</span>`;
+        if (!document.getElementById("toast-styles")) {
+          const style = document.createElement("style");
+          style.id = "toast-styles";
+          style.innerHTML = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
+          document.head.appendChild(style);
+        }
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.animation =
+            "slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) reverse forwards";
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      function thoatKhoiTroChoi() {
+        phatAmThanhClick();
+        let xacNhan = confirm("Em có chắc chắn muốn trở về trang chủ không?");
+        if (xacNhan) {
+          try {
+            amThanhNenMedia.pause();
+          } catch (e) {}
+          window.location.href = "https://www.google.com";
+        }
+      }
+
+      async function tienHanhDangKy() {
+        phatAmThanhClick();
+        if (laKhoaDangKy()) {
+          showToast(
+            "🔒 Cổng đăng ký tài khoản hiện đang tạm khóa bởi Thầy/Cô!",
+            "error",
+          );
+          return;
+        }
+        window.__dangTrongTienTrinhForm = true;
+        try {
+          if (window.__fbInitPromise) {
+            try {
+              await window.__fbInitPromise;
+            } catch (e) {}
+          }
+          window.__fbDataReady = true;
+
+          let ten = document
+            .getElementById("reg-name")
+            .value.trim()
+            .replace(/\s+/g, " ");
+          let lop = document.getElementById("reg-class").value.trim();
+          let lopCuThe = document
+            .getElementById("reg-classroom")
+            .value.trim()
+            .replace(/\s+/g, " ");
+          let pass = document.getElementById("reg-pass").value.trim();
+
+          if (!ten || !lop || !pass) {
+            showToast("Cần điền đầy đủ thông tin đăng ký!", "error");
+            return;
+          }
+
+          let users =
+            JSON.parse(localStorage.getItem("math_hero_users_v2")) || {};
+          const lower = ten.toLowerCase().trim();
+          const existingKey = Object.keys(users).find(
+            (k) => k.toLowerCase().trim() === lower,
+          );
+          if (existingKey) {
+            showToast(
+              "Chiến binh này đã tồn tại! Vui lòng đăng nhập hoặc chọn tên khác.",
+              "error",
+            );
+            return;
+          }
+
+          // Gỡ tên khỏi tombstone nếu có (dùng .trim() cả 2 vế)
+          let tombstoneCoThayDoi = false;
+          try {
+            let dsDaXoa =
+              JSON.parse(localStorage.getItem("danh_sach_hs_da_xoa")) || [];
+            if (Array.isArray(dsDaXoa)) {
+              const dsDaXoaMoi = dsDaXoa.filter(
+                (t) => String(t).toLowerCase().trim() !== lower,
+              );
+              if (dsDaXoaMoi.length !== dsDaXoa.length) {
+                localStorage.setItem(
+                  "danh_sach_hs_da_xoa",
+                  JSON.stringify(dsDaXoaMoi),
+                );
+                tombstoneCoThayDoi = true;
+              }
+            }
+          } catch (e) {
+            console.warn("[Auth Register] Lỗi gỡ tombstone:", e);
+          }
+
+          let hashedPass = pass;
+          try {
+            if (typeof window.__authHashMatKhau === "function")
+              hashedPass = await window.__authHashMatKhau(pass);
+            else if (
+              window.HeroAuth &&
+              typeof window.HeroAuth.hashMatKhau === "function"
+            )
+              hashedPass = await window.HeroAuth.hashMatKhau(pass);
+            else if (typeof window.hashMatKhau === "function")
+              hashedPass = await window.hashMatKhau(pass);
+          } catch (e) {
+            console.warn("[Auth Hash Pass]", e);
+          }
+
+          users[ten] = {
+            class: lop,
+            classroom: lopCuThe,
+            pass: hashedPass,
+            _hashed: true,
+          };
+          localStorage.setItem("math_hero_users_v2", JSON.stringify(users));
+          try {
+            localStorage.setItem(
+              "hero_my_account_backup",
+              JSON.stringify({ name: ten, record: users[ten] }),
+            );
+          } catch (e) {}
+          if (!localStorage.getItem("coin_" + ten))
+            localStorage.setItem("coin_" + ten, "50");
+          if (!localStorage.getItem("exp_" + ten))
+            localStorage.setItem("exp_" + ten, "0");
+
+          try {
+            // Xóa bia mộ trên Cloud trước để lần pull kế tiếp không loại tài khoản vừa đăng ký lại.
+            if (tombstoneCoThayDoi)
+              await dayLenCloudVoiRetry("danh_sach_hs_da_xoa", 3, 3000);
+            const pushUsersOk = await dayLenCloudVoiRetry(
+              "math_hero_users_v2",
+              3,
+              3000,
+            );
+            if (!pushUsersOk)
+              console.warn(
+                "[Auth Register] Push users vào hàng đợi — sẽ tự đồng bộ lần sau.",
+              );
+          } catch (e) {
+            console.warn("[Auth Firebase Push]", e);
+          }
+
+          showToast(
+            "Tạo tài khoản thành công! Đang tiến hành đăng nhập...",
+            "success",
+          );
+          switchTab("login");
+          document.getElementById("login-name").value = ten;
+          document.getElementById("login-pass").value = pass;
+          setTimeout(() => {
+            tienHanhDangNhap();
+          }, 600);
+        } finally {
+          window.__dangTrongTienTrinhForm = false;
+        }
+      }
+
+      async function tienHanhDangNhap() {
+        phatAmThanhClick();
+        window.__dangTrongTienTrinhForm = true;
+        try {
+          if (window.__fbInitPromise) {
+            try {
+              await window.__fbInitPromise;
+            } catch (e) {}
+          }
+          window.__fbDataReady = true;
+
+          function boDauTiengVietAuth(str) {
+            return String(str || '')
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd')
+              .replace(/Đ/g, 'D')
+              .toLowerCase()
+              .replace(/[\u00A0\u200B\uFEFF]/g, ' ')
+              .trim()
+              .replace(/\s+/g, ' ');
+          }
+
+          function timKhoaNguoiDung(usersObj, tenInp) {
+            if (!usersObj || typeof usersObj !== 'object') return null;
+            const keys = Object.keys(usersObj);
+            if (keys.length === 0) return null;
+
+            const cleanInp = String(tenInp || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ');
+            const nfcInp = cleanInp.normalize('NFC');
+            const lowerInp = nfcInp.toLowerCase();
+            const unaccentedInp = boDauTiengVietAuth(nfcInp);
+
+            // Bậc 1: Khớp chính xác (NFC)
+            for (const k of keys) {
+              if (k.normalize('NFC') === nfcInp) return k;
+            }
+
+            // Bậc 2: Khớp không phân biệt hoa thường (Case-insensitive NFC)
+            for (const k of keys) {
+              const cleanK = String(k || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+              if (cleanK === lowerInp) return k;
+            }
+
+            // Bậc 3: Khớp không dấu tiếng Việt (dành cho học sinh gõ máy không dấu)
+            const matchesUnaccented = keys.filter(k => boDauTiengVietAuth(k) === unaccentedInp);
+            if (matchesUnaccented.length === 1) {
+              return matchesUnaccented[0];
+            }
+
+            return null;
+          }
+
+          let ten = document
+            .getElementById("login-name")
+            .value.replace(/[\u00A0\u200B\uFEFF]/g, " ")
+            .trim()
+            .replace(/\s+/g, " ")
+            .normalize("NFC");
+          let pass = document.getElementById("login-pass").value.trim();
+          if (!ten || !pass) {
+            showToast("Hãy điền đủ tên và mật mã!", "error");
+            return;
+          }
+
+          let users = {};
+          let usersLocalTruocDongBo = {};
+          let valid = false;
+
+          try {
+            usersLocalTruocDongBo =
+              JSON.parse(localStorage.getItem("math_hero_users_v2") || "{}") ||
+              {};
+          } catch (e) {
+            usersLocalTruocDongBo = {};
+          }
+
+          try {
+            users =
+              JSON.parse(localStorage.getItem("math_hero_users_v2") || "{}") ||
+              {};
+          } catch (e) {
+            users = {};
+          }
+
+          // Bảo vệ tài khoản vừa đăng ký: một bản Cloud rỗng/cũ không được xóa bản local hợp lệ.
+          let coTaiKhoanDuocKhoiPhuc = false;
+          Object.keys(usersLocalTruocDongBo).forEach((key) => {
+            const record = usersLocalTruocDongBo[key];
+            if (
+              !users[key] &&
+              record &&
+              (record.pass || typeof record === "string")
+            ) {
+              users[key] = record;
+              coTaiKhoanDuocKhoiPhuc = true;
+            }
+          });
+          if (coTaiKhoanDuocKhoiPhuc) {
+            localStorage.setItem("math_hero_users_v2", JSON.stringify(users));
+            await dayLenCloudVoiRetry("math_hero_users_v2", 3, 3000);
+          }
+
+          let userKey = timKhoaNguoiDung(users, ten);
+
+          // Nếu chưa tìm thấy trên máy cục bộ, thử tải ngay từ Cloud
+          if (!userKey) {
+            try {
+              const compat = window.HeroFirebaseCompat || window.FirebaseSync;
+              if (compat && typeof compat.taiCauHinhToanCuc === "function") {
+                await compat.taiCauHinhToanCuc({ force: true });
+              }
+            } catch (e) {
+              console.warn("[Login] Lỗi đồng bộ Cloud users:", e);
+            }
+            try {
+              users =
+                JSON.parse(
+                  localStorage.getItem("math_hero_users_v2") || "{}",
+                ) || {};
+            } catch (e) {
+              users = {};
+            }
+            userKey = timKhoaNguoiDung(users, ten);
+          }
+
+          if (!userKey) {
+            showToast(
+              "Tài khoản không tồn tại! Vui lòng kiểm tra lại họ tên hoặc báo Thầy.",
+              "error",
+            );
+            return;
+          }
+
+          let hashedInput = pass;
+          try {
+            if (typeof window.__authHashMatKhau === "function")
+              hashedInput = await window.__authHashMatKhau(pass);
+            else if (
+              window.HeroAuth &&
+              typeof window.HeroAuth.hashMatKhau === "function"
+            )
+              hashedInput = await window.HeroAuth.hashMatKhau(pass);
+            else if (typeof window.hashMatKhau === "function")
+              hashedInput = await window.hashMatKhau(pass);
+          } catch (e) {}
+
+          const userRecord = users[userKey];
+          const storedPass =
+            typeof userRecord === "string"
+              ? userRecord
+              : userRecord?.pass || "";
+
+          if (storedPass === hashedInput || storedPass.trim() === hashedInput) {
+            valid = true;
+          } else if (
+            storedPass === pass ||
+            storedPass.trim() === pass ||
+            storedPass.trim() === pass.trim()
+          ) {
+            valid = true;
+            if (typeof userRecord === "object" && userRecord !== null) {
+              userRecord.pass = hashedInput;
+              userRecord._hashed = true;
+            } else {
+              users[userKey] = {
+                class: "Khối 7",
+                classroom: "",
+                pass: hashedInput,
+                _hashed: true,
+              };
+            }
+            localStorage.setItem("math_hero_users_v2", JSON.stringify(users));
+            if (typeof window.__fbDayCauHinhToanCuc === "function")
+              dayLenCloudVoiRetry("math_hero_users_v2");
+          } else {
+            const legacyHasher =
+              window.legacyBrokenSha256 ||
+              (window.HeroSHA256 && window.HeroSHA256.legacyBrokenSha256);
+            if (typeof legacyHasher === "function") {
+              const legacyHash = legacyHasher("HERO_MATH_2024_SALT_XyZ" + pass);
+              if (
+                storedPass === legacyHash ||
+                storedPass.trim() === legacyHash
+              ) {
+                valid = true;
+                if (typeof userRecord === "object" && userRecord !== null) {
+                  userRecord.pass = hashedInput;
+                  userRecord._hashed = true;
+                } else {
+                  users[userKey] = {
+                    class: "Khối 7",
+                    classroom: "",
+                    pass: hashedInput,
+                    _hashed: true,
+                  };
+                }
+                localStorage.setItem(
+                  "math_hero_users_v2",
+                  JSON.stringify(users),
+                );
+                if (typeof window.__fbDayCauHinhToanCuc === "function")
+                  dayLenCloudVoiRetry("math_hero_users_v2");
+                console.log(
+                  "[Hero Auth] Đã tự động nâng cấp hash mật khẩu thành công cho:",
+                  userKey,
+                );
+              }
+            }
+          }
+
+          if (!valid) {
+            showToast("Sai thông tin danh tính hoặc mật mã!", "error");
+            return;
+          }
+
+          const lopHs =
+            typeof userRecord === "object" && userRecord?.class
+              ? userRecord.class
+              : "Khối 7";
+          const lopCuTheHs =
+            typeof userRecord === "object" && userRecord?.classroom
+              ? userRecord.classroom
+              : "";
+          const tenChuan = userKey;
+
+          // KIỂM TRA MẬT KHẨU MẶC ĐỊNH 123456 -> NHẮC ĐỔI MẬT KHẨU BẢO VỆ TÀI KHOẢN
+          const isDefaultPass = (pass === '123456' || (typeof userRecord === 'object' && !userRecord._hasChangedPassword && pass === '123456'));
+          if (isDefaultPass) {
+            moModalDoiMatKhauLanDau(tenChuan, userKey, userRecord, lopHs, lopCuTheHs);
+            return;
+          }
+
+          await hoanTatDangNhap(tenChuan, userRecord, lopHs, lopCuTheHs);
+        } finally {
+          window.__dangTrongTienTrinhForm = false;
+        }
+      }
+
+      // MODAL BẢO VỆ TÀI KHOẢN KHI ĐĂNG NHẬP LẦN ĐẦU / ĐANG DÙNG 123456
+      function moModalDoiMatKhauLanDau(tenChuan, userKey, userRecord, lopHs, lopCuTheHs) {
+        window.__pendingLogin = { tenChuan, userKey, userRecord, lopHs, lopCuTheHs };
+        const lblName = document.getElementById("lbl-first-login-student-name");
+        if (lblName) lblName.innerText = tenChuan;
+        const modal = document.getElementById("modal-doi-mat-khau-dau-tien");
+        if (modal) modal.style.display = "flex";
+        setTimeout(() => document.getElementById("first-new-pass")?.focus(), 150);
+      }
+
+      async function xacNhanDoiMatKhauLanDau() {
+        if (!window.__pendingLogin) return;
+        const newPass = (document.getElementById("first-new-pass")?.value || "").trim();
+        const confirmPass = (document.getElementById("first-confirm-pass")?.value || "").trim();
+
+        if (!newPass || newPass.length < 4) {
+          showToast("Mật khẩu mới phải có ít nhất 4 ký tự!", "error");
+          document.getElementById("first-new-pass")?.focus();
+          return;
+        }
+        if (newPass === "123456") {
+          showToast("Vui lòng không đặt lại mật mã mặc định 123456!", "warning");
+          document.getElementById("first-new-pass")?.focus();
+          return;
+        }
+        if (newPass !== confirmPass) {
+          showToast("Mật khẩu xác nhận không khớp!", "error");
+          document.getElementById("first-confirm-pass")?.focus();
+          return;
+        }
+
+        const btn = document.getElementById("btn-xac-nhan-doi-pass");
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu mật khẩu...`;
+        }
+
+        try {
+          const { tenChuan, userKey, userRecord, lopHs, lopCuTheHs } = window.__pendingLogin;
+          let hashedNew = newPass;
+          try {
+            if (typeof window.__authHashMatKhau === "function") hashedNew = await window.__authHashMatKhau(newPass);
+            else if (window.HeroAuth && typeof window.HeroAuth.hashMatKhau === "function") hashedNew = await window.HeroAuth.hashMatKhau(newPass);
+            else if (typeof window.hashMatKhau === "function") hashedNew = await window.hashMatKhau(newPass);
+          } catch(e) {}
+
+          let users = {};
+          try { users = JSON.parse(localStorage.getItem("math_hero_users_v2") || "{}"); } catch(e) {}
+          if (typeof userRecord === "object" && userRecord !== null) {
+            userRecord.pass = hashedNew;
+            userRecord._hashed = true;
+            userRecord._hasChangedPassword = true;
+          } else {
+            userRecord = {
+              class: lopHs || "Khối 7",
+              classroom: lopCuTheHs || "",
+              pass: hashedNew,
+              _hashed: true,
+              _hasChangedPassword: true
+            };
+          }
+          users[userKey] = userRecord;
+          localStorage.setItem("math_hero_users_v2", JSON.stringify(users));
+
+          // Đồng bộ lên Cloud
+          if (typeof window.__fbDayCauHinhToanCuc === "function") dayLenCloudVoiRetry("math_hero_users_v2");
+          if (typeof window.dongBoHocSinh === "function") window.dongBoHocSinh(tenChuan, userRecord);
+
+          showToast("🎉 Đã bảo vệ tài khẩu với mật mã riêng thành công!", "success");
+          const modal = document.getElementById("modal-doi-mat-khau-dau-tien");
+          if (modal) modal.style.display = "none";
+
+          await hoanTatDangNhap(tenChuan, userRecord, lopHs, lopCuTheHs);
+        } catch(e) {
+          console.error("[Đổi pass lần đầu]", e);
+          showToast("Lỗi khi lưu mật khẩu: " + e.message, "error");
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> LƯU MẬT KHẨU & VÀO HỌC`;
+          }
+        }
+      }
+
+      async function boQuaDoiMatKhau() {
+        if (!window.__pendingLogin) return;
+        const modal = document.getElementById("modal-doi-mat-khau-dau-tien");
+        if (modal) modal.style.display = "none";
+        const { tenChuan, userRecord, lopHs, lopCuTheHs } = window.__pendingLogin;
+        await hoanTatDangNhap(tenChuan, userRecord, lopHs, lopCuTheHs);
+      }
+
+      async function hoanTatDangNhap(tenChuan, userRecord, lopHs, lopCuTheHs) {
+        try {
+          localStorage.setItem(
+            "hero_my_account_backup",
+            JSON.stringify({ name: tenChuan, record: userRecord }),
+          );
+        } catch (e) {}
+
+        // Dọn tombstone cho user đang login thành công (giữ local sạch)
+        try {
+          let dsDaXoa = JSON.parse(localStorage.getItem("danh_sach_hs_da_xoa")) || [];
+          if (Array.isArray(dsDaXoa)) {
+            const cleanUser = String(tenChuan || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+            const dsDaXoaClean = dsDaXoa.filter(
+              (t) => {
+                const cleanT = String(t || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                return cleanT !== cleanUser;
+              }
+            );
+            if (dsDaXoaClean.length !== dsDaXoa.length) {
+              localStorage.setItem("danh_sach_hs_da_xoa", JSON.stringify(dsDaXoaClean));
+              if (typeof window.__fbDayCauHinhToanCuc === "function") dayLenCloudVoiRetry("danh_sach_hs_da_xoa");
+            }
+          }
+        } catch (e) {}
+
+        localStorage.setItem("hoc_school_student_name", tenChuan);
+        localStorage.setItem("hoc_school_student_class", lopHs);
+        localStorage.setItem("hoc_school_student_classroom", lopCuTheHs);
+        sessionStorage.setItem("hoc_school_student_name", tenChuan);
+        sessionStorage.setItem("hoc_school_student_class", lopHs);
+        sessionStorage.setItem("hoc_school_student_classroom", lopCuTheHs);
+        localStorage.setItem("hero_login_timestamp", String(Date.now()));
+
+        try {
+          if (typeof window.__authLuuSessionToken === "function") {
+            await window.__authLuuSessionToken(tenChuan);
+          } else if (window.HeroAuth && typeof window.HeroAuth.luuSessionToken === "function") {
+            await window.HeroAuth.luuSessionToken(tenChuan);
+          } else if (typeof window.luuSessionToken === "function") {
+            await window.luuSessionToken(tenChuan);
+          }
+        } catch (e) {
+          console.warn("[Auth] Lưu session token lỗi nhẹ:", e);
+        }
+
+        try {
+          const cMaDot = window.HeroFirebaseCompat || window.FirebaseSync;
+          if (cMaDot && typeof cMaDot.layMaDotDuLieu === "function") {
+            const curMa = await cMaDot.layMaDotDuLieu();
+            if (curMa) localStorage.setItem("hero_ma_dot_du_lieu", curMa);
+          }
+        } catch(e) {}
+
+        try {
+          if (typeof window.__fbTaiDuLieuTuMay === "function")
+            await window.__fbTaiDuLieuTuMay(tenChuan);
+        } catch (e) {}
+
+        let danhSachNhatKy = [];
+        try {
+          danhSachNhatKy = JSON.parse(localStorage.getItem("nhat_ky_dang_nhap")) || [];
+        } catch (e) {}
+        if (!Array.isArray(danhSachNhatKy)) danhSachNhatKy = [];
+        danhSachNhatKy.push({
+          name: tenChuan,
+          className: lopHs,
+          classroom: lopCuTheHs,
+          time: new Date().toLocaleString("vi-VN"),
+        });
+        localStorage.setItem("nhat_ky_dang_nhap", JSON.stringify(danhSachNhatKy));
+
+        try {
+          await dayLenCloudVoiRetry("nhat_ky_dang_nhap", 3, 3000);
+        } catch (e) {
+          console.warn("[Auth] Không đẩy được nhật ký lên Cloud:", e);
+        }
+
+        showToast("Đăng nhập thành công! Đang vào sảnh...", "success");
+        setTimeout(() => {
+          sessionStorage.removeItem("__hero_redirect_count");
+          window.location.href = "index.html";
+        }, 300);
+      }
+
+      // LẤY DANH SÁCH HỌC SINH HIỆN TẠI (BAO GỒM CẢ HỌC SINH MỚI THÊM HOẶC NHẬP EXCEL SAU NÀY)
+      function layDanhSachHocSinhHienTai() {
+        let users = {};
+        try { users = JSON.parse(localStorage.getItem("math_hero_users_v2") || "{}"); } catch(e) {}
+        let dsDaXoa = [];
+        try { dsDaXoa = JSON.parse(localStorage.getItem("danh_sach_hs_da_xoa") || "[]"); } catch(e) {}
+        const setDaXoa = new Set(dsDaXoa.map(t => String(t || '').trim().toLowerCase()));
+
+        const studentMap = new Map();
+
+        // 1. Thêm từ danh sách chuẩn 203 học sinh (nếu chưa bị xóa)
+        if (Array.isArray(window.HERO_DANH_SACH_CHUAN_LIST)) {
+          window.HERO_DANH_SACH_CHUAN_LIST.forEach(hs => {
+            const lower = String(hs.name || '').trim().toLowerCase();
+            if (!setDaXoa.has(lower)) {
+              studentMap.set(lower, {
+                name: hs.name,
+                class: hs.class || "Khối 7",
+                classroom: hs.classroom || ""
+              });
+            }
+          });
+        }
+
+        // 2. Thêm và ghi đè từ dữ liệu thực tế (bao gồm học sinh Thầy thêm mới sau này)
+        Object.keys(users).forEach(ten => {
+          const lower = String(ten || '').trim().toLowerCase();
+          if (!setDaXoa.has(lower)) {
+            const u = users[ten];
+            studentMap.set(lower, {
+              name: ten,
+              class: typeof u === "object" ? (u.class || "Khối 7") : "Khối 7",
+              classroom: typeof u === "object" ? (u.classroom || "") : ""
+            });
+          }
+        });
+
+        return Array.from(studentMap.values());
+      }
+
+      function capNhatDropdownLop() {
+        const selClass = document.getElementById("login-class-select");
+        if (!selClass) return;
+        const curVal = selClass.value;
+        const allStudents = layDanhSachHocSinhHienTai();
+        const setLop = new Set();
+        allStudents.forEach(hs => {
+          if (hs.classroom) setLop.add(String(hs.classroom).trim().toUpperCase());
+        });
+        const dsLop = Array.from(setLop).sort((a, b) => a.localeCompare(b, "vi", { numeric: true }));
+
+        // Chỉ tạo lại nếu số lượng lớp thay đổi hoặc chưa có
+        if (selClass.options.length <= 2 || dsLop.length !== selClass.options.length - 2) {
+          selClass.innerHTML = '<option value="">-- Chọn Lớp của em --</option>';
+          dsLop.forEach(lop => {
+            const opt = document.createElement("option");
+            opt.value = lop;
+            opt.textContent = `Lớp ${lop}`;
+            selClass.appendChild(opt);
+          });
+          const optAll = document.createElement("option");
+          optAll.value = "ALL";
+          optAll.textContent = "-- Hiển thị tất cả học sinh --";
+          selClass.appendChild(optAll);
+
+          if (curVal && (dsLop.includes(curVal) || curVal === "ALL")) {
+            selClass.value = curVal;
+          }
+        }
+      }
+
+      // CHỨC NĂNG CHỌN LỚP ĐĂNG NHẬP & GỢI Ý DANH SÁCH TÊN
+      function chonLopDangNhap() {
+        capNhatDropdownLop();
+        const lop = document.getElementById("login-class-select")?.value;
+        const datalist = document.getElementById("student-names-datalist");
+        const selQuick = document.getElementById("login-student-select");
+        const boxQuick = document.getElementById("quick-student-select-box");
+        const inpName = document.getElementById("login-name");
+        
+        if (!datalist || !selQuick) return;
+        datalist.innerHTML = "";
+        selQuick.innerHTML = '<option value="">-- Bấm vào đây để chọn nhanh tên em --</option>';
+
+        let danhSach = layDanhSachHocSinhHienTai();
+        if (lop && lop !== "ALL") {
+          danhSach = danhSach.filter(it => String(it.classroom).toUpperCase() === lop.toUpperCase());
+        }
+
+        danhSach.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+        danhSach.forEach(hs => {
+          const optDl = document.createElement("option");
+          optDl.value = hs.name;
+          optDl.label = hs.classroom ? `${hs.name} (${hs.classroom})` : hs.name;
+          datalist.appendChild(optDl);
+
+          const optSel = document.createElement("option");
+          optSel.value = hs.name;
+          optSel.textContent = hs.classroom ? `${hs.name} - ${hs.classroom}` : hs.name;
+          selQuick.appendChild(optSel);
+        });
+
+        if (lop && danhSach.length > 0) {
+          if (boxQuick) boxQuick.style.display = "block";
+        } else {
+          if (boxQuick) boxQuick.style.display = "none";
+        }
+
+        if (inpName) {
+          inpName.placeholder = lop && lop !== "ALL" ? `Gõ hoặc chọn tên em trong lớp ${lop}...` : "Gõ hoặc chọn tên từ gợi ý...";
+        }
+      }
+
+      function chonNhanhHocSinh() {
+        const sel = document.getElementById("login-student-select");
+        const inpName = document.getElementById("login-name");
+        const inpPass = document.getElementById("login-pass");
+        if (sel && inpName && sel.value) {
+          inpName.value = sel.value;
+          if (inpPass) inpPass.focus();
+        }
+      }
+
+      function toggleHienThiMatKhau(inputId, btn) {
+        const inp = document.getElementById(inputId);
+        if (!inp) return;
+        const isPass = inp.type === "password";
+        inp.type = isPass ? "text" : "password";
+        if (btn) {
+          btn.innerHTML = isPass ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+        }
+      }
+
+      function moModalQuenPass() {
+        phatAmThanhClick();
+        let gvInfo = null;
+        try {
+          gvInfo = JSON.parse(
+            localStorage.getItem("thong_tin_giao_vien_lien_he"),
+          );
+        } catch (e) {}
+        const tenGv = gvInfo?.hoten || "Thầy Trọng Toán";
+        const phoneGv = gvInfo?.phone || "0912345678";
+        const ghiChuGv =
+          gvInfo?.ghichu ||
+          "Nhắn tin qua Zalo hoặc gửi yêu cầu bên dưới để Thầy cấp lại mật mã cho em nhé!";
+        const lblTen = document.getElementById("lbl-modal-gv-ten");
+        const lblGhiChu = document.getElementById("lbl-modal-gv-ghichu");
+        const btnZalo = document.getElementById("btn-zalo-gv");
+        const btnCall = document.getElementById("btn-call-gv");
+        if (lblTen) lblTen.innerText = tenGv;
+        if (lblGhiChu) lblGhiChu.innerText = ghiChuGv;
+        const cleanPhone = phoneGv.replace(/[^0-9]/g, "");
+        if (btnZalo)
+          btnZalo.href = cleanPhone
+            ? `https://zalo.me/${cleanPhone}`
+            : "https://zalo.me";
+        if (btnCall) btnCall.href = cleanPhone ? `tel:${cleanPhone}` : "tel:";
+        const loginName = (
+          document.getElementById("login-name")?.value || ""
+        ).trim();
+        const qpName = document.getElementById("qp-name");
+        if (qpName && loginName) qpName.value = loginName;
+        const modal = document.getElementById("modal-quen-pass");
+        if (modal) modal.style.display = "flex";
+      }
+
+      function dongModalQuenPass() {
+        phatAmThanhClick();
+        const modal = document.getElementById("modal-quen-pass");
+        if (modal) modal.style.display = "none";
+      }
+
+      async function guiYeuCauQuenPass() {
+        phatAmThanhClick();
+        const ten = (document.getElementById("qp-name")?.value || "").trim();
+        const khoi = document.getElementById("qp-grade")?.value || "Khối 7";
+        const lop = (
+          document.getElementById("qp-classroom")?.value || ""
+        ).trim();
+        const phone = (document.getElementById("qp-phone")?.value || "").trim();
+        const lyDo =
+          (document.getElementById("qp-note")?.value || "").trim() ||
+          "Em quên mật mã, nhờ Thầy đặt lại 123456 giúp em ạ";
+        if (!ten) {
+          showToast("Vui lòng nhập Họ và tên của em!", "error");
+          return;
+        }
+
+        let dsReq = [];
+        try {
+          dsReq =
+            JSON.parse(localStorage.getItem("danh_sach_yeu_cau_quen_pass")) ||
+            [];
+        } catch (e) {}
+        if (!Array.isArray(dsReq)) dsReq = [];
+
+        const newReq = {
+          id: "req_" + Date.now(),
+          ten: ten,
+          khoi: khoi,
+          lop: lop,
+          phone: phone,
+          lyDo: lyDo,
+          thoiGian: new Date().toLocaleString("vi-VN"),
+          daXuLy: false,
+          capNhatLuc: Date.now(),
+        };
+        dsReq.unshift(newReq);
+        localStorage.setItem(
+          "danh_sach_yeu_cau_quen_pass",
+          JSON.stringify(dsReq),
+        );
+
+        if (typeof window.__fbDayCauHinhToanCuc === "function") {
+          try {
+            await dayLenCloudVoiRetry("danh_sach_yeu_cau_quen_pass");
+          } catch (e) {
+            console.warn("[Auth] Lỗi gửi yêu cầu Firebase:", e);
+          }
+        }
+        dongModalQuenPass();
+        showToast(
+          "Đã gửi yêu cầu tới Giáo Viên! Thầy Cô sẽ đặt lại mật mã thành 123456 cho em sớm nhất.",
+          "success",
+        );
+      }
+    </script>
+  </body>
+</html>

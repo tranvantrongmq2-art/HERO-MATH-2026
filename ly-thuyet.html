@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thư Viện Toán Học - Hero Math</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    startup: {
+      // Không tự typeset ngay khi load — chờ nội dung bài học được inject xong
+      typeset: false,
+      // Sau khi MathJax sẵn sàng, typeset lại toàn bộ nội dung bài học
+      pageReady: function() {
+        return window.MathJax.startup.defaultPageReady().then(function() {
+          var container = document.getElementById('lesson-list');
+          if (container && container.innerHTML.trim() !== '') {
+            window.MathJax.typesetPromise([container]).catch(function(){});
+          }
+        });
+      }
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0a0c1a;
+    --parchment: #e8e4f0;
+    --arcane-1: #7f77dd;   /* Chương — tím huyền */
+    --arcane-1-dim: #534ab7;
+    --arcane-2: #1d9e75;   /* Mục con — ngọc lục */
+    --arcane-2-dim: #5dcaa5;
+    --arcane-3: #ef9f27;   /* Công thức — hổ phách */
+    --arcane-4: #d85a30;   /* Ghi chú — đỏ cam */
+    --rose: #d4537e;
+    --border-glass: rgba(255, 255, 255, 0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(ellipse at 18% 12%, rgba(83,74,183,0.22) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(29,158,117,0.16) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 95%, rgba(186,117,23,0.12) 0%, transparent 42%),
+      radial-gradient(ellipse at 95% 5%, rgba(212,83,126,0.10) 0%, transparent 35%);
+    color: var(--parchment);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 80px;
+    position: relative;
+  }
+
+  /* Hạt sao lấp lánh nền */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.22) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 8%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 55%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 20%, rgba(255,255,255,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 68% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 38% 28%, rgba(255,255,255,0.18) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 38%, rgba(255,255,255,0.22) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Thanh tiến trình đọc */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--arcane-1), var(--rose), var(--arcane-3));
+    z-index: 999; transition: width 0.1s linear;
+    box-shadow: 0 0 8px rgba(212,83,126,0.6);
+  }
+
+  .container { max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* ===== HEADER ===== */
+  .site-header {
+    display: flex; justify-content: space-between; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, rgba(153,53,86,0.16), rgba(83,74,183,0.14));
+    border: 1px solid rgba(212,83,126,0.35);
+    border-radius: 18px;
+    padding: 18px 24px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .site-header::after {
+    content: ''; position: absolute; top: -50%; right: -10%; width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(212,83,126,0.22) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .site-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem; font-weight: 700; letter-spacing: 0.03em;
+    color: #f7a8c3;
+    display: flex; align-items: center; gap: 12px;
+    text-shadow: 0 0 22px rgba(212,83,126,0.5), 0 0 6px rgba(212,83,126,0.3);
+  }
+  .site-title i { font-size: 1.4rem; color: #ff9fc3; filter: drop-shadow(0 0 8px rgba(255,159,195,0.6)); }
+  .site-sub {
+    font-size: 0.76rem; color: #b7add1; margin-top: 5px;
+    letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700;
+  }
+
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+
+  .btn-back {
+    background: rgba(217,58,48,0.15); color: #f9a3a3;
+    border: 1px solid rgba(240,149,149,0.4); border-radius: 10px;
+    padding: 9px 18px; font-size: 0.86rem; font-weight: 800;
+    font-family: 'Nunito', sans-serif; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s ease; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-back:hover {
+    background: rgba(217,58,48,0.32);
+    border-color: rgba(240,149,149,0.7);
+    color: #fff;
+    transform: translateX(-2px);
+  }
+
+  /* ===== BỘ LỌC KHỐI LỚP (GRADE FILTER TABS) ===== */
+  .grade-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    backdrop-filter: blur(6px);
+  }
+  .grade-filter-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #9fe1cb;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+  .grade-tab-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #b8b2d8;
+    padding: 7px 15px;
+    border-radius: 9px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .grade-tab-btn:hover {
+    background: rgba(127, 119, 221, 0.22);
+    border-color: rgba(127, 119, 221, 0.5);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .grade-tab-btn.active {
+    background: linear-gradient(135deg, rgba(127, 119, 221, 0.4), rgba(83, 74, 183, 0.5));
+    border-color: #9b94ee;
+    color: #fff;
+    box-shadow: 0 0 14px rgba(127, 119, 221, 0.4);
+  }
+  .grade-badge-count {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #cecbf6;
+  }
+
+  /* ===== THANH CÔNG CỤ: TÌM KIẾM + MỞ/ĐÓNG TẤT CẢ ===== */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 16px;
+  }
+  .search-wrap {
+    flex: 1; min-width: 220px;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .search-wrap:focus-within {
+    border-color: rgba(127, 119, 221, 0.6);
+    box-shadow: 0 0 10px rgba(127, 119, 221, 0.2);
+  }
+  .search-wrap i { color: #8e86eb; font-size: 0.95rem; }
+  .search-wrap input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--parchment); font-family: 'Nunito', sans-serif; font-size: 0.9rem;
+  }
+  .search-wrap input::placeholder { color: #69628d; }
+
+  .btn-toggle-all {
+    background: rgba(127,119,221,0.15);
+    border: 1px solid rgba(127,119,221,0.4);
+    color: #cecbf6;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.82rem; font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .btn-toggle-all:hover {
+    background: rgba(127,119,221,0.32);
+    border-color: rgba(127,119,221,0.7);
+    color: #fff;
+  }
+
+  /* ===== MỤC LỤC BÀI HỌC (TOC CHIPS) ===== */
+  .toc-wrap {
+    margin-bottom: 18px;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+  }
+  .toc-label {
+    font-family: 'Cinzel', serif; font-size: 0.74rem; font-weight: 700;
+    color: #9b94ee; text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
+  }
+  .toc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toc-chip {
+    background: rgba(127,119,221,0.12);
+    border: 1px solid rgba(127,119,221,0.35);
+    color: #cecbf6;
+    border-radius: 8px;
+    padding: 6px 13px;
+    font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .toc-chip:hover {
+    background: rgba(127,119,221,0.32);
+    border-color: rgba(127,119,221,0.7);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .toc-chip .toc-num { color: var(--arcane-3); font-family: 'Cinzel', serif; font-weight: 800; }
+
+  /* ===== BẢNG CHÚ GIẢI MÀU SẮC (LEGEND) ===== */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px 18px;
+    margin-bottom: 22px;
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.028);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    font-size: 0.76rem;
+  }
+  .leg-item { display: flex; align-items: center; gap: 7px; color: #a89ec0; }
+  .leg-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ===== CẤP 1: CHƯƠNG — Tím huyền ===== */
+  .lvl1 {
+    background: linear-gradient(160deg, rgba(83,74,183,0.14), rgba(83,74,183,0.05));
+    border: 1px solid rgba(175,169,236,0.35);
+    border-radius: 18px;
+    margin-bottom: 18px;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    scroll-margin-top: 20px;
+  }
+  .lvl1:hover { border-color: rgba(175,169,236,0.65); }
+  .lvl1.open { box-shadow: 0 8px 30px rgba(83,74,183,0.22); }
+
+  .lvl1-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px;
+    cursor: pointer; user-select: none;
+    position: relative;
+  }
+  .lvl1-head::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, var(--arcane-1), var(--rose));
+    opacity: 0.85;
+  }
+
+  .lvl1-badge {
+    background: rgba(83,74,183,0.5);
+    border: 1px solid #8f87e8;
+    color: #e5e3fd;
+    font-family: 'Cinzel', serif;
+    font-size: 0.74rem; font-weight: 800;
+    border-radius: 8px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+  }
+
+  .lvl1-grade-badge {
+    background: rgba(29, 158, 117, 0.22);
+    border: 1px solid rgba(93, 202, 165, 0.45);
+    color: #9fe1cb;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border-radius: 6px;
+    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .lvl1-title-wrap { flex: 1; min-width: 0; }
+  .lvl1-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.05rem; font-weight: 700;
+    color: #eae7ff;
+    letter-spacing: 0.02em;
+    line-height: 1.45;
+  }
+  .lvl1-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px;
+    font-size: 0.74rem; color: #8e86eb;
+  }
+  .lvl1-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+  .chevron { color: #8e86eb; font-size: 0.95rem; transition: transform 0.3s ease; flex-shrink: 0; }
+  .lvl1.open .chevron { transform: rotate(180deg); }
+
+  .lvl1-body { display: none; padding: 4px 20px 22px 24px; }
+  .lvl1.open .lvl1-body { display: block; animation: fadein 0.35s ease; }
+
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== CẤP 2: MỤC CON — Xanh ngọc ===== */
+  .lvl2 {
+    background: rgba(29,158,117,0.09);
+    border: 1px solid rgba(93,202,165,0.32);
+    border-left: 3px solid var(--arcane-2);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+  }
+  .lvl2:hover { border-color: rgba(93,202,165,0.6); }
+
+  .lvl2-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer; user-select: none;
+  }
+
+  .lvl2-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(29,158,117,0.35);
+    border: 1px solid #1d9e75;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 0.72rem; color: #9fe1cb;
+    font-family: 'Cinzel', serif; font-weight: 800;
+  }
+
+  .lvl2-title { font-size: 0.95rem; font-weight: 800; color: #a8ebd5; flex: 1; }
+  .lvl2-count {
+    font-size: 0.7rem; color: #5dcaa5; background: rgba(29,158,117,0.2);
+    border-radius: 6px; padding: 3px 9px; font-weight: 800; flex-shrink: 0;
+  }
+
+  .chevron2 { color: #1d9e75; font-size: 0.85rem; transition: transform 0.3s ease; flex-shrink: 0; }
+  .lvl2.open .chevron2 { transform: rotate(180deg); }
+
+  .lvl2-body { display: none; padding: 6px 16px 16px; }
+  .lvl2.open .lvl2-body { display: block; animation: fadein 0.3s ease; }
+
+  /* ===== CẤP 3: NỘI DUNG CÓ NHÃN ===== */
+  .lvl3 {
+    border-left: 3px solid rgba(93,202,165,0.45);
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background: rgba(93,202,165,0.04);
+    border-radius: 0 9px 9px 0;
+  }
+  .lvl3-label {
+    font-size: 0.74rem; font-weight: 800; color: #5dcaa5;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
+  }
+  .lvl3-text { font-size: 0.94rem; color: #c8e8df; line-height: 1.85; }
+
+  /* ===== CÔNG THỨC — Vàng hổ phách ===== */
+  .formula-block {
+    background: linear-gradient(135deg, rgba(186,117,23,0.18), rgba(186,117,23,0.08));
+    border: 1px solid rgba(239,159,39,0.45);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: relative;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+  }
+  .formula-block.display-math {
+    padding: 18px 22px;
+  }
+  .formula-block::after {
+    content: 'CÔNG THỨC'; position: absolute; top: -9px; right: 14px;
+    font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 800;
+    letter-spacing: 0.12em; color: #0a0c1a; background: #ef9f27;
+    padding: 2px 10px; border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(239,159,39,0.4);
+  }
+  /* Tiền đề dẫn dắt công thức (Ví dụ: "Với x = a/m, y = b/m (a, b, m ∈ Z, m > 0):") */
+  .formula-intro {
+    font-size: 1.02rem;
+    color: #fde68a;
+    font-weight: 600;
+    line-height: 1.8;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(239,159,39,0.28);
+    text-align: left;
+  }
+  /* Danh sách các phương trình toán học hiển thị to rõ từng dòng */
+  .formula-math-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    align-items: center;
+  }
+  .formula-row {
+    font-size: 1.15rem;
+    color: #fac775;
+    text-align: center;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 0;
+  }
+  .formula-row mjx-container {
+    margin: 0.25em 0 !important;
+  }
+
+
+  /* ===== GHI CHÚ QUAN TRỌNG — Đỏ cam ===== */
+  .note-block {
+    background: linear-gradient(135deg, rgba(216,90,48,0.16), rgba(216,90,48,0.06));
+    border: 1px solid rgba(216,90,48,0.45);
+    border-radius: 12px;
+    padding: 13px 18px;
+    margin: 11px 0;
+    display: flex; gap: 11px; align-items: flex-start;
+    font-size: 0.9rem; color: #f7cdbe; line-height: 1.65;
+    position: relative;
+  }
+  .note-block i { color: #e6663c; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px; }
+  .note-block strong { color: #ffe2d6; }
+
+  /* ===== HÌNH ẢNH MINH HỌA ===== */
+  .image-block {
+    margin: 13px 0; padding: 14px; text-align: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    position: relative;
+  }
+  .image-block img {
+    max-width: 100%; max-height: 400px; border-radius: 10px;
+    display: block; margin: 0 auto;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+  .image-block .image-caption {
+    margin-top: 9px; font-size: 0.78rem; color: #b0a6c9;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .image-block .image-error {
+    padding: 28px 16px; color: #a89ec0; font-size: 0.88rem;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .image-block .image-error i { font-size: 2rem; color: #7f77dd; }
+
+  /* ===== NỘI DUNG DẠNG TỰ DO (FLAT) ===== */
+  .free-content {
+    font-size: 0.94rem; color: #c8e8df; line-height: 1.85;
+    padding: 12px 0 12px 16px; border-left: 3px solid rgba(93,202,165,0.45);
+    margin-bottom: 8px;
+  }
+
+  /* ===== TRẠNG THÁI TRỐNG & KHÔNG TÌM THẤY ===== */
+  .empty-state { text-align: center; padding: 75px 20px; color: #6a6493; }
+  .empty-state i { font-size: 3.5rem; display: block; margin-bottom: 18px; color: #7f77dd; }
+  .empty-state p { font-size: 1rem; color: #b7add1; }
+  .empty-state .empty-sub { font-size: 0.85rem; color: #6d6694; margin-top: 8px; }
+
+  .no-result { text-align: center; padding: 50px 20px; color: #78729f; font-size: 0.95rem; }
+  .no-result i { font-size: 2.2rem; display: block; margin-bottom: 12px; color: #7f77dd; opacity: 0.7; }
+
+  /* Dấu phân cách giữa các mục con */
+  .orb { text-align: center; color: #7f77dd; font-size: 1rem; letter-spacing: 8px; margin: 8px 0 14px; opacity: 0.45; }
+
+  /* ===== NÚT LÊN ĐẦU TRANG ===== */
+  .btn-top {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(127,119,221,0.28);
+    border: 1px solid rgba(127,119,221,0.55);
+    color: #e5e3fd; font-size: 1.05rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.2s ease, background 0.2s ease;
+    backdrop-filter: blur(6px);
+    z-index: 500;
+  }
+  .btn-top.show { opacity: 1; pointer-events: auto; }
+  .btn-top:hover { background: rgba(127,119,221,0.55); transform: translateY(-3px); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 650px) {
+    body { padding: 16px 10px 70px; }
+    .site-header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 15px 18px; }
+    .site-title { font-size: 1.25rem; }
+    .header-actions { width: 100%; justify-content: flex-end; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .btn-toggle-all { justify-content: center; }
+    .lvl1-head { padding: 14px 16px; gap: 10px; }
+    .lvl1-title { font-size: 0.95rem; }
+    .lvl1-meta { gap: 8px; font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div>
+      <div class="site-title"><i class="fa-solid fa-book-open-reader"></i> Thư Viện Toán Học</div>
+      <div class="site-sub">Kho Tàng Tri Thức Toán Học · Khắc Ghi Muôn Đời</div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Trở Về</a>
+    </div>
+  </header>
+
+  <!-- THANH BỘ LỌC KHỐI LỚP (GRADE FILTER TABS) -->
+  <div class="grade-filter-bar" id="grade-filter-bar">
+    <span class="grade-filter-label"><i class="fa-solid fa-graduation-cap"></i> Khối lớp:</span>
+    <button type="button" class="grade-tab-btn active" data-grade="all" onclick="chonKhoiLop('all', this)">
+      <i class="fa-solid fa-layer-group"></i> Tất Cả <span class="grade-badge-count" id="count-all">0</span>
+    </button>
+    <button type="button" class="grade-tab-btn" data-grade="Khối 6" onclick="chonKhoiLop('Khối 6', this)">
+      Khối 6 <span class="grade-badge-count" id="count-k6">0</span>
+    </button>
+    <button type="button" class="grade-tab-btn" data-grade="Khối 7" onclick="chonKhoiLop('Khối 7', this)">
+      Khối 7 <span class="grade-badge-count" id="count-k7">0</span>
+    </button>
+    <button type="button" class="grade-tab-btn" data-grade="Khối 8" onclick="chonKhoiLop('Khối 8', this)">
+      Khối 8 <span class="grade-badge-count" id="count-k8">0</span>
+    </button>
+    <button type="button" class="grade-tab-btn" data-grade="Khối 9" onclick="chonKhoiLop('Khối 9', this)">
+      Khối 9 <span class="grade-badge-count" id="count-k9">0</span>
+    </button>
+  </div>
+
+  <!-- TOOLBAR: TÌM KIẾM + MỞ/ĐÓNG TẤT CẢ -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input id="search-input" type="text" placeholder="Tìm kiếm trong thư viện toán học... (tên chương, mục con, công thức, ghi chú)">
+    </div>
+    <button class="btn-toggle-all" id="btn-expand-all" onclick="toggleAll(true)"><i class="fa-solid fa-book-open"></i> Mở Tất Cả</button>
+    <button class="btn-toggle-all" id="btn-collapse-all" onclick="toggleAll(false)"><i class="fa-solid fa-book"></i> Đóng Tất Cả</button>
+  </div>
+
+  <!-- MỤC LỤC BÀI HỌC (TOC CHIPS) -->
+  <div class="toc-wrap" id="toc-wrap">
+    <div class="toc-label"><i class="fa-solid fa-compass"></i> Mục lục bài học thư viện</div>
+    <div class="toc-chips" id="toc-chips"></div>
+  </div>
+
+  <!-- CHÚ GIẢI PHÂN CẤP (LEGEND) -->
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#7f77dd"></div> Chương / Đề mục lớn</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#1d9e75"></div> Mục con</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#5dcaa5"></div> Nội dung chi tiết</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ef9f27"></div> Công thức toán học</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#d85a30"></div> Ghi chú quan trọng</div>
+  </div>
+
+  <!-- DANH SÁCH BÀI HỌC -->
+  <div id="lesson-list"></div>
+
+</div>
+
+<!-- NÚT CUỘN LÊN ĐẦU TRANG -->
+<button class="btn-top" id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Lên đầu trang">
+  <i class="fa-solid fa-chevron-up"></i>
+</button>
+
+<!-- ============================================================ -->
+<!--  JAVASCRIPT XỬ LÝ CHÍNH (CHẠY 100% ĐỘC LẬP, AN TOÀN FILE://) -->
+<!-- ============================================================ -->
+<script>
+let RAW_DATA = [];
+let KHOI_HIEN_TAI = 'all';
+
+/* Danh sách bài học lý thuyết được đồng bộ 100% từ Khu Lý Thuyết của Admin */
+const BAI_HOC_MAC_DINH = [];
+
+/* Hàm so khớp khối lớp linh hoạt, chuẩn hóa các dạng tên khối (Khối 7, Lớp 7, 7, Tất cả các khối...) */
+function khopKhoiLop(itemGrade, boLoc) {
+  if (!boLoc || boLoc === 'all') return true;
+  if (!itemGrade || itemGrade === 'all' || itemGrade === 'Tất cả các khối' || itemGrade === 'Tất cả') return true;
+  if (itemGrade === boLoc) return true;
+  const numItem = String(itemGrade).match(/\d+/)?.[0];
+  const numLoc = String(boLoc).match(/\d+/)?.[0];
+  if (numItem && numLoc && numItem === numLoc) return true;
+  return false;
+}
+
+// Nhận diện ID bài học mẫu giả lập cũ (được tạo trước đây không qua khu lý thuyết admin)
+function isLegacyMockId(id) {
+  return typeof id === 'string' && /^lt_k[6-9]_\d+$/i.test(id);
+}
+
+function escAttr(s) {
+  return String(s || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+}
+
+/* Đọc dữ liệu từ mọi nguồn lưu trữ khả dụng trong trình duyệt */
+function layDanhSachLyThuyet() {
+  // 1. Đọc từ localStorage gốc (__originalGetItem nếu có)
+  try {
+    if (window.__originalGetItem) {
+      const rawOrig = window.__originalGetItem('danh_sach_bai_hoc_ly_thuyet');
+      if (rawOrig !== null && rawOrig !== undefined && rawOrig !== '') {
+        const p = JSON.parse(rawOrig);
+        if (Array.isArray(p)) return p;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Đọc từ memory storage
+  try {
+    if (window.heroMemoryStorage && window.heroMemoryStorage['danh_sach_bai_hoc_ly_thuyet'] !== undefined) {
+      const raw = window.heroMemoryStorage['danh_sach_bai_hoc_ly_thuyet'];
+      const p = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (Array.isArray(p)) return p;
+    }
+  } catch (e) {}
+
+  // 3. Đọc từ localStorage thông thường
+  try {
+    const rawLs = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet');
+    if (rawLs !== null && rawLs !== undefined && rawLs !== '') {
+      const p = JSON.parse(rawLs);
+      if (Array.isArray(p)) return p;
+    }
+  } catch (e) {}
+
+  return [];
+}
+
+/* Dữ liệu bài học chuẩn SGK cho Khối 7 - Bài 1 */
+const BAI_HOC_CHUAN_LOP_7_BAI_1 = {
+  id: "lt_1789304180107",
+  title: "Bài 1: Tập hợp các số hữu tỉ",
+  grade: "Khối 7",
+  source: "ai",
+  date: "13/9/2026",
+  hidden: false,
+  children: [
+    {
+      title: "1. Khái niệm số hữu tỉ",
+      items: [
+        {
+          label: "Định nghĩa",
+          text: "Số hữu tỉ là số viết được dưới dạng phân số $\\frac{a}{b}$ với $a, b \\in \\mathbb{Z}$ và $b \\neq 0$."
+        },
+        {
+          label: "Tập hợp số hữu tỉ",
+          text: "Tập hợp các số hữu tỉ được ký hiệu là $\\mathbb{Q}$."
+        },
+        {
+          type: "formula",
+          text: "$$\\mathbb{Q} = \\left\\{ \\frac{a}{b} \\;\\middle|\\; a, b \\in \\mathbb{Z}, b \\neq 0 \\right\\}$$"
+        },
+        {
+          label: "Mối quan hệ giữa các tập hợp số",
+          text: "Mọi số tự nhiên và số nguyên đều là số hữu tỉ. Ta có quan hệ bao hàm:"
+        },
+        {
+          type: "formula",
+          text: "$$\\mathbb{N} \\subset \\mathbb{Z} \\subset \\mathbb{Q}$$"
+        },
+        {
+          type: "note",
+          text: "Các số thập phân hữu hạn, số thập phân vô hạn tuần hoàn, hỗn số đều là số hữu tỉ vì chúng luôn có thể biểu diễn dưới dạng phân số."
+        }
+      ]
+    },
+    {
+      title: "2. Biểu diễn số hữu tỉ trên trục số",
+      items: [
+        {
+          label: "Cách biểu diễn",
+          text: "Trên trục số, mỗi số hữu tỉ được biểu diễn bởi một điểm. Điểm biểu diễn số hữu tỉ $x$ gọi là điểm $x$."
+        },
+        {
+          label: "Quy tắc chia đoạn đơn vị",
+          text: "Để biểu diễn số hữu tỉ $\\frac{a}{b}$ ($b > 0$) trên trục số, ta chia đoạn đơn vị cũ thành $b$ phần bằng nhau, lấy độ dài một phần làm đơn vị mới."
+        },
+        {
+          type: "note",
+          text: "Trên trục số nằm ngang, điểm biểu diễn số hữu tỉ âm nằm bên trái điểm 0, điểm biểu diễn số hữu tỉ dương nằm bên phải điểm 0."
+        }
+      ]
+    },
+    {
+      title: "3. Số đối của một số hữu tỉ",
+      items: [
+        {
+          label: "Định nghĩa",
+          text: "Hai số hữu tỉ có tổng bằng $0$ gọi là hai số đối nhau. Hai điểm biểu diễn hai số đối nhau $x$ và $-x$ nằm về hai phía so với gốc $0$ và cách đều gốc $0$."
+        },
+        {
+          label: "Ký hiệu",
+          text: "Số đối của số hữu tỉ $x$ ký hiệu là $-x$. Số đối của $-x$ là $x$, nghĩa là $-(-x) = x$."
+        },
+        {
+          type: "formula",
+          text: "$$x + (-x) = 0$$"
+        }
+      ]
+    },
+    {
+      title: "4. So sánh hai số hữu tỉ",
+      items: [
+        {
+          label: "Quy tắc so sánh",
+          text: "Để so sánh hai số hữu tỉ $x, y$, ta có thể viết chúng dưới dạng hai phân số có cùng mẫu số dương rồi so sánh hai tử số."
+        },
+        {
+          label: "Số hữu tỉ dương và số hữu tỉ âm",
+          text: "Số hữu tỉ lớn hơn $0$ gọi là số hữu tỉ dương. Số hữu tỉ nhỏ hơn $0$ gọi là số hữu tỉ âm. Số $0$ không là số hữu tỉ dương cũng không là số hữu tỉ âm."
+        },
+        {
+          type: "formula",
+          text: "Với $x, y, z \\in \\mathbb{Q}$:\n$$x < y \\text{ và } y < z \\implies x < z$$"
+        }
+      ]
+    }
+  ]
+};
+
+/* Dữ liệu bài học chuẩn SGK cho Khối 7 - Bài 2 */
+const BAI_HOC_CHUAN_LOP_7_BAI_2 = {
+  id: "lt_1789471284530",
+  title: "Bài 2: Cộng, trừ, nhân, chia số hữu tỉ",
+  grade: "Khối 7",
+  source: "ai",
+  date: "15/9/2026",
+  hidden: false,
+  children: [
+    {
+      title: "1. Cộng và trừ số hữu tỉ",
+      items: [
+        {
+          label: "Quy tắc cộng, trừ",
+          text: "Để cộng hoặc trừ hai số hữu tỉ, ta viết chúng dưới dạng phân số có cùng mẫu dương rồi áp dụng quy tắc cộng, trừ phân số."
+        },
+        {
+          type: "formula",
+          text: "Với $x = \\frac{a}{m},\\ y = \\frac{b}{m}$ ($a, b, m \\in \\mathbb{Z},\\ m > 0$):\n$$x + y = \\frac{a}{m} + \\frac{b}{m} = \\frac{a + b}{m}$$\n$$x - y = \\frac{a}{m} - \\frac{b}{m} = \\frac{a - b}{m}$$"
+        },
+        {
+          label: "Quy tắc chuyển vế",
+          text: "Khi chuyển một số hạng từ vế này sang vế kia của một đẳng thức, ta phải đổi dấu số hạng đó."
+        },
+        {
+          type: "formula",
+          text: "Với mọi $x, y, z \\in \\mathbb{Q}$:\n$$x + y = z \\Rightarrow x = z - y$$"
+        },
+        {
+          type: "note",
+          text: "Phép cộng số hữu tỉ có các tính chất: giao hoán, kết hợp, cộng với số 0, mỗi số hữu tỉ đều có một số đối duy nhất."
+        }
+      ]
+    },
+    {
+      title: "2. Nhân và chia số hữu tỉ",
+      items: [
+        {
+          label: "Quy tắc nhân, chia",
+          text: "Ta thực hiện nhân, chia hai số hữu tỉ bằng cách viết chúng dưới dạng phân số rồi áp dụng quy tắc nhân, chia phân số."
+        },
+        {
+          type: "formula",
+          text: "Với $x = \\frac{a}{b},\\ y = \\frac{c}{d}$ ($b, d \\neq 0$):\n$$x \\cdot y = \\frac{a}{b} \\cdot \\frac{c}{d} = \\frac{a \\cdot c}{b \\cdot d}$$\n$$x : y = \\frac{a}{b} : \\frac{c}{d} = \\frac{a}{b} \\cdot \\frac{d}{c} = \\frac{a \\cdot d}{b \\cdot c}$$"
+        },
+        {
+          type: "note",
+          text: "Phép nhân số hữu tỉ có các tính chất: giao hoán, kết hợp, nhân với số 1, tính chất phân phối của phép nhân đối với phép cộng và phép trừ."
+        }
+      ]
+    }
+  ]
+};
+
+const BAI_HOC_CHUAN_LOP_7 = BAI_HOC_CHUAN_LOP_7_BAI_2;
+
+/* Chuẩn hóa định dạng công thức trong kho dữ liệu (nếu dữ liệu cũ bị dính $ hoặc lộn xộn) */
+function chuanHoaDuLieuLyThuyet(ds) {
+  let daSua = false;
+  if (!Array.isArray(ds)) return { ds: ds, daSua: false };
+  ds.forEach(function(b) {
+    if (b && Array.isArray(b.children)) {
+      b.children.forEach(function(c) {
+        if (c && Array.isArray(c.items)) {
+          c.items.forEach(function(it) {
+            if (it && it.type === 'formula' && typeof it.text === 'string') {
+              let parsed = phuCongThuc(it.text);
+              if (parsed && parsed.mathList && parsed.mathList.length > 0) {
+                let textChuan = (parsed.intro ? parsed.intro + '\n' : '') + parsed.mathList.join('\n');
+                if (textChuan !== it.text) {
+                  it.text = textChuan;
+                  daSua = true;
+                }
+              }
+            }
+          });
+        }
+      });
+    }
+  });
+  return { ds: ds, daSua: daSua };
+}
+
+/* Đọc tập hợp các ID bài học đang bị ẩn bởi giáo viên */
+function layDaAnSet() {
+  try {
+    const raw = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet_da_an');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed);
+    }
+  } catch(e) {}
+  // Fallback: đọc từ ds hiện tại để đồng bộ trạng thái hidden
+  try {
+    const rawDs = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet');
+    if (rawDs) {
+      const ds = JSON.parse(rawDs);
+      if (Array.isArray(ds)) {
+        const hiddenIds = ds.filter(function(b) { return b && b.id && b.hidden; }).map(function(b) { return b.id; });
+        if (hiddenIds.length > 0) return new Set(hiddenIds);
+      }
+    }
+  } catch(e) {}
+  return new Set();
+}
+
+/* Lấy danh sách bài học lý thuyết trực tiếp từ kho lưu trữ của Admin */
+function layVaKhoiTaoDanhSachLyThuyet() {
+  localStorage.removeItem('hero_da_xoa_ly_thuyet');
+  let ds = layDanhSachLyThuyet();
+  if (!Array.isArray(ds)) ds = [];
+
+  // Đọc danh sách đã xóa tombstone để tôn trọng thao tác xóa của giáo viên
+  let dsDaXoa = [];
+  try {
+    const rawDaXoa = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet_da_xoa');
+    if (rawDaXoa) dsDaXoa = JSON.parse(rawDaXoa);
+  } catch(e) {}
+  const daXoaSet = new Set(Array.isArray(dsDaXoa) ? dsDaXoa : []);
+
+  // Đọc danh sách bị ẩn để tôn trọng thao tác ẩn bài của giáo viên
+  const daAnSet = layDaAnSet();
+
+  // Lọc bỏ các bài học đã bị xóa
+  if (daXoaSet.size > 0) {
+    ds = ds.filter(function(b) { return b && b.id && !daXoaSet.has(b.id); });
+  }
+
+  // Tự động dọn dẹp triệt để các bài học mẫu giả lập cũ (lt_k6_01... không có trong khu lý thuyết admin)
+  const coMockCu = ds.some(function(b) { return b && isLegacyMockId(b.id); });
+  if (coMockCu) {
+    ds = ds.filter(function(b) { return b && b.id && !isLegacyMockId(b.id); });
+    try {
+      localStorage.setItem('danh_sach_bai_hoc_ly_thuyet', JSON.stringify(ds));
+    } catch(e) {}
+  }
+
+  // 2. Đảm bảo Bài 1 và Bài 2 Khối 7 hiện diện nếu chưa bị xóa VÀ chưa bị ẩn bởi giáo viên
+  const coBai1 = ds.some(function(b) {
+    return b && (b.id === BAI_HOC_CHUAN_LOP_7_BAI_1.id || (b.title && b.title.includes('Tập hợp các số hữu tỉ')));
+  });
+  // Chỉ thêm nếu: chưa có trong ds, chưa bị xóa tombstone, VÀ chưa bị ẩn bởi giáo viên
+  if (!coBai1 && !daXoaSet.has(BAI_HOC_CHUAN_LOP_7_BAI_1.id) && !daAnSet.has(BAI_HOC_CHUAN_LOP_7_BAI_1.id)) {
+    ds.unshift(BAI_HOC_CHUAN_LOP_7_BAI_1);
+  }
+
+  const coBai2 = ds.some(function(b) {
+    return b && (b.id === BAI_HOC_CHUAN_LOP_7_BAI_2.id || (b.title && b.title.includes('Cộng, trừ, nhân, chia số hữu tỉ')));
+  });
+  // Chỉ thêm nếu: chưa có trong ds, chưa bị xóa tombstone, VÀ chưa bị ẩn bởi giáo viên
+  if (!coBai2 && !daXoaSet.has(BAI_HOC_CHUAN_LOP_7_BAI_2.id) && !daAnSet.has(BAI_HOC_CHUAN_LOP_7_BAI_2.id)) {
+    ds.splice(coBai1 ? 1 : 0, 0, BAI_HOC_CHUAN_LOP_7_BAI_2);
+  }
+
+  // Tự động chuẩn hóa dữ liệu công thức nếu cần
+  let cleanRes = chuanHoaDuLieuLyThuyet(ds);
+  ds = cleanRes.ds;
+  try {
+    localStorage.setItem('danh_sach_bai_hoc_ly_thuyet', JSON.stringify(ds));
+    if (window.heroMemoryStorage) {
+      window.heroMemoryStorage['danh_sach_bai_hoc_ly_thuyet'] = JSON.stringify(ds);
+    }
+  } catch(e) {}
+
+  return ds;
+}
+
+/* Đọc trực tiếp từ IndexedDB (Native API, không phụ thuộc ES module) */
+function docTrucTiepIndexedDB() {
+  if (!window.indexedDB) return;
+  try {
+    const req = indexedDB.open('HeroMathDB', 1);
+    req.onsuccess = function(e) {
+      const db = e.target.result;
+      if (!db || !db.objectStoreNames || !db.objectStoreNames.contains('HeroStore')) return;
+      const tx = db.transaction(['HeroStore'], 'readonly');
+      const store = tx.objectStore('HeroStore');
+      const getReq = store.get('danh_sach_bai_hoc_ly_thuyet');
+      getReq.onsuccess = function() {
+        if (getReq.result !== undefined && getReq.result !== null) {
+          const val = getReq.result;
+          let parsed = typeof val === 'string' ? JSON.parse(val) : val;
+          if (Array.isArray(parsed)) {
+            // Tự động loại bỏ ID giả lập cũ nếu có trong IndexedDB
+            const coMock = parsed.some(function(b) { return b && isLegacyMockId(b.id); });
+            if (coMock) {
+              parsed = parsed.filter(function(b) { return b && b.id && !isLegacyMockId(b.id); });
+              try {
+                const wTx = db.transaction(['HeroStore'], 'readwrite');
+                wTx.objectStore('HeroStore').put(parsed, 'danh_sach_bai_hoc_ly_thuyet');
+              } catch(e) {}
+            }
+
+            // Lọc tombstone
+            let dsDaXoa = [];
+            try {
+              const rawDaXoa = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet_da_xoa');
+              if (rawDaXoa) dsDaXoa = JSON.parse(rawDaXoa);
+            } catch(e) {}
+            const daXoaSet = new Set(Array.isArray(dsDaXoa) ? dsDaXoa : []);
+            if (daXoaSet.size > 0) {
+              parsed = parsed.filter(function(b) { return b && b.id && !daXoaSet.has(b.id); });
+            }
+
+            // Đọc danh sách bị ẩn bởi giáo viên
+            const daAnSetIdb = layDaAnSet();
+
+            // 2. Đảm bảo Bài 1 và Bài 2 Khối 7 hiện diện nếu chưa bị xóa VÀ chưa bị ẩn bởi giáo viên
+            const coBai1Idb = parsed.some(function(b) {
+              return b && (b.id === BAI_HOC_CHUAN_LOP_7_BAI_1.id || (b.title && b.title.includes('Tập hợp các số hữu tỉ')));
+            });
+            if (!coBai1Idb && !daXoaSet.has(BAI_HOC_CHUAN_LOP_7_BAI_1.id) && !daAnSetIdb.has(BAI_HOC_CHUAN_LOP_7_BAI_1.id)) {
+              parsed.unshift(BAI_HOC_CHUAN_LOP_7_BAI_1);
+            }
+
+            const coBai2Idb = parsed.some(function(b) {
+              return b && (b.id === BAI_HOC_CHUAN_LOP_7_BAI_2.id || (b.title && b.title.includes('Cộng, trừ, nhân, chia số hữu tỉ')));
+            });
+            if (!coBai2Idb && !daXoaSet.has(BAI_HOC_CHUAN_LOP_7_BAI_2.id) && !daAnSetIdb.has(BAI_HOC_CHUAN_LOP_7_BAI_2.id)) {
+              parsed.splice(coBai1Idb ? 1 : 0, 0, BAI_HOC_CHUAN_LOP_7_BAI_2);
+            }
+
+            // Tự động chuẩn hóa dữ liệu công thức trong IndexedDB
+            let cleanRes = chuanHoaDuLieuLyThuyet(parsed);
+            parsed = cleanRes.ds;
+            try {
+              const wTx = db.transaction(['HeroStore'], 'readwrite');
+              wTx.objectStore('HeroStore').put(parsed, 'danh_sach_bai_hoc_ly_thuyet');
+            } catch(e) {}
+
+            localStorage.removeItem('hero_da_xoa_ly_thuyet');
+            console.log("[Thư Viện] Đồng bộ thành công " + parsed.length + " bài học từ IndexedDB!");
+            capNhatDuLieu(parsed);
+          }
+        }
+      };
+    };
+  } catch (err) {
+    console.warn("[Thư Viện] Lỗi đọc IndexedDB:", err);
+  }
+}
+
+
+/* Định dạng văn bản, hỗ trợ hiển thị công thức toán ẩn và ngắt dòng */
+function dinhDangNoiDungToan(rawText) {
+  if (!rawText || typeof rawText !== 'string') return '';
+  let s = rawText.trim();
+  if (!s) return '';
+
+  // Toàn bộ là LaTeX thuần (bắt đầu bằng lệnh \...)
+  const laCongThucToan = /^\s*\\(?:begin|xrightarrow|frac|sqrt|left|vec|sum|int|lim|text|alpha|beta|gamma|Delta|pi|theta|cdot|times|div|pm|ne|le|ge|approx|equiv|rightarrow|Rightarrow)\b/i;
+  if (laCongThucToan.test(s) && !s.startsWith('$') && !s.startsWith('\\(') && !s.startsWith('\\[') && !s.endsWith('$')) {
+    return `$$${s}$$`;
+  }
+
+  // Nếu chuỗi bị thiếu dấu $$ mở đầu nhưng có $$ ở cuối
+  if (s.endsWith('$$') && !s.startsWith('$')) {
+    return `$$${s}`;
+  }
+  if (s.endsWith('$') && !s.endsWith('$$') && !s.startsWith('$')) {
+    return `$${s}`;
+  }
+
+  // Cân bằng dấu $ nếu bị lẻ
+  let countDola = (s.match(/(?<!\\)\$/g) || []).length;
+  if (countDola % 2 !== 0) {
+    s += '$';
+  }
+
+  return s.replace(/\n/g, '<br>');
+}
+
+/**
+ * Xử lý nội dung công thức toán học linh hoạt:
+ * - Tách phần tiền đề dẫn dắt ("Với...", "Khi...", "Nếu...", "Cho...", "Xét...", "Áp dụng...") nếu có
+ * - Tách các công thức rời rẽ hoặc dính nhau ($$ dính giữa 2 công thức)
+ * - Tự động bọc display math $$...$$ cho từng dòng công thức để hiển thị to, rõ, đúng chuẩn toán học
+ */
+function phuCongThuc(raw) {
+  if (!raw) return { intro: '', mathList: [] };
+  let s = String(raw).trim();
+
+  // 1. Tách phần intro (tiền đề bắt đầu bằng "Với...", "Khi...", "Nếu...", "Cho...", "Xét...", "Áp dụng...") kết thúc bằng dấu ":"
+  let intro = '';
+  let rest = s;
+  let colonMatch = s.match(/^((?:Với|Khi|Nếu|Cho|Xét|Áp dụng)[^:\n]*:\s*)/i);
+  if (colonMatch) {
+    intro = colonMatch[1].trim();
+    rest = s.slice(colonMatch[0].length).trim();
+  }
+
+  // Chuẩn hóa intro: thêm khoảng cách nếu $ dính với ( hoặc ) và đảm bảo cân bằng $
+  if (intro) {
+    intro = intro.replace(/\$\(/g, '$ (');
+    intro = intro.replace(/\)\$/g, ') $');
+    let cnt = (intro.match(/(?<!\\)\$/g) || []).length;
+    if (cnt % 2 !== 0) {
+      if (intro.endsWith(':')) intro = intro.slice(0, -1).trim() + '$:';
+      else intro += '$';
+    }
+  }
+
+  // 2. Xử lý phần công thức (rest)
+  let mathList = [];
+
+  // Tách $$ dính liền giữa 2 công thức: ...$$x - y... -> ...$\n$x - y...
+  let normalizedRest = rest.replace(/([^\$])\s*\$\$\s*([a-zA-Z\\])/g, '$1$\n$$$2');
+
+  // Chia theo dòng mới
+  let lines = normalizedRest.split(/\n+/).map(function(l) { return l.trim(); }).filter(Boolean);
+
+  for (let line of lines) {
+    let chunks = line.match(/\$\$[\s\S]*?\$\$|\$[^\$]+?\$|[^\$]+/g) || [line];
+    for (let chunk of chunks) {
+      chunk = chunk.trim();
+      if (!chunk) continue;
+
+      if (chunk.startsWith('$$') && chunk.endsWith('$$') && chunk.length > 4) {
+        mathList.push(chunk);
+      } else if (chunk.startsWith('$') && chunk.endsWith('$') && chunk.length > 2) {
+        let inner = chunk.slice(1, -1).trim();
+        mathList.push(`$$${inner}$$`);
+      } else {
+        let inner = chunk.replace(/^\$+|\$+$/g, '').trim();
+        if (inner) {
+          mathList.push(`$$${inner}$$`);
+        }
+      }
+    }
+  }
+
+  // Fallback: nếu không tách được mà rest có nội dung
+  if (mathList.length === 0 && rest) {
+    let clean = rest.replace(/^\$+|\$+$/g, '').trim();
+    if (clean) mathList.push(`$$${clean}$$`);
+  }
+
+  return { intro: intro, mathList: mathList };
+}
+
+/* Render từng phần tử nội dung con (công thức, hình ảnh, ghi chú, nội dung có nhãn) */
+function buildItems(items) {
+  if (!Array.isArray(items)) return '';
+  return items.map(function(it) {
+    if (it.type === 'formula') {
+      let { intro, mathList } = phuCongThuc(it.text || '');
+      if (mathList.length === 0 && intro) {
+        return `<div class="lvl3" style="border-left-color:var(--arcane-3); background:rgba(239,159,39,0.06);">
+          <div class="lvl3-label" style="color:var(--arcane-3);"><i class="fa-solid fa-square-root-variable"></i> Công thức</div>
+          <div class="lvl3-text" style="color:#fde68a;">${dinhDangNoiDungToan(it.text || '')}</div>
+        </div>`;
+      }
+      let introHtml = intro ? `<div class="formula-intro">${intro}</div>` : '';
+      let rowsHtml = mathList.map(function(m) {
+        return `<div class="formula-row">${m}</div>`;
+      }).join('');
+      return `<div class="formula-block display-math">
+        ${introHtml}
+        <div class="formula-math-rows">${rowsHtml}</div>
+      </div>`;
+    }
+
+    if (it.type === 'image') {
+      let url = (it.text || '').trim();
+      return `<div class="image-block">
+        <img src="${escAttr(url)}" alt="Hình minh họa toán học" loading="lazy"
+             onerror="this.outerHTML='<div class=&quot;image-error&quot;><i class=&quot;fa-solid fa-image-slash&quot;></i><span>Không tải được hình ảnh minh họa</span></div>'">
+        <div class="image-caption"><i class="fa-solid fa-shapes"></i> Hình ảnh minh họa</div>
+      </div>`;
+    }
+    if (it.type === 'note') {
+      let noteText = dinhDangNoiDungToan(it.text || '');
+      return `<div class="note-block"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>Lưu ý:</strong> ${noteText}</span></div>`;
+    }
+
+    let tRaw = (it.text || '').trim();
+    const laCongThucToan = /^\s*\\(?:begin|xrightarrow|frac|sqrt|left|vec|sum|int|lim|text|alpha|beta|gamma|Delta|pi|theta|cdot|times|div|pm|ne|le|ge|approx|equiv|rightarrow|Rightarrow)\b/i;
+    if (laCongThucToan.test(tRaw) && !tRaw.startsWith('$') && !tRaw.startsWith('\\[') && !tRaw.endsWith('$')) {
+      return `<div class="formula-block display-math"><div class="formula-math-rows"><div class="formula-row">$$${tRaw}$$</div></div></div>`;
+    }
+
+    return `<div class="lvl3">
+      ${it.label ? `<div class="lvl3-label"><i class="fa-solid fa-circle-dot" style="font-size:0.62rem"></i>${it.label}</div>` : ''}
+      <div class="lvl3-text">${dinhDangNoiDungToan(it.text || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* Render các mục con cấp 2 */
+function buildChildren(children, pid) {
+  if (!Array.isArray(children)) return '';
+  return children.map(function(ch, ci) {
+    const id = `lvl2-${pid}-${ci}`;
+    const count = (ch.items || []).length;
+    return `
+      <div class="lvl2 open" id="${id}">
+        <div class="lvl2-head" onclick="tog('${id}', 2)">
+          <div class="lvl2-icon">${ci + 1}</div>
+          <div class="lvl2-title">${ch.title || 'Mục con'}</div>
+          <div class="lvl2-count">${count} nội dung</div>
+          <i class="fa-solid fa-chevron-down chevron2"></i>
+        </div>
+        <div class="lvl2-body">${buildItems(ch.items || [])}</div>
+      </div>
+    `;
+  }).join('<div class="orb">· · ·</div>');
+}
+
+/* Render 1 bài học (Hỗ trợ linh hoạt cả cấu trúc chuẩn children lẫn dữ liệu phẳng content) */
+function renderSingleLesson(ch, idx) {
+  const isStructured = Array.isArray(ch.children) && ch.children.length > 0;
+  const id = `lvl1-${idx}`;
+  const khoiText = (!ch.grade || ch.grade === 'all') ? 'Tất cả các khối' : ch.grade;
+  const soMuc = isStructured ? ch.children.length : 0;
+  let soNoiDung = 0;
+  if (isStructured) {
+    ch.children.forEach(function(c) { soNoiDung += (c.items || []).length; });
+  }
+
+  return `
+    <div class="lvl1 open" id="${id}">
+      <div class="lvl1-head" onclick="tog('${id}', 1)">
+        <span class="lvl1-badge">Ch.${idx + 1}</span>
+        <div class="lvl1-title-wrap">
+          <div class="lvl1-title">${ch.title || 'Bài học lý thuyết'}</div>
+          <div class="lvl1-meta">
+            <span class="lvl1-grade-badge"><i class="fa-solid fa-graduation-cap"></i> ${khoiText}</span>
+            ${isStructured ? `<span><i class="fa-solid fa-bookmark"></i> ${soMuc} mục con</span>` : ''}
+            ${isStructured ? `<span><i class="fa-solid fa-layer-group"></i> ${soNoiDung} nội dung</span>` : ''}
+            <span><i class="fa-regular fa-calendar"></i> ${ch.date || ''}</span>
+            ${ch.source === 'ai' ? `<span style="color:#b388ff;"><i class="fa-solid fa-robot"></i> Trợ lý AI</span>` : ''}
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-down chevron"></i>
+      </div>
+      <div class="lvl1-body">
+        ${isStructured 
+          ? buildChildren(ch.children, idx) 
+          : `<div class="free-content">${(ch.content || '').replace(/\n/g, '<br>')}</div>`}
+      </div>
+    </div>
+  `;
+}
+
+/* Xây dựng mục lục điều hướng nhanh (chips) */
+function buildToc(data) {
+  if (!Array.isArray(data) || data.length === 0) return '';
+  return data.map(function(ch, i) {
+    const id = `lvl1-${i}`;
+    return `<a class="toc-chip" onclick="jumpTo('${id}')"><span class="toc-num">${i + 1}.</span> ${ch.title || 'Bài ' + (i + 1)}</a>`;
+  }).join('');
+}
+
+window.jumpTo = function(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  const l2s = el.querySelectorAll('.lvl2');
+  l2s.forEach(function(l2) { l2.classList.add('open'); });
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+/* Đóng / mở từng cấp */
+window.tog = function(id, level) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+};
+
+window.toggleAll = function(open) {
+  document.querySelectorAll('.lvl1').forEach(function(el) { el.classList.toggle('open', open); });
+  document.querySelectorAll('.lvl2').forEach(function(el) { el.classList.toggle('open', open); });
+};
+
+/* Render danh sách bài học ra giao diện */
+function renderList(list) {
+  const container = document.getElementById('lesson-list');
+  const tocWrap = document.getElementById('toc-wrap');
+  if (!container) return;
+
+  if (!list || list.length === 0) {
+    const khoiText = (KHOI_HIEN_TAI === 'all') ? '' : ` dành cho ${KHOI_HIEN_TAI}`;
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-feather-pointed"></i>
+        <p>Thư viện chưa có bài học riêng${khoiText}.</p>
+        <p class="empty-sub">Em có thể bấm nút dưới đây để khám phá tất cả các bài học lý thuyết toán học có sẵn trong Thư viện nhé!</p>
+        <div style="margin-top: 18px;">
+          <button type="button" class="btn-toggle-all" onclick="chonKhoiLop('all', document.querySelector('.grade-tab-btn[data-grade=\\'all\\']'))" style="font-size:0.92rem; padding:10px 20px; cursor:pointer;">
+            <i class="fa-solid fa-layer-group"></i> Xem Tất Cả Bài Học Trong Thư Viện
+          </button>
+        </div>
+      </div>
+    `;
+    if (tocWrap) tocWrap.style.display = 'none';
+    return;
+  }
+
+  if (tocWrap) tocWrap.style.display = '';
+  container.innerHTML = list.map(function(ch, idx) { return renderSingleLesson(ch, idx); }).join('');
+  const tocChipsEl = document.getElementById('toc-chips');
+  if (tocChipsEl) tocChipsEl.innerHTML = buildToc(list);
+
+  afterRender();
+}
+
+/* Lấy danh sách bài học lọc theo khối lớp đã chọn */
+function getFilteredData() {
+  if (KHOI_HIEN_TAI === 'all') {
+    return RAW_DATA;
+  }
+  return RAW_DATA.filter(function(ch) {
+    return khopKhoiLop(ch.grade, KHOI_HIEN_TAI);
+  });
+}
+
+/* Cập nhật số lượng bài học hiển thị trên từng tab khối lớp */
+function updateGradeCounts(allList) {
+  const validList = (allList || []).filter(function(ch) { return !ch.hidden; });
+  const countAll = validList.length;
+  const countK6 = validList.filter(function(ch) { return khopKhoiLop(ch.grade, 'Khối 6'); }).length;
+  const countK7 = validList.filter(function(ch) { return khopKhoiLop(ch.grade, 'Khối 7'); }).length;
+  const countK8 = validList.filter(function(ch) { return khopKhoiLop(ch.grade, 'Khối 8'); }).length;
+  const countK9 = validList.filter(function(ch) { return khopKhoiLop(ch.grade, 'Khối 9'); }).length;
+
+  const elAll = document.getElementById('count-all');
+  const elK6 = document.getElementById('count-k6');
+  const elK7 = document.getElementById('count-k7');
+  const elK8 = document.getElementById('count-k8');
+  const elK9 = document.getElementById('count-k9');
+
+  if (elAll) elAll.innerText = countAll;
+  if (elK6) elK6.innerText = countK6;
+  if (elK7) elK7.innerText = countK7;
+  if (elK8) elK8.innerText = countK8;
+  if (elK9) elK9.innerText = countK9;
+}
+
+/* Chuyển tab khối lớp */
+window.chonKhoiLop = function(khoi, btnEl) {
+  KHOI_HIEN_TAI = khoi;
+  document.querySelectorAll('.grade-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btnEl) btnEl.classList.add('active');
+
+  const sInp = document.getElementById('search-input');
+  if (sInp && sInp.value.trim()) {
+    runSearch(sInp.value);
+  } else {
+    renderList(getFilteredData());
+  }
+};
+
+/* Tìm kiếm thông minh */
+function runSearch(q) {
+  const container = document.getElementById('lesson-list');
+  const tocWrap = document.getElementById('toc-wrap');
+  q = (q || '').trim().toLowerCase();
+
+  const dataToSearch = getFilteredData();
+
+  if (!q) {
+    renderList(dataToSearch);
+    return;
+  }
+
+  if (tocWrap) tocWrap.style.display = 'none';
+
+  const filtered = dataToSearch.filter(function(ch) {
+    if ((ch.title || '').toLowerCase().includes(q)) return true;
+    if (ch.content && ch.content.toLowerCase().includes(q)) return true;
+    if (Array.isArray(ch.children)) {
+      return ch.children.some(function(c) {
+        if ((c.title || '').toLowerCase().includes(q)) return true;
+        return (c.items || []).some(function(it) {
+          return (it.label || '').toLowerCase().includes(q) || 
+                 (it.text || '').toLowerCase().includes(q);
+        });
+      });
+    }
+    return false;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="no-result">
+        <i class="fa-solid fa-ghost"></i>
+        Không tìm thấy nội dung nào khớp với "<b>${escAttr(q)}</b>" trong thư viện toán học.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(function(ch, idx) { return renderSingleLesson(ch, idx); }).join('');
+  document.querySelectorAll('.lvl1, .lvl2').forEach(function(el) { el.classList.add('open'); });
+  afterRender();
+}
+
+/* Tiến trình cuộn trang */
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  const pBar = document.getElementById('progress-bar');
+  const btnTop = document.getElementById('btn-top');
+  if (pBar) pBar.style.width = pct + '%';
+  if (btnTop) btnTop.classList.toggle('show', scrollTop > 400);
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+
+/* Kích hoạt render MathJax cho các công thức sau khi inject HTML động */
+function afterRender() {
+  if (!window.MathJax) return;
+  // Dùng setTimeout để đảm bảo DOM đã được cập nhật hoàn toàn
+  setTimeout(function() {
+    var container = document.getElementById('lesson-list');
+    if (!container) return;
+    if (window.MathJax.typesetClear && window.MathJax.typesetPromise) {
+      // MathJax 3: xóa cache của container và typeset lại
+      try { window.MathJax.typesetClear([container]); } catch(e) {}
+      window.MathJax.typesetPromise([container]).catch(function(err) {
+        console.warn('[MathJax] Lỗi render công thức:', err);
+      });
+    } else if (window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([container]).catch(function() {});
+    } else if (window.MathJax.Hub) {
+      // Fallback MathJax 2
+      window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub, container]);
+    }
+  }, 80);
+}
+
+/* Cập nhật danh sách bài học và vẽ lại giao diện */
+function capNhatDuLieu(danhSach) {
+  if (!Array.isArray(danhSach)) return;
+  RAW_DATA = danhSach.filter(function(ch) { return !ch.hidden; });
+  updateGradeCounts(danhSach);
+  renderList(getFilteredData());
+}
+
+/* Hàm làm mới toàn diện */
+window.__lamMoiThuVien = function() {
+  const ds = layVaKhoiTaoDanhSachLyThuyet();
+  capNhatDuLieu(ds || []);
+  docTrucTiepIndexedDB();
+};
+
+/* KHỞI ĐỘNG HỆ THỐNG NGAY KHI TẢI TRANG */
+function khoiDongThuVien() {
+  // 1. Tự động nhận diện khối lớp học sinh nếu đang đăng nhập
+  const studentGrade = sessionStorage.getItem('hoc_school_student_class') || 
+                       localStorage.getItem('hoc_school_student_class');
+  
+  if (studentGrade && ['Khối 6', 'Khối 7', 'Khối 8', 'Khối 9'].includes(studentGrade)) {
+    KHOI_HIEN_TAI = studentGrade;
+    const tabEl = document.querySelector(`.grade-tab-btn[data-grade="${studentGrade}"]`);
+    if (tabEl) {
+      document.querySelectorAll('.grade-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      tabEl.classList.add('active');
+    }
+  }
+
+
+  // 3. Tải ngay dữ liệu từ localStorage
+  window.__lamMoiThuVien();
+  updateProgress();
+
+  // 4. Đọc tiếp từ IndexedDB trực tiếp
+  docTrucTiepIndexedDB();
+
+  // 5. Gắn sự kiện tìm kiếm
+  const sInp = document.getElementById('search-input');
+  if (sInp) {
+    sInp.addEventListener('input', function(e) { runSearch(e.target.value); });
+  }
+
+  // 6. Lắng nghe storage event (khi Admin nạp bài hoặc xóa bài từ tab khác)
+  window.addEventListener('storage', function(e) {
+    if (!e.key || e.key === 'danh_sach_bai_hoc_ly_thuyet' || e.key === 'danh_sach_bai_hoc_ly_thuyet_da_xoa' || e.key === 'hero_da_xoa_ly_thuyet') {
+      window.__lamMoiThuVien();
+    }
+  });
+
+  // 7. Tự động làm mới khi quay lại tab này (focus)
+  window.addEventListener('focus', function() {
+    window.__lamMoiThuVien();
+  });
+}
+
+// Chạy ngay khi DOM sẵn sàng
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', khoiDongThuVien);
+} else {
+  khoiDongThuVien();
+}
+</script>
+
+<!-- ============================================================ -->
+<!--  MODULE ĐỒNG BỘ CLOUD FIREBASE (CHẠY ĐƯỢC CẢ TRÊN FILE:/// VÀ HTTP/HTTPS)-->
+<!-- ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="./hero-firebase-compat.js"></script>
+<script>
+(async function() {
+    try {
+      if (window.HeroFirebaseCompat && typeof window.HeroFirebaseCompat.taiCauHinhToanCuc === 'function') {
+        await window.HeroFirebaseCompat.taiCauHinhToanCuc();
+        if (typeof window.__lamMoiThuVien === 'function') {
+          window.__lamMoiThuVien();
+        }
+      }
+    } catch(e) {
+      console.warn("[Thư Viện] Lỗi đồng bộ Firebase compat:", e);
+    }
+  })();
+</script>
+<script type="module">
+  try {
+    const { taiCauHinhToanCuc } = await import("./firebase-sync.js");
+    const { kiemTraSessionToken } = await import("./hero-auth.js");
+
+    const isAdmin = sessionStorage.getItem('hero_admin_mode') === 'admin' ||
+                    localStorage.getItem('teacher_authenticated') === 'true';
+    if (!isAdmin && typeof kiemTraSessionToken === 'function') {
+      kiemTraSessionToken(true).catch(() => {});
+    }
+
+    if (typeof taiCauHinhToanCuc === 'function') {
+      await taiCauHinhToanCuc();
+      if (typeof window.__lamMoiThuVien === 'function') {
+        window.__lamMoiThuVien();
+      }
+    }
+  } catch (err) {
+    console.log("[Thư Viện] Chế độ file:// dùng hero-firebase-compat.js");
+  }
+</script>
+</body>
+</html>

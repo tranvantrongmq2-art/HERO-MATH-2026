@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUẢN LÝ CHIẾN BINH (HỌC SINH) - HERO MATH</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Compat SDK & HeroFirebaseCompat (Chạy 100% trên cả file:/// và web server) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./hero-firebase-compat.js"></script>
+    <script src="./hero-sha256.js"></script>
+    <script src="./hero-auth.js"></script>
+    <script src="./hero-danh-sach-chuan.js"></script>
+    <!-- SheetJS Thư viện đọc và xuất file Excel (.xlsx) hỗ trợ quản lý học sinh theo lớp -->
+    <script src="./xlsx.full.min.js"></script>
+    <script>
+        if (typeof XLSX === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- Nạp ES Modules nâng cao nếu hỗ trợ (Live Server / Hosting) -->
+    <script type="module">
+        try {
+            const FirebaseSync = await import('./firebase-sync.js');
+            const { kiemTraMatKhauGiaoVien, hashMatKhau } = await import('./hero-auth.js');
+            const { luuDuLieu, docDuLieu, xoaDuLieu } = await import('./hero-storage.js');
+            
+            if (FirebaseSync) window.FirebaseSync = FirebaseSync;
+            window.__authKiemTraMatKhauGV = kiemTraMatKhauGiaoVien;
+            window.__authHashMatKhau = hashMatKhau;
+            window.__heroStorage = { luuDuLieu, docDuLieu, xoaDuLieu };
+            console.log("[Quản lý học sinh] Đã nạp thành công firebase-sync.js + hero-auth.js");
+        } catch(e) {
+            console.log("[Quản lý học sinh] Đang chạy chế độ tương thích trực tiếp (hero-firebase-compat.js):", e.message);
+        }
+        window.firebaseSyncSan = true;
+    </script>
+
+    <script>
+        // Kiểm tra quyền truy cập Quản trị viên (Chạy độc lập trên mọi giao thức bao gồm file:///)
+        window.kiemTraQuyenTruyCapAdmin = function() {
+            const adminMode = sessionStorage.getItem('hero_admin_mode');
+            const teacherAuth = sessionStorage.getItem('teacher_authenticated') === 'true' || localStorage.getItem('teacher_authenticated') === 'true';
+            if (adminMode === 'admin' || teacherAuth) {
+                sessionStorage.setItem('hero_admin_mode', 'admin');
+                localStorage.setItem('hero_admin_mode', 'admin');
+                sessionStorage.setItem('teacher_authenticated', 'true');
+                localStorage.setItem('teacher_authenticated', 'true');
+                const modal = document.getElementById('admin-auth-modal');
+                if (modal) modal.style.display = 'none';
+                return true;
+            }
+
+            // Nếu chưa xác thực, hiện modal đăng nhập admin
+            const modal = document.getElementById('admin-auth-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const input = document.getElementById('admin-page-pwd-input');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                const err = document.getElementById('admin-page-pwd-error');
+                if (err) err.style.display = 'none';
+            }
+            return false;
+        };
+
+        window.kiemTraQuyenTruyCapAdmin();
+    </script>
+
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: #151d30;
+            --bg-card-hover: #1c2742;
+            --bg-darker: #0d1322;
+            --border-color: #243452;
+            --border-highlight: #3b82f6;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-emerald: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-rose: #ef4444;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 20px;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        /* HEADER BOX */
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #131c31 0%, #17233d 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px 24px;
+            margin-bottom: 22px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .title-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-emerald);
+            font-size: 1.5rem;
+        }
+
+        .title-text h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-text p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .btn-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #334155;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header:hover {
+            background: #334155;
+            transform: translateY(-1px);
+        }
+
+        .btn-header.btn-sync {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border-color: #38bdf8;
+            color: #fff;
+        }
+
+        .btn-header.btn-admin {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            border-color: #818cf8;
+            color: #fff;
+        }
+
+        .btn-header.btn-home {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        /* OVERVIEW STAT CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-color, var(--accent-emerald));
+        }
+
+        .stat-info h4 {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-info .stat-value {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .stat-info .stat-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.35;
+            color: var(--accent-color, var(--accent-emerald));
+        }
+
+        /* MAIN CARD */
+        .management-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ACTION TOOLBAR */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+        }
+
+        .btn-excel-template {
+            background: #1e293b;
+            color: #38bdf8;
+            border: 1px solid #0284c7;
+        }
+
+        .btn-excel-import {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+        }
+
+        .btn-excel-export {
+            background: #1e293b;
+            color: #f59e0b;
+            border: 1px solid #d97706;
+        }
+
+        .btn-refresh {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+
+        .btn-refresh:hover {
+            color: #fff;
+        }
+
+        /* FILTER & SEARCH BAR */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--bg-darker);
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: #162035;
+            border: 1px solid #293a58;
+            color: #fff;
+            padding: 10px 14px 10px 38px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-emerald);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .filter-select {
+            background: #162035;
+            border: 1px solid #293a58;
+            color: #cbd5e1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .filter-select:focus {
+            border-color: var(--accent-emerald);
+        }
+
+        /* TABLE STYLING */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-darker);
+        }
+
+        table.student-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        table.student-table th {
+            background: #131b2e;
+            color: var(--text-secondary);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        table.student-table td {
+            padding: 13px 16px;
+            border-bottom: 1px solid #1a263d;
+            vertical-align: middle;
+            color: #e2e8f0;
+        }
+
+        table.student-table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        table.student-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* BADGES */
+        .badge-grade {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-class {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .badge-exp {
+            color: #fbbf24;
+        }
+
+        .badge-coin {
+            color: #facc15;
+        }
+
+        .pwd-cell-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 6px;
+            padding: 3px 8px;
+            color: #f87171;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .btn-tbl-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            margin: 0 2px;
+        }
+
+        .btn-tbl-action:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-tbl-edit {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-tbl-edit:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-tbl-reset-pwd {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-tbl-reset-pwd:hover {
+            background: #d97706;
+            color: #fff;
+        }
+
+        .btn-tbl-del {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-tbl-del:hover {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 40px !important;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* MODALS */
+        .pwd-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 8, 15, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 16px;
+        }
+
+        .pwd-card {
+            background: #151d30;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d1322;
+            border: 1px solid #243452;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-emerald);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* TOAST */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-item {
+            background: #172138;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border-left: 4px solid var(--accent-emerald);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            animation: slideInRight 0.3s ease-out;
+            pointer-events: auto;
+            max-width: 380px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* REGISTRATION GATE TOGGLE BUTTON */
+        .btn-gate-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!--  MODAL XÁC THỰC ADMIN                                        -->
+    <!-- ============================================================ -->
+    <div id="admin-auth-modal" style="display:none;" class="pwd-overlay">
+        <div class="pwd-card" style="border-color: #ef4444; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.35); text-align:center; max-width: 420px;">
+            <i class="fa-solid fa-shield-halved fa-3x" style="color: #ef4444; margin-bottom: 12px;"></i>
+            <h4 style="color: #ef4444; margin: 0 0 8px 0; font-family:'Montserrat',sans-serif; font-size:1.25rem;">QUẢN LÝ CHIẾN BINH</h4>
+            <p style="font-size: 0.9rem; color: #94a3b8; margin: 0 0 18px 0;">Vui lòng nhập mật mã Giáo viên / Admin để tiếp tục:</p>
+            <div class="form-group" style="text-align:left; margin-bottom:12px;">
+                <input type="password" id="admin-page-pwd-input" placeholder="Nhập mật mã..." onkeydown="if(event.key==='Enter') xacNhanDangNhapAdminTaiTrang();">
+                <div id="admin-page-pwd-error" style="display:none; color:#ef4444; font-size:0.85rem; margin-top:6px;"><i class="fa-solid fa-circle-exclamation"></i> Mật mã không chính xác!</div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <button onclick="xacNhanDangNhapAdminTaiTrang()" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 8px; cursor: pointer; flex: 1.2;">Xác Nhận</button>
+                <button onclick="window.location.href='index.html'" style="background: #334155; color: white; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 8px; cursor: pointer; flex: 1;">Về Trang Chủ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MODAL XÁC NHẬN TÙY CHỈNH (CUSTOM CONFIRM)                   -->
+    <!-- ============================================================ -->
+    <div id="custom-confirm-modal" style="display:none;" class="pwd-overlay">
+        <div class="pwd-card" style="border-color: #f59e0b; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25);">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <i class="fa-solid fa-triangle-exclamation fa-3x" style="color: #f59e0b;"></i>
+            </div>
+            <h4 id="confirm-title" style="color: #f59e0b; margin: 0 0 10px 0; font-family:'Montserrat',sans-serif; text-align:center;">XÁC NHẬN HÀNH ĐỘNG</h4>
+            <p id="confirm-msg" style="font-size: 0.92rem; color: #cbd5e1; margin: 0 0 20px 0; line-height: 1.5; text-align:center;"></p>
+            <div style="display: flex; gap: 10px;">
+                <button id="confirm-yes-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1;">Đồng ý</button>
+                <button id="confirm-no-btn" style="background: #334155; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1;">Hủy bỏ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MODAL THÊM / SỬA HỌC SINH                                   -->
+    <!-- ============================================================ -->
+    <div id="student-modal" style="display:none;" class="pwd-overlay" onclick="if(event.target === this) dongStudentModal();">
+        <div class="pwd-card" style="border-color: #10b981; box-shadow: 0 10px 35px rgba(16, 185, 129, 0.25); max-width: 520px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <h4 id="student-modal-title" style="color:#10b981; margin:0; font-family:'Montserrat',sans-serif; font-size:1.15rem;">
+                    <i class="fa-solid fa-user-plus"></i> Thêm Chiến Binh Mới
+                </h4>
+                <button onclick="dongStudentModal()" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; line-height:1;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <input type="hidden" id="student-edit-mode" value="add">
+            <input type="hidden" id="student-old-name" value="">
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-signature"></i> Họ và Tên học sinh (*):</label>
+                <input type="text" id="inp-hs-name" placeholder="Ví dụ: Nguyễn Văn An">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-graduation-cap"></i> Khối lớp:</label>
+                    <select id="inp-hs-class" onchange="capNhatGoiYLopCuThe()">
+                        <option value="Khối 6">Khối 6</option>
+                        <option value="Khối 7" selected>Khối 7</option>
+                        <option value="Khối 8">Khối 8</option>
+                        <option value="Khối 9">Khối 9</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-school"></i> Lớp cụ thể (*):</label>
+                    <input type="text" id="inp-hs-classroom" placeholder="Ví dụ: 7A2, 7A7...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-key"></i> Mật khẩu đăng nhập (*):</label>
+                <input type="text" id="inp-hs-pass" placeholder="Nhập mật khẩu (Mặc định gợi ý: 123456)...">
+                <div style="font-size:0.78rem; color:#94a3b8; margin-top:4px;">
+                    <i class="fa-solid fa-circle-info"></i> Hệ thống tự động mã hóa bảo mật khi lưu và đồng bộ lên Firebase.
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-star" style="color:#fbbf24;"></i> Điểm EXP:</label>
+                    <input type="number" id="inp-hs-exp" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-coins" style="color:#facc15;"></i> Số Điểm (Coin):</label>
+                    <input type="number" id="inp-hs-coin" value="50" min="0">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:15px;">
+                <button onclick="dongStudentModal()" style="background:#334155; color:#fff; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:bold;">Hủy bỏ</button>
+                <button onclick="luuThongTinHocSinh()" class="btn-action btn-add" style="margin-top:0;">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu Thông Tin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- ============================================================ -->
+    <!--  MAIN CONTAINER                                              -->
+    <!-- ============================================================ -->
+    <div class="container">
+        <!-- HEADER BOX -->
+        <div class="header-box">
+            <div class="title-container">
+                <div class="title-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="title-text">
+                    <h1>HỆ THỐNG QUẢN LÝ CHIẾN BINH</h1>
+                    <p>Quản lý hồ sơ học sinh, phân lớp, mật mã, điểm số và đồng bộ Cloud Firestore</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div id="sync-status-badge" class="status-badge" title="Trạng thái kết nối Cloud Firestore">
+                    <i class="fa-solid fa-circle" style="font-size:0.6rem;"></i> <span>Firebase Sẵn Sàng</span>
+                </div>
+                <button onclick="kichHoatDongBoThuCong()" class="btn-header btn-sync" title="Đồng bộ thủ công giữa LocalStorage và Cloud">
+                    <i class="fa-solid fa-arrows-rotate"></i> Đồng Bộ Cloud
+                </button>
+                <button onclick="doiSoatTaiKhoanVoiCloud(true)" class="btn-header btn-sync" style="background: linear-gradient(135deg, #0d9488, #0f766e); border-color:#2dd4bf;" title="Đối soát tài khoản">
+                    <i class="fa-solid fa-user-check"></i> Đối Soát Cloud
+                </button>
+                <a href="admin.html" class="btn-header btn-admin" title="Chuyển sang trang Quản trị Bộ đề & Hệ thống">
+                    <i class="fa-solid fa-sliders"></i> Quản Trị Hệ Thống
+                </a>
+                <a href="index.html" class="btn-header btn-home" title="Về Sảnh chính Math Hero">
+                    <i class="fa-solid fa-house"></i> Sảnh Chính
+                </a>
+            </div>
+        </div>
+
+        <!-- OVERVIEW STATS -->
+        <div class="stats-grid">
+            <div class="stat-card" style="--accent-color: #10b981;">
+                <div class="stat-info">
+                    <h4>Tổng Chiến Binh</h4>
+                    <div class="stat-value" id="stat-total-students">0</div>
+                    <div class="stat-desc">Đã kích hoạt trong hệ thống</div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #3b82f6;">
+                <div class="stat-info">
+                    <h4>Phân Bổ Theo Khối</h4>
+                    <div class="stat-value" id="stat-by-grade" style="font-size: 1.15rem; font-weight: 700; margin-top: 4px;">
+                        K6: 0 | K7: 0 | K8: 0 | K9: 0
+                    </div>
+                    <div class="stat-desc">Học sinh thuộc các khối 6, 7, 8, 9</div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-chart-pie"></i></div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #f59e0b;">
+                <div class="stat-info">
+                    <h4>Tổng Số Lớp</h4>
+                    <div class="stat-value" id="stat-total-classes">0</div>
+                    <div class="stat-desc">Lớp học đang có dữ liệu</div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-school"></i></div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #8b5cf6;">
+                <div class="stat-info">
+                    <h4>Cổng Đăng Ký Tự Do</h4>
+                    <div style="margin-top: 6px;">
+                        <button id="btn-toggle-khoa-dang-ky" onclick="chuyenTrangThaiKhoaDangKy()" class="btn-gate-toggle">
+                            <i id="icon-khoa-dang-ky" class="fa-solid fa-lock"></i>
+                            <span id="text-khoa-dang-ky">Đang kiểm tra...</span>
+                        </button>
+                    </div>
+                    <div class="stat-desc" style="margin-top: 6px;">Bấm nút để Khóa hoặc Mở đăng ký tự do</div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            </div>
+        </div>
+
+        <!-- MAIN MANAGEMENT SECTION -->
+        <div class="management-section">
+            <!-- TOOLBAR -->
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button onclick="moModalThemHocSinh()" class="btn-action btn-add" title="Thêm một học sinh mới vào danh sách">
+                        <i class="fa-solid fa-user-plus"></i> + Thêm Học Sinh
+                    </button>
+                    <button onclick="taiFileMauExcelHocSinh()" class="btn-action btn-excel-template" title="Tải mẫu file Excel chuẩn">
+                        <i class="fa-solid fa-file-excel"></i> Tải Mẫu Excel
+                    </button>
+                    <button onclick="kichHoatChonFileExcel()" class="btn-action btn-excel-import" title="Nhập danh sách học sinh từ file Excel theo từng lớp">
+                        <i class="fa-solid fa-file-import"></i> Nhập Excel Theo Lớp
+                    </button>
+                    <input type="file" id="inp-excel-hoc-sinh" accept=".xlsx, .xls, .csv" style="display:none;" onchange="xuLyFileExcelHocSinh(event)">
+                    <button onclick="xuatDanhSachHocSinhExcel()" class="btn-action btn-excel-export" title="Xuất danh sách học sinh hiện tại ra file Excel">
+                        <i class="fa-solid fa-download"></i> Xuất Excel Danh Sách
+                    </button>
+                    <button onclick="khoiPhuc203HocSinhExcel()" class="btn-action" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); color:#fff;" title="Khôi phục danh sách 203 học sinh chuẩn từ 5 file Excel (7A2, 7A4, 7A7, 9A4, 9A6)">
+                        <i class="fa-solid fa-arrows-rotate"></i> Nạp 203 HS Chuẩn
+                    </button>
+                    <button onclick="xoaSachToanBoHocSinh()" class="btn-action" style="background: linear-gradient(135deg, #c0392b, #e74c3c); color:#fff;" title="Xóa sạch toàn bộ học sinh để làm mới từ đầu">
+                        <i class="fa-solid fa-trash-can"></i> Xóa Sạch Tất Cả
+                    </button>
+                </div>
+                <div class="toolbar-group">
+                    <button onclick="taiLogHocSinh(true)" class="btn-action btn-refresh" title="Làm mới bảng danh sách học sinh">
+                        <i class="fa-solid fa-rotate"></i> Làm Mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- FILTER & SEARCH -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-student" placeholder="Tìm theo tên học sinh hoặc tên lớp (ví dụ: An, 7A2...)" oninput="taiLogHocSinh()">
+                </div>
+                <div>
+                    <select id="filter-student-grade" class="filter-select" onchange="taiLogHocSinh()">
+                        <option value="all">🌐 Tất cả các khối</option>
+                        <option value="Khối 6">Khối 6</option>
+                        <option value="Khối 7">Khối 7</option>
+                        <option value="Khối 8">Khối 8</option>
+                        <option value="Khối 9">Khối 9</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filter-student-classroom" class="filter-select" onchange="taiLogHocSinh()">
+                        <option value="all">🏫 Tất cả các lớp</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="sort-student" class="filter-select" onchange="taiLogHocSinh()">
+                        <option value="name_asc">Sắp xếp: Tên A-Z</option>
+                        <option value="name_desc">Sắp xếp: Tên Z-A</option>
+                        <option value="classroom_asc">Sắp xếp: Theo Lớp</option>
+                        <option value="exp_desc">Sắp xếp: EXP cao nhất</option>
+                        <option value="coin_desc">Sắp xếp: Điểm nhiều nhất</option>
+                        <option value="login_desc">Sắp xếp: Truy cập gần nhất</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px; text-align: center;">STT</th>
+                            <th style="min-width: 180px;">Họ và Tên Chiến Binh</th>
+                            <th style="width: 100px;">Khối</th>
+                            <th style="width: 100px;">Lớp</th>
+                            <th style="min-width: 140px;">Mật Khẩu</th>
+                            <th style="width: 120px; text-align: right;">EXP</th>
+                            <th style="width: 120px; text-align: right;">Điểm (Xu)</th>
+                            <th style="min-width: 160px;">Truy Cập Gần Nhất</th>
+                            <th style="width: 140px; text-align: center;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-admin-hs">
+                        <!-- Rendered by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  JAVASCRIPT XỬ LÝ QUẢN LÝ HỌC SINH                           -->
+    <!-- ============================================================ -->
+    <script>
+        // CÁC HÀM TIỆN ÍCH AN TOÀN
+        function safeJsonParse(key, fallback = null) {
+            try {
+                const val = localStorage.getItem(key);
+                if (val === null || val === undefined || val === '') return fallback;
+                return JSON.parse(val);
+            } catch (err) {
+                console.error(`[SafeJSON] Lỗi parse key "${key}":`, err);
+                return fallback;
+            }
+        }
+
+        function safeJsonSet(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (err) {
+                console.error(`[SafeJSON] Lỗi lưu key "${key}":`, err);
+                return false;
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            try {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                const toast = document.createElement('div');
+                toast.className = 'toast-item';
+                
+                let iconClass = 'fa-solid fa-circle-check';
+                let borderColor = '#10b981';
+                if (type === 'warning') {
+                    iconClass = 'fa-solid fa-triangle-exclamation';
+                    borderColor = '#f59e0b';
+                } else if (type === 'error') {
+                    iconClass = 'fa-solid fa-circle-xmark';
+                    borderColor = '#ef4444';
+                } else if (type === 'info') {
+                    iconClass = 'fa-solid fa-circle-info';
+                    borderColor = '#38bdf8';
+                }
+
+                toast.style.borderLeftColor = borderColor;
+                toast.innerHTML = `<i class="${iconClass}" style="color:${borderColor}; font-size:1.1rem;"></i> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.transition = 'all 0.4s ease';
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(50px)';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3500);
+            } catch(e) {
+                console.log(message);
+            }
+        }
+
+        function customConfirm(message, callback) {
+            const modal = document.getElementById('custom-confirm-modal');
+            const msgEl = document.getElementById('confirm-msg');
+            const yesBtn = document.getElementById('confirm-yes-btn');
+            const noBtn = document.getElementById('confirm-no-btn');
+            if (!modal || !msgEl || !yesBtn || !noBtn) {
+                if (confirm(message)) callback();
+                return;
+            }
+
+            msgEl.innerText = message;
+            modal.style.display = 'flex';
+            
+            const close = () => {
+                modal.style.display = 'none';
+                yesBtn.onclick = null;
+                noBtn.onclick = null;
+            };
+
+            yesBtn.onclick = () => {
+                close();
+                callback();
+            };
+
+            noBtn.onclick = () => {
+                close();
+            };
+        }
+
+        function chuanHoaTenAdmin(ten) {
+            if (!ten) return '';
+            return String(ten)
+                .replace(/[\u00A0\u200B\uFEFF]/g, ' ')
+                .trim()
+                .replace(/\s+/g, ' ')
+                .normalize('NFC');
+        }
+
+        // DANH SÁCH BIA MỘ: Học sinh đã xóa để tránh Cloud tự merge lại
+        function layDanhSachDaXoa() {
+            const ds = safeJsonParse('danh_sach_hs_da_xoa', []);
+            return Array.isArray(ds) ? ds : [];
+        }
+
+        function ghiNhoHocSinhDaXoa(tenHs) {
+            const clean = chuanHoaTenAdmin(tenHs);
+            if (!clean) return;
+            const ds = layDanhSachDaXoa();
+            const lowerClean = clean.toLowerCase();
+            if (!ds.some(t => chuanHoaTenAdmin(t).toLowerCase() === lowerClean)) {
+                ds.push(clean);
+                safeJsonSet('danh_sach_hs_da_xoa', ds);
+            }
+        }
+
+        function boGhiNhoHocSinhDaXoa(tenHs) {
+            const clean = chuanHoaTenAdmin(tenHs).toLowerCase();
+            if (!clean) return;
+            const ds = layDanhSachDaXoa().filter(t => chuanHoaTenAdmin(t).toLowerCase() !== clean);
+            safeJsonSet('danh_sach_hs_da_xoa', ds);
+        }
+
+        function boGhiNhoNhieuHocSinhDaXoa(danhSachTen) {
+            if (!Array.isArray(danhSachTen) || danhSachTen.length === 0) return;
+            const setTen = new Set(danhSachTen.map(t => chuanHoaTenAdmin(t).toLowerCase()).filter(Boolean));
+            const ds = layDanhSachDaXoa().filter(t => !setTen.has(chuanHoaTenAdmin(t).toLowerCase()));
+            safeJsonSet('danh_sach_hs_da_xoa', ds);
+        }
+
+        function donDepHocSinhDaXoa() {
+            const ds = layDanhSachDaXoa();
+            if (ds.length === 0) return false;
+
+            const users = safeJsonParse('math_hero_users_v2', {});
+            const setUsers = new Set(Object.keys(users).map(k => chuanHoaTenAdmin(k).toLowerCase()));
+
+            const dsMoi = ds.filter(ten => {
+                const clean = chuanHoaTenAdmin(ten).toLowerCase();
+                return !setUsers.has(clean);
+            });
+
+            if (dsMoi.length !== ds.length) {
+                safeJsonSet('danh_sach_hs_da_xoa', dsMoi);
+                return true;
+            }
+            return false;
+        }
+
+        // ĐỒNG BỘ CLOUD VÀ FIREBASE
+        function choFirebaseSanSang(maxWaitMs = 4000) {
+            return new Promise((resolve) => {
+                if (window.HeroFirebaseCompat) return resolve(window.HeroFirebaseCompat);
+                if (window.FirebaseSync) return resolve(window.FirebaseSync);
+                const startTime = Date.now();
+                const interval = setInterval(() => {
+                    if (window.HeroFirebaseCompat) {
+                        clearInterval(interval);
+                        resolve(window.HeroFirebaseCompat);
+                    } else if (window.FirebaseSync) {
+                        clearInterval(interval);
+                        resolve(window.FirebaseSync);
+                    } else if (Date.now() - startTime >= maxWaitMs) {
+                        clearInterval(interval);
+                        resolve(null);
+                    }
+                }, 100);
+            });
+        }
+
+        async function dongBoToanCuc(tenKey) {
+            if (!tenKey) return false;
+            try {
+                if (window.HeroFirebaseCompat && typeof window.HeroFirebaseCompat.dayCauHinhToanCuc === 'function') {
+                    return await window.HeroFirebaseCompat.dayCauHinhToanCuc(tenKey);
+                } else if (window.FirebaseSync && typeof window.FirebaseSync.dayCauHinhToanCuc === 'function') {
+                    return await window.FirebaseSync.dayCauHinhToanCuc(tenKey);
+                }
+            } catch (e) {
+                console.error("[Quản lý học sinh] Lỗi đẩy cấu hình toàn cục lên Firebase:", tenKey, e);
+            }
+            return false;
+        }
+
+        async function dongBoHocSinh(tenHs, hoSoTrucTiep) {
+            if (!tenHs) return false;
+            try {
+                if (window.HeroFirebaseCompat && typeof window.HeroFirebaseCompat.dayDuLieuLenMay === 'function') {
+                    return await window.HeroFirebaseCompat.dayDuLieuLenMay(tenHs, hoSoTrucTiep);
+                } else if (window.FirebaseSync && typeof window.FirebaseSync.dayDuLieuLenMay === 'function') {
+                    return await window.FirebaseSync.dayDuLieuLenMay(tenHs, hoSoTrucTiep);
+                }
+            } catch (e) {
+                console.error("[Quản lý học sinh] Lỗi đẩy học sinh lên Firebase:", tenHs, e);
+            }
+            return false;
+        }
+
+        async function xoaHocSinhFirebase(tenHs) {
+            if (!tenHs) return;
+            try {
+                if (window.HeroFirebaseCompat && typeof window.HeroFirebaseCompat.xoaHocSinhTrenMay === 'function') {
+                    await window.HeroFirebaseCompat.xoaHocSinhTrenMay(tenHs);
+                } else if (window.FirebaseSync && typeof window.FirebaseSync.xoaHocSinhTrenMay === 'function') {
+                    await window.FirebaseSync.xoaHocSinhTrenMay(tenHs);
+                }
+            } catch (e) {
+                console.error("[Quản lý học sinh] Lỗi xóa học sinh trên Firebase:", tenHs, e);
+            }
+        }
+
+        let _dangDoiSoatTaiKhoan = false;
+        async function doiSoatTaiKhoanVoiCloud(hienThongBao = false) {
+            if (_dangDoiSoatTaiKhoan) return null;
+            _dangDoiSoatTaiKhoan = true;
+            try {
+                const api = await choFirebaseSanSang();
+                if (!api || !window.firebase || typeof window.firebase.firestore !== 'function') {
+                    if (hienThongBao) showToast("Chưa kết nối được Firebase để đối soát tài khoản.", "error");
+                    return null;
+                }
+                if (hienThongBao) showToast("Đang đối soát tài khoản với Cloud...", "info");
+                
+                const docRef = window.firebase.firestore().collection('mathhero_global').doc('math_hero_users_v2');
+                const snap = await docRef.get();
+                let cloud = {};
+                if (snap.exists) {
+                    try {
+                        cloud = JSON.parse((snap.data() || {}).value || '{}');
+                    } catch(e) {}
+                }
+
+                let users = safeJsonParse('math_hero_users_v2', {});
+                const daXoa = layDanhSachDaXoa();
+                const setDaXoa = new Set(daXoa.map(t => chuanHoaTenAdmin(t).toLowerCase()));
+
+                let coCapNhat = false;
+                Object.keys(cloud).forEach(ten => {
+                    const norm = chuanHoaTenAdmin(ten).toLowerCase();
+                    if (!setDaXoa.has(norm) && !users[ten]) {
+                        users[ten] = cloud[ten];
+                        coCapNhat = true;
+                    }
+                });
+
+                if (coCapNhat) {
+                    safeJsonSet('math_hero_users_v2', users);
+                    taiLogHocSinh();
+                    if (hienThongBao) showToast("Đã bổ sung tài khoản còn thiếu từ Cloud vào máy!", "success");
+                } else {
+                    if (hienThongBao) showToast("Dữ liệu tài khoản đã đồng bộ khớp hoàn hảo với Cloud.", "success");
+                }
+            } catch(e) {
+                console.warn("[Quản lý học sinh] Lỗi đối soát tài khoản:", e);
+                if (hienThongBao) showToast("Lỗi khi đối soát: " + e.message, "error");
+            } finally {
+                _dangDoiSoatTaiKhoan = false;
+            }
+        }
+
+        async function kichHoatDongBoThuCong() {
+            showToast("Đang kích hoạt đồng bộ hai chiều với Firebase Firestore...", "info");
+            const badge = document.getElementById('sync-status-badge');
+            if (badge) {
+                badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="font-size:0.6rem;"></i> <span>Đang đồng bộ...</span>`;
+            }
+
+            try {
+                await doiSoatTaiKhoanVoiCloud(false);
+                await dongBoToanCuc('math_hero_users_v2');
+                await dongBoToanCuc('danh_sach_hs_da_xoa');
+                await dongBoToanCuc('nhat_ky_dang_nhap');
+                showToast("Đã đồng bộ toàn bộ dữ liệu học sinh lên Cloud thành công!", "success");
+                if (badge) {
+                    badge.innerHTML = `<i class="fa-solid fa-circle" style="font-size:0.6rem; color:#10b981;"></i> <span>Firebase Sẵn Sàng</span>`;
+                }
+                taiLogHocSinh();
+            } catch(e) {
+                console.error("Lỗi đồng bộ thủ công:", e);
+                showToast("Đồng bộ gặp lỗi: " + e.message, "error");
+                if (badge) {
+                    badge.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="font-size:0.6rem; color:#ef4444;"></i> <span>Lỗi kết nối</span>`;
+                }
+            }
+        }
+
+        // TẢI VÀ RENDER DANH SÁCH HỌC SINH
+        function taiLogHocSinh(hienToast = false) {
+            const tbody = document.getElementById('tbl-admin-hs');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            donDepHocSinhDaXoa();
+            const users = safeJsonParse('math_hero_users_v2', {});
+            let userNames = Object.keys(users);
+
+            // Cập nhật thẻ thống kê
+            capNhatThongKe(users);
+
+            if (userNames.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-row"><i class="fa-solid fa-users-slash fa-2x" style="display:block; margin-bottom:10px; opacity:0.4;"></i> Chưa có dữ liệu học sinh đăng ký trong hệ thống. Hãy bấm <b>+ Thêm Học Sinh</b> hoặc <b>Nhập Excel Theo Lớp</b>.</td></tr>`;
+                return;
+            }
+
+            const searchKw = (document.getElementById('search-student')?.value || '').trim().toLowerCase();
+            const filterGrade = document.getElementById('filter-student-grade')?.value || 'all';
+            const filterClassroom = document.getElementById('filter-student-classroom')?.value || 'all';
+            const sortMode = document.getElementById('sort-student')?.value || 'name_asc';
+
+            // Lấy thời gian đăng nhập gần nhất
+            const nhatKyDangNhap = safeJsonParse('nhat_ky_dang_nhap', []);
+            const lastLoginMap = {};
+            if (Array.isArray(nhatKyDangNhap)) {
+                nhatKyDangNhap.forEach(item => {
+                    if (item && item.name) lastLoginMap[item.name] = item.time || '—';
+                });
+            }
+
+            let listStudents = userNames.map(ten => {
+                const userData = users[ten];
+                let matKhau = "Không rõ";
+                let lop = "Khối 7";
+                let lopCuThe = "—";
+                let isHashed = false;
+
+                if (typeof userData === 'string') {
+                    matKhau = userData;
+                } else if (typeof userData === 'object' && userData !== null) {
+                    matKhau = userData.pass || "Không rõ";
+                    lop = userData.class || "Khối 7";
+                    lopCuThe = userData.classroom || "—";
+                    isHashed = !!userData._hashed || (matKhau.length === 64 && /^[0-9a-f]+$/i.test(matKhau));
+                }
+
+                const diem = parseInt(localStorage.getItem('exp_' + ten)) || 0;
+                const xu = parseInt(localStorage.getItem('coin_' + ten)) || 50;
+
+                return {
+                    name: ten,
+                    pass: matKhau,
+                    isHashed: isHashed,
+                    class: lop,
+                    classroom: lopCuThe,
+                    exp: diem,
+                    coin: xu,
+                    lastLogin: lastLoginMap[ten] || '—'
+                };
+            });
+
+            // Lọc theo từ khóa tìm kiếm
+            if (searchKw) {
+                listStudents = listStudents.filter(hs => 
+                    hs.name.toLowerCase().includes(searchKw) || 
+                    hs.classroom.toLowerCase().includes(searchKw) ||
+                    hs.class.toLowerCase().includes(searchKw)
+                );
+            }
+
+            // Lọc theo Khối
+            if (filterGrade !== 'all') {
+                listStudents = listStudents.filter(hs => hs.class === filterGrade);
+            }
+
+            // Lọc theo Lớp cụ thể
+            if (filterClassroom !== 'all') {
+                listStudents = listStudents.filter(hs => hs.classroom.toUpperCase() === filterClassroom.toUpperCase());
+            }
+
+            // Sắp xếp
+            if (sortMode === 'name_asc') {
+                listStudents.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+            } else if (sortMode === 'name_desc') {
+                listStudents.sort((a, b) => b.name.localeCompare(a.name, 'vi'));
+            } else if (sortMode === 'classroom_asc') {
+                listStudents.sort((a, b) => a.classroom.localeCompare(b.classroom, 'vi') || a.name.localeCompare(b.name, 'vi'));
+            } else if (sortMode === 'exp_desc') {
+                listStudents.sort((a, b) => b.exp - a.exp);
+            } else if (sortMode === 'coin_desc') {
+                listStudents.sort((a, b) => b.coin - a.coin);
+            } else if (sortMode === 'login_desc') {
+                listStudents.sort((a, b) => (b.lastLogin === '—' ? '' : b.lastLogin).localeCompare(a.lastLogin === '—' ? '' : a.lastLogin));
+            }
+
+            if (listStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-row"><i class="fa-solid fa-filter-circle-xmark fa-2x" style="display:block; margin-bottom:10px; opacity:0.4;"></i> Không tìm thấy học sinh nào phù hợp với bộ lọc hiện tại.</td></tr>`;
+                return;
+            }
+
+            listStudents.forEach((hs, index) => {
+                const tr = document.createElement('tr');
+                
+                // Hiển thị mật khẩu an toàn
+                let passDisplayHtml = '';
+                if (hs.isHashed || hs.pass.length > 20) {
+                    passDisplayHtml = `
+                        <div class="pwd-cell-box" title="Mật khẩu đã được mã hóa an toàn SHA256 trên hệ thống">
+                            <i class="fa-solid fa-lock" style="font-size:0.75rem;"></i>
+                            <span>Đã mã hóa</span>
+                        </div>
+                    `;
+                } else {
+                    passDisplayHtml = `
+                        <div class="pwd-cell-box" style="color:#cbd5e1; border-color:#334155; background:rgba(255,255,255,0.03);" title="Mật khẩu học sinh: ${hs.pass}">
+                            <i class="fa-solid fa-key" style="font-size:0.75rem; color:#f59e0b;"></i>
+                            <span>${hs.pass}</span>
+                        </div>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 9px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 0.85rem;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <span style="font-weight: 700; color: #fff;">${hs.name}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge-grade">${hs.class}</span></td>
+                    <td><span class="badge-class">${hs.classroom}</span></td>
+                    <td>${passDisplayHtml}</td>
+                    <td style="text-align: right;">
+                        <span class="badge-stat badge-exp"><i class="fa-solid fa-star"></i> ${hs.exp.toLocaleString('vi-VN')}</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span class="badge-stat badge-coin"><i class="fa-solid fa-coins"></i> ${hs.coin.toLocaleString('vi-VN')}</span>
+                    </td>
+                    <td style="color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap;">
+                        ${hs.lastLogin === '—' ? '<span style="color:#64748b;">Chưa đăng nhập</span>' : '<i class="fa-regular fa-clock" style="margin-right:4px;"></i> ' + hs.lastLogin}
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button onclick="moModalSuaHocSinh('${encodeURIComponent(hs.name)}')" class="btn-tbl-action btn-tbl-edit" title="Sửa thông tin học sinh">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="datLaiMatKhauNhanh('${encodeURIComponent(hs.name)}')" class="btn-tbl-action btn-tbl-reset-pwd" title="Đặt lại mật khẩu về mặc định 123456">
+                            <i class="fa-solid fa-key"></i>
+                        </button>
+                        <button onclick="xoaMotHocSinh('${encodeURIComponent(hs.name)}')" class="btn-tbl-action btn-tbl-del" title="Xóa học sinh này">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (hienToast) {
+                showToast(`Đã tải lại danh sách ${listStudents.length} chiến binh!`, "success");
+            }
+        }
+
+        // CẬP NHẬT THỐNG KÊ DASHBOARD & DROPDOWN LỚP HỌC
+        function capNhatThongKe(users) {
+            const names = Object.keys(users);
+            document.getElementById('stat-total-students').innerText = names.length;
+
+            let k6 = 0, k7 = 0, k8 = 0, k9 = 0;
+            const classSet = new Set();
+
+            names.forEach(t => {
+                const u = users[t];
+                let g = (typeof u === 'object' && u?.class) ? u.class : 'Khối 7';
+                let c = (typeof u === 'object' && u?.classroom) ? u.classroom.trim().toUpperCase() : '';
+
+                if (g.includes('6')) k6++;
+                else if (g.includes('7')) k7++;
+                else if (g.includes('8')) k8++;
+                else if (g.includes('9')) k9++;
+
+                if (c && c !== '—') classSet.add(c);
+            });
+
+            document.getElementById('stat-by-grade').innerText = `K6: ${k6} | K7: ${k7} | K8: ${k8} | K9: ${k9}`;
+            document.getElementById('stat-total-classes').innerText = classSet.size;
+
+            // Cập nhật Dropdown Lớp cụ thể
+            const selClassroom = document.getElementById('filter-student-classroom');
+            if (selClassroom) {
+                const curVal = selClassroom.value;
+                const sortedClasses = Array.from(classSet).sort();
+                let html = '<option value="all">🏫 Tất cả các lớp</option>';
+                sortedClasses.forEach(c => {
+                    html += `<option value="${c}" ${c === curVal ? 'selected' : ''}>Lớp ${c}</option>`;
+                });
+                selClassroom.innerHTML = html;
+            }
+        }
+
+        // CỔNG ĐĂNG KÝ HỆ THỐNG
+        function capNhatNutKhoaDangKy() {
+            const isLocked = localStorage.getItem('khoa_dang_ky_he_thong') === 'true';
+            const btn = document.getElementById('btn-toggle-khoa-dang-ky');
+            const icon = document.getElementById('icon-khoa-dang-ky');
+            const txt = document.getElementById('text-khoa-dang-ky');
+            if (!btn || !icon || !txt) return;
+
+            if (isLocked) {
+                btn.style.borderColor = '#ef4444';
+                btn.style.color = '#f87171';
+                btn.style.background = 'rgba(239, 68, 68, 0.15)';
+                icon.className = 'fa-solid fa-lock';
+                txt.innerHTML = 'ĐÃ KHÓA 🔒';
+                btn.title = 'Cổng đăng ký đang BỊ KHÓA. Học sinh không thể tự tạo tài khoản. Bấm để MỞ.';
+            } else {
+                btn.style.borderColor = '#10b981';
+                btn.style.color = '#34d399';
+                btn.style.background = 'rgba(16, 185, 129, 0.15)';
+                icon.className = 'fa-solid fa-lock-open';
+                txt.innerHTML = 'ĐANG MỞ 🔓';
+                btn.title = 'Cổng đăng ký đang MỞ. Học sinh có thể tự đăng ký tài khoản. Bấm để KHÓA.';
+            }
+        }
+
+        async function chuyenTrangThaiKhoaDangKy() {
+            const isCurrentlyLocked = localStorage.getItem('khoa_dang_ky_he_thong') === 'true';
+            const newStatus = !isCurrentlyLocked;
+            
+            localStorage.setItem('khoa_dang_ky_he_thong', newStatus ? 'true' : 'false');
+            capNhatNutKhoaDangKy();
+
+            try {
+                await dongBoToanCuc('khoa_dang_ky_he_thong');
+            } catch(e) {
+                console.warn("Lỗi đồng bộ trạng thái khóa đăng ký:", e);
+            }
+
+            if (newStatus) {
+                showToast("🔒 Đã KHÓA cổng đăng ký! Học sinh sẽ không thể tự tạo tài khoản mới.", "warning");
+            } else {
+                showToast("🔓 Đã MỞ cổng đăng ký! Học sinh có thể tự đăng ký tài khoản bình thường.", "success");
+            }
+        }
+
+        // MODAL THÊM / SỬA HỌC SINH
+        function moModalThemHocSinh() {
+            document.getElementById('student-modal-title').innerHTML = `<i class="fa-solid fa-user-plus"></i> Thêm Chiến Binh Mới`;
+            document.getElementById('student-edit-mode').value = 'add';
+            document.getElementById('student-old-name').value = '';
+            document.getElementById('inp-hs-name').value = '';
+            document.getElementById('inp-hs-name').disabled = false;
+            document.getElementById('inp-hs-class').value = 'Khối 7';
+            document.getElementById('inp-hs-classroom').value = '';
+            document.getElementById('inp-hs-pass').value = '123456';
+            document.getElementById('inp-hs-exp').value = '0';
+            document.getElementById('inp-hs-coin').value = '50';
+            document.getElementById('student-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('inp-hs-name').focus(), 100);
+        }
+
+        function moModalSuaHocSinh(encodedTenHs) {
+            const tenHs = decodeURIComponent(encodedTenHs);
+            const users = safeJsonParse('math_hero_users_v2', {});
+            const userData = users[tenHs];
+            if (!userData) {
+                showToast("Không tìm thấy thông tin chiến binh!", "error");
+                return;
+            }
+
+            document.getElementById('student-modal-title').innerHTML = `<i class="fa-solid fa-user-pen"></i> Sửa Thông Tin: ${tenHs}`;
+            document.getElementById('student-edit-mode').value = 'edit';
+            document.getElementById('student-old-name').value = tenHs;
+            
+            document.getElementById('inp-hs-name').value = tenHs;
+            document.getElementById('inp-hs-name').disabled = true;
+
+            let lop = "Khối 7";
+            let lopCuThe = "";
+            let passVal = "";
+
+            if (typeof userData === 'string') {
+                passVal = userData;
+            } else if (typeof userData === 'object' && userData !== null) {
+                passVal = userData.pass || '';
+                lop = userData.class || 'Khối 7';
+                lopCuThe = userData.classroom || '';
+            }
+
+            document.getElementById('inp-hs-class').value = lop;
+            document.getElementById('inp-hs-classroom').value = lopCuThe;
+            
+            // Nếu pass là hash 64 ký tự, để trống và ghi chú
+            if (passVal.length === 64 && /^[0-9a-f]+$/i.test(passVal)) {
+                document.getElementById('inp-hs-pass').value = '';
+                document.getElementById('inp-hs-pass').placeholder = 'Giữ nguyên mật mã hiện tại (hoặc nhập mật mã mới để đổi)';
+            } else {
+                document.getElementById('inp-hs-pass').value = passVal;
+                document.getElementById('inp-hs-pass').placeholder = 'Nhập mật khẩu...';
+            }
+
+            document.getElementById('inp-hs-exp').value = localStorage.getItem('exp_' + tenHs) || 0;
+            document.getElementById('inp-hs-coin').value = localStorage.getItem('coin_' + tenHs) || 50;
+
+            document.getElementById('student-modal').style.display = 'flex';
+        }
+
+        function dongStudentModal() {
+            document.getElementById('student-modal').style.display = 'none';
+        }
+
+        function capNhatGoiYLopCuThe() {
+            const khoi = document.getElementById('inp-hs-class').value;
+            const match = khoi.match(/\d+/);
+            const num = match ? match[0] : '7';
+            const curInp = document.getElementById('inp-hs-classroom');
+            if (curInp && !curInp.value) {
+                curInp.placeholder = `Ví dụ: ${num}A1, ${num}A2...`;
+            }
+        }
+
+        async function luuThongTinHocSinh() {
+            const mode = document.getElementById('student-edit-mode').value;
+            const ten = chuanHoaTenAdmin(document.getElementById('inp-hs-name').value);
+            const lop = document.getElementById('inp-hs-class').value;
+            const lopCuThe = document.getElementById('inp-hs-classroom').value.trim();
+            let pass = document.getElementById('inp-hs-pass').value.trim();
+            const exp = parseInt(document.getElementById('inp-hs-exp').value) || 0;
+            const coin = parseInt(document.getElementById('inp-hs-coin').value) || 0;
+
+            if (!ten) {
+                showToast("Vui lòng điền Họ và Tên học sinh!", "warning");
+                return;
+            }
+
+            let users = safeJsonParse('math_hero_users_v2', {});
+
+            if (mode === 'add') {
+                if (users[ten]) {
+                    showToast(`Chiến binh "${ten}" đã tồn tại trên hệ thống!`, "error");
+                    return;
+                }
+                if (!pass) pass = "123456";
+            }
+
+            // Băm mật khẩu nếu người dùng nhập pass mới
+            const authHasher = (window.HeroAuth && typeof window.HeroAuth.hashMatKhau === 'function')
+                ? window.HeroAuth.hashMatKhau
+                : (typeof window.hashMatKhau === 'function' ? window.hashMatKhau : (async (p) => p));
+
+            let finalPass = pass;
+            if (pass) {
+                try {
+                    finalPass = await authHasher(pass);
+                } catch(e) {}
+            } else if (mode === 'edit') {
+                // Giữ nguyên mật mã cũ
+                const oldUser = users[ten];
+                finalPass = (typeof oldUser === 'object' && oldUser?.pass) ? oldUser.pass : (typeof oldUser === 'string' ? oldUser : '123456');
+            }
+
+            users[ten] = {
+                class: lop,
+                classroom: lopCuThe,
+                pass: finalPass,
+                _hashed: true
+            };
+            safeJsonSet('math_hero_users_v2', users);
+
+            // Gỡ khỏi bia mộ đã xóa
+            boGhiNhoHocSinhDaXoa(ten);
+
+            // Cập nhật trong nhật ký đăng nhập
+            const nhatKy = safeJsonParse('nhat_ky_dang_nhap', []);
+            if (Array.isArray(nhatKy)) {
+                let coSua = false;
+                nhatKy.forEach(it => {
+                    if (it && it.name === ten) {
+                        it.class = lop;
+                        it.classroom = lopCuThe;
+                        coSua = true;
+                    }
+                });
+                if (coSua) safeJsonSet('nhat_ky_dang_nhap', nhatKy);
+            }
+
+            localStorage.setItem('moc_cap_nhat_hs_' + ten, Date.now().toString());
+            localStorage.setItem('exp_' + ten, exp);
+            localStorage.setItem('coin_' + ten, coin);
+
+            // ĐỒNG BỘ CLOUD
+            dongBoToanCuc('math_hero_users_v2');
+            dongBoToanCuc('danh_sach_hs_da_xoa');
+            dongBoToanCuc('nhat_ky_dang_nhap');
+            dongBoHocSinh(ten, users[ten]);
+
+            showToast(mode === 'add' ? `Đã thêm thành công học sinh ${ten}!` : `Đã cập nhật thông tin học sinh ${ten}!`, "success");
+            dongStudentModal();
+            taiLogHocSinh();
+        }
+
+        // ĐẶT LẠI MẬT KHẨU NHANH VỀ 123456
+        async function datLaiMatKhauNhanh(encodedTenHs) {
+            const tenHs = decodeURIComponent(encodedTenHs);
+            customConfirm(`Thầy có muốn đặt lại mật khẩu của "${tenHs}" về mặc định "123456" không?`, async () => {
+                const users = safeJsonParse('math_hero_users_v2', {});
+                if (!users[tenHs]) {
+                    showToast("Không tìm thấy học sinh trong cơ sở dữ liệu!", "error");
+                    return;
+                }
+
+                const authHasher = (window.HeroAuth && typeof window.HeroAuth.hashMatKhau === 'function')
+                    ? window.HeroAuth.hashMatKhau
+                    : (typeof window.hashMatKhau === 'function' ? window.hashMatKhau : (async (p) => p));
+
+                let hashed = "123456";
+                try {
+                    hashed = await authHasher("123456");
+                } catch(e) {}
+
+                if (typeof users[tenHs] === 'string') {
+                    users[tenHs] = { class: "Khối 7", classroom: "—", pass: hashed, _hashed: true };
+                } else {
+                    users[tenHs].pass = hashed;
+                    users[tenHs]._hashed = true;
+                }
+
+                safeJsonSet('math_hero_users_v2', users);
+                localStorage.setItem('moc_cap_nhat_hs_' + tenHs, Date.now().toString());
+
+                await dongBoToanCuc('math_hero_users_v2');
+                await dongBoHocSinh(tenHs, users[tenHs]);
+
+                showToast(`Đã đặt lại mật khẩu của "${tenHs}" về "123456" thành công!`, "success");
+                taiLogHocSinh();
+            });
+        }
+
+        // XÓA HỌC SINH
+        async function xoaMotHocSinh(encodedTenHs) {
+            const tenHs = decodeURIComponent(encodedTenHs);
+            customConfirm(`CẢNH BÁO: Thầy có chắc chắn muốn xóa học sinh "${tenHs}" khỏi hệ thống?\n\nDữ liệu điểm số và tài khoản trên cả máy và Cloud sẽ được dọn sạch.`, async () => {
+                let users = safeJsonParse('math_hero_users_v2', {});
+                delete users[tenHs];
+                safeJsonSet('math_hero_users_v2', users);
+
+                // Ghi vào "bia mộ" để Cloud không merge lại
+                ghiNhoHocSinhDaXoa(tenHs);
+
+                // Xóa khỏi nhật ký đăng nhập
+                const nhatKy = safeJsonParse('nhat_ky_dang_nhap', []);
+                if (Array.isArray(nhatKy)) {
+                    safeJsonSet('nhat_ky_dang_nhap', nhatKy.filter(it => !it || it.name !== tenHs));
+                }
+
+                // Dọn sạch điểm và key phụ
+                const cleanKeys = [
+                    'exp_', 'coin_', 'da_quay_', 'luot_lam_bai_', 'luot_boss_',
+                    'luot_vong_quay_', 'luot_thach_dau_', 'luot_vuot_ai_', 'ruong_do_',
+                    'math_hero_pet_', 'avatar_', 'khung_avatar_', 'danh_hieu_', 'moc_cap_nhat_hs_'
+                ];
+                cleanKeys.forEach(p => localStorage.removeItem(p + tenHs));
+
+                // Đồng bộ xóa Cloud
+                await xoaHocSinhFirebase(tenHs);
+                await dongBoToanCuc('math_hero_users_v2');
+                await dongBoToanCuc('danh_sach_hs_da_xoa');
+                await dongBoToanCuc('nhat_ky_dang_nhap');
+
+                donDepHocSinhDaXoa();
+                showToast(`Đã xóa hoàn tất học sinh "${tenHs}"!`, "success");
+                taiLogHocSinh();
+            });
+        }
+
+        // KHÔI PHỤC 203 HỌC SINH CHUẨN TỪ 5 FILE EXCEL
+        async function khoiPhuc203HocSinhExcel() {
+            customConfirm("Thầy có muốn nạp lại danh sách 203 học sinh chuẩn từ 5 file Excel (7A2, 7A4, 7A7, 9A4, 9A6) không?\n\nThao tác này sẽ dọn sạch danh sách cũ/rác và đồng bộ danh sách 203 học sinh chuẩn lên Cloud.", async () => {
+                showToast("⏳ Đang nạp danh sách 203 học sinh chuẩn...", "info");
+                if (window.khoiPhucDanhSachHocSinhChuan) {
+                    const res = await window.khoiPhucDanhSachHocSinhChuan();
+                    if (res && res.success) {
+                        taiLogHocSinh();
+                        showToast(`🎉 Đã nạp thành công ${res.count} học sinh chuẩn vào hệ thống và Cloud!`, "success");
+                    } else {
+                        showToast("Có lỗi khi nạp danh sách: " + (res?.error?.message || "Không rõ"), "error");
+                    }
+                } else {
+                    showToast("Chưa tải được file danh sách chuẩn!", "error");
+                }
+            });
+        }
+
+        // XÓA SẠCH TOÀN BỘ HỌC SINH ĐỂ LÀM MỚI
+        async function xoaSachToanBoHocSinh() {
+            customConfirm("CẢNH BÁO NGUY HIỂM:\nThầy có chắc chắn muốn XÓA SẠCH TOÀN BỘ học sinh trong hệ thống để làm mới từ đầu không?", async () => {
+                showToast("⏳ Đang xóa sạch danh sách học sinh...", "warning");
+                safeJsonSet('math_hero_users_v2', {});
+                safeJsonSet('danh_sach_hs_da_xoa', []);
+                safeJsonSet('nhat_ky_dang_nhap', []);
+                
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && (k.startsWith('exp_') || k.startsWith('coin_') || k.startsWith('da_quay_') || k.startsWith('luot_') || k.startsWith('ruong_do_') || k.startsWith('math_hero_pet_') || k.startsWith('avatar_') || k.startsWith('khung_avatar_') || k.startsWith('danh_hieu_') || k.startsWith('moc_cap_nhat_hs_'))) {
+                        keysToRemove.push(k);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                try {
+                    const compat = window.HeroFirebaseCompat || window.FirebaseSync;
+                    if (compat && typeof compat.xoaSachToanBoHocSinhTrenCloud === 'function') {
+                        await compat.xoaSachToanBoHocSinhTrenCloud();
+                    }
+                } catch(e) {}
+
+                await dongBoToanCuc('math_hero_users_v2');
+                await dongBoToanCuc('danh_sach_hs_da_xoa');
+                await dongBoToanCuc('nhat_ky_dang_nhap');
+
+                taiLogHocSinh();
+                showToast("Đã dọn sạch toàn bộ học sinh trên cả máy và Cloud!", "success");
+            });
+        }
+
+        // TẢI FILE MẪU EXCEL
+        function taiFileMauExcelHocSinh() {
+            try {
+                // Tải trực tiếp file mẫu đã có sẵn
+                const a = document.createElement('a');
+                a.href = './Mau_Danh_Sach_Hoc_Sinh_HeroMath.xlsx';
+                a.download = 'Mau_Danh_Sach_Hoc_Sinh_HeroMath.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => a.remove(), 300);
+                showToast("📁 Đã tải file mẫu Excel (Mau_Danh_Sach_Hoc_Sinh_HeroMath.xlsx)!", "success");
+            } catch(e) {
+                console.warn("Lỗi tải file mẫu:", e);
+                showToast("Không thể tải file mẫu: " + e.message, "error");
+            }
+        }
+
+        // NHẬP EXCEL THEO LỚP
+        function kichHoatChonFileExcel() {
+            const fileInp = document.getElementById('inp-excel-hoc-sinh');
+            if (fileInp) {
+                fileInp.value = '';
+                fileInp.click();
+            }
+        }
+
+        async function xuLyFileExcelHocSinh(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                showToast("Thư viện đọc file Excel chưa sẵn sàng. Vui lòng thử lại!", "error");
+                return;
+            }
+
+            showToast("⏳ Đang đọc danh sách học sinh từ file Excel...", "info");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        showToast("File Excel không có dữ liệu!", "error");
+                        return;
+                    }
+
+                    // Ưu tiên sheet DanhSachHocSinh hoặc sheet đầu tiên
+                    let sheetName = workbook.SheetNames[0];
+                    const preferredSheet = workbook.SheetNames.find(s => /danh\s*s[aá]ch|h[oọ]c\s*sinh/i.test(s));
+                    if (preferredSheet) sheetName = preferredSheet;
+
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                    if (rows.length < 2) {
+                        showToast("File Excel không đủ dữ liệu (cần ít nhất 1 dòng tiêu đề và 1 dòng học sinh)!", "warning");
+                        return;
+                    }
+
+                    // Tự động nhận diện cột linh hoạt
+                    let headerRowIndex = -1;
+                    let colIndexMap = {
+                        name: -1,
+                        lastName: -1,
+                        firstName: -1,
+                        grade: -1,
+                        classroom: -1,
+                        pass: -1,
+                        exp: -1,
+                        coin: -1
+                    };
+
+                    for (let i = 0; i < Math.min(15, rows.length); i++) {
+                        const r = rows[i].map(c => String(c || '').trim().toLowerCase().normalize('NFC'));
+                        
+                        // Kiểm tra 2 cột tách biệt (vnEdu/SMAS: Họ đệm + Tên)
+                        const lastNameIdx = r.findIndex(c => /^(h[oọ]\s*(v[aà])?\s*t[eê]n\s*đ[eệ]m|h[oọ]\s*đ[eệ]m|h[oọ])$/i.test(c));
+                        const firstNameIdx = r.findIndex(c => /^(t[eê]n)$/i.test(c));
+
+                        // Cột Họ và tên gộp
+                        const nameIdx = r.findIndex(c => /h[oọ]\s*(v[aà])?\s*t[eê]n|t[eê]n\s*h[oọ]c\s*sinh/i.test(c));
+
+                        if (lastNameIdx !== -1 && firstNameIdx !== -1) {
+                            headerRowIndex = i;
+                            colIndexMap.lastName = lastNameIdx;
+                            colIndexMap.firstName = firstNameIdx;
+                        } else if (nameIdx !== -1) {
+                            headerRowIndex = i;
+                            colIndexMap.name = nameIdx;
+                        }
+
+                        if (headerRowIndex !== -1) {
+                            colIndexMap.grade = r.findIndex(c => /kh[oố]i(\s*l[oớ]p)?/i.test(c));
+                            colIndexMap.classroom = r.findIndex(c => /l[oớ]p(\s*c[uụ]\s*th[eể]|\s*ni[eê]n\s*ch[eế])?/i.test(c) && !/kh[oố]i/i.test(c));
+                            colIndexMap.pass = r.findIndex(c => /m[aậ]t\s*kh[aẩ]u|m[aậ]t\s*m[aã]|password|pass|\bmk\b/i.test(c));
+                            colIndexMap.exp = r.findIndex(c => /exp|di[eể]m\s*(kinh\s*nghi[eệ]m|kh[oở]i\s*d[aầ]u)?/i.test(c));
+                            colIndexMap.coin = r.findIndex(c => /coin|xu|di[eể]m\s*th[uư][oờ]ng|v[aà]ng/i.test(c));
+                            break;
+                        }
+                    }
+
+                    // Nếu không tìm thấy cột bằng tên, dùng vị trí mặc định từ file mẫu
+                    if (colIndexMap.name === -1 && colIndexMap.firstName === -1) {
+                        headerRowIndex = 0;
+                        colIndexMap.name = 1;
+                        colIndexMap.grade = 2;
+                        colIndexMap.classroom = 3;
+                        colIndexMap.pass = 4;
+                        colIndexMap.exp = 5;
+                        colIndexMap.coin = 6;
+                    }
+
+                    let users = safeJsonParse('math_hero_users_v2', {});
+                    let soLuongMoi = 0;
+                    let soLuongCapNhat = 0;
+                    const danhSachTenNhap = [];
+                    const danhSachHocSinhFile = [];
+                    const tapHopLopTrongFile = new Set();
+
+                    const authHasher = (window.HeroAuth && typeof window.HeroAuth.hashMatKhau === 'function')
+                        ? window.HeroAuth.hashMatKhau
+                        : (typeof window.hashMatKhau === 'function' ? window.hashMatKhau : (async (p) => p));
+
+                    for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length === 0) continue;
+
+                        let rawTen = '';
+                        if (colIndexMap.lastName !== -1 && colIndexMap.firstName !== -1) {
+                            const ho = String(row[colIndexMap.lastName] || '').trim();
+                            const tenRieng = String(row[colIndexMap.firstName] || '').trim();
+                            rawTen = `${ho} ${tenRieng}`.trim();
+                        } else if (colIndexMap.name !== -1) {
+                            rawTen = String(row[colIndexMap.name] || '').trim();
+                        }
+
+                        let ten = chuanHoaTenAdmin(rawTen);
+                        if (!ten || /^(h[oọ]\s*(v[aà])?\s*t[eê]n|t[eê]n\s*h[oọ]c\s*sinh)$/i.test(ten)) continue;
+
+                        // Chuẩn hóa Khối & Lớp cụ thể
+                        let rawGrade = colIndexMap.grade !== -1 ? String(row[colIndexMap.grade] || '').trim() : '';
+                        let lopCuThe = colIndexMap.classroom !== -1 ? String(row[colIndexMap.classroom] || '').trim() : '';
+                        if (!lopCuThe && rawGrade && !/khối\s*[6-9]/i.test(rawGrade)) {
+                            lopCuThe = rawGrade;
+                        }
+
+                        // Nhận diện khối từ lớp (ví dụ: 7A2 -> Khối 7)
+                        const lopMatch = lopCuThe.match(/^\s*([6-9])\s*[A-Za-zÀ-ỹ0-9]/);
+                        const soKhoi = lopMatch ? lopMatch[1] : (rawGrade.match(/[6-9]/) || [])[0];
+                        const lop = soKhoi ? `Khối ${soKhoi}` : (rawGrade || "Khối 7");
+
+                        if (lopCuThe) {
+                            tapHopLopTrongFile.add(lopCuThe.toUpperCase());
+                        }
+
+                        let rawPass = colIndexMap.pass !== -1 ? String(row[colIndexMap.pass] || '').trim() : '';
+                        if (!rawPass) rawPass = "123456";
+
+                        let exp = colIndexMap.exp !== -1 ? parseInt(row[colIndexMap.exp]) || 0 : 0;
+                        let coin = colIndexMap.coin !== -1 ? parseInt(row[colIndexMap.coin]) || 50 : 50;
+
+                        danhSachHocSinhFile.push({
+                            ten,
+                            lop,
+                            lopCuThe,
+                            rawPass,
+                            exp,
+                            coin
+                        });
+                    }
+
+                    if (danhSachHocSinhFile.length === 0) {
+                        showToast("Không tìm thấy học sinh hợp lệ nào trong file!", "warning");
+                        return;
+                    }
+
+                    // Tự động xóa học sinh của các lớp có trong file Excel mà không còn trong file
+                    const setTenMoiNFC = new Set(danhSachHocSinhFile.map(hs => hs.ten.toLowerCase()));
+                    const danhSachBiXoaTuDong = [];
+
+                    if (tapHopLopTrongFile.size > 0) {
+                        Object.keys(users).forEach(tenCu => {
+                            const hoSoCu = users[tenCu];
+                            const lopCuTheCu = String(hoSoCu?.classroom || '').trim().toUpperCase();
+                            if (lopCuTheCu && tapHopLopTrongFile.has(lopCuTheCu)) {
+                                const cleanTenCu = chuanHoaTenAdmin(tenCu).toLowerCase();
+                                if (!setTenMoiNFC.has(cleanTenCu)) {
+                                    danhSachBiXoaTuDong.push(tenCu);
+                                }
+                            }
+                        });
+                    }
+
+                    let soLuongDaXoa = 0;
+                    for (const tenXoa of danhSachBiXoaTuDong) {
+                        delete users[tenXoa];
+                        ghiNhoHocSinhDaXoa(tenXoa);
+                        localStorage.removeItem('exp_' + tenXoa);
+                        localStorage.removeItem('coin_' + tenXoa);
+                        soLuongDaXoa++;
+                    }
+
+                    // Thêm mới hoặc cập nhật từ file Excel
+                    for (const hs of danhSachHocSinhFile) {
+                        const { ten, lop, lopCuThe, rawPass, exp, coin } = hs;
+
+                        let hashedPass = rawPass;
+                        try {
+                            hashedPass = await authHasher(rawPass);
+                        } catch(e) {}
+
+                        let existingKey = Object.keys(users).find(k => chuanHoaTenAdmin(k).toLowerCase() === ten.toLowerCase());
+                        if (existingKey) {
+                            soLuongCapNhat++;
+                            if (existingKey !== ten) delete users[existingKey];
+                        } else {
+                            soLuongMoi++;
+                        }
+
+                        users[ten] = {
+                            class: lop,
+                            classroom: lopCuThe,
+                            pass: hashedPass,
+                            _hashed: true
+                        };
+
+                        if (!danhSachTenNhap.includes(ten)) danhSachTenNhap.push(ten);
+
+                        if (!localStorage.getItem('exp_' + ten) || exp > 0) {
+                            localStorage.setItem('exp_' + ten, exp);
+                        }
+                        if (!localStorage.getItem('coin_' + ten) || coin !== 50) {
+                            localStorage.setItem('coin_' + ten, coin);
+                        }
+                        localStorage.setItem('moc_cap_nhat_hs_' + ten, Date.now().toString());
+                    }
+
+                    // Gỡ bỏ khỏi danh sách bia mộ đã xóa
+                    boGhiNhoNhieuHocSinhDaXoa(danhSachTenNhap);
+
+                    safeJsonSet('math_hero_users_v2', users);
+
+                    // Đồng bộ lên Cloud
+                    await dongBoToanCuc('math_hero_users_v2');
+                    await dongBoToanCuc('danh_sach_hs_da_xoa');
+                    await dongBoToanCuc('nhat_ky_dang_nhap');
+
+                    if (danhSachBiXoaTuDong.length > 0) {
+                        Promise.allSettled(danhSachBiXoaTuDong.map(t => xoaHocSinhFirebase(t))).catch(() => {});
+                    }
+
+                    // Đẩy tài khoản lên Firestore theo nhóm batch 10
+                    const BATCH_SIZE = 10;
+                    for (let b = 0; b < danhSachTenNhap.length; b += BATCH_SIZE) {
+                        const batchNames = danhSachTenNhap.slice(b, b + BATCH_SIZE);
+                        await Promise.allSettled(batchNames.map(tenHs => dongBoHocSinh(tenHs, users[tenHs])));
+                    }
+
+                    taiLogHocSinh();
+
+                    const danhSachLopStr = Array.from(tapHopLopTrongFile).join(', ') || 'Chung';
+                    showToast(`✅ Đã nhập lớp ${danhSachLopStr}: +${soLuongMoi} mới, ${soLuongCapNhat} cập nhật, -${soLuongDaXoa} tự dọn!`, "success");
+
+                } catch (loiDoc) {
+                    console.error("[Excel Import Error]", loiDoc);
+                    showToast("Lỗi khi đọc file Excel: " + (loiDoc.message || loiDoc), "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // XUẤT EXCEL DANH SÁCH HỌC SINH
+        function xuatDanhSachHocSinhExcel() {
+            if (typeof XLSX === 'undefined') {
+                showToast("Thư viện SheetJS chưa sẵn sàng!", "error");
+                return;
+            }
+
+            const users = safeJsonParse('math_hero_users_v2', {});
+            const userNames = Object.keys(users);
+
+            if (userNames.length === 0) {
+                showToast("Chưa có học sinh nào trong hệ thống để xuất file!", "warning");
+                return;
+            }
+
+            const filterGrade = document.getElementById('filter-student-grade')?.value || 'all';
+            const filterClassroom = document.getElementById('filter-student-classroom')?.value || 'all';
+
+            const nhatKyDangNhap = safeJsonParse('nhat_ky_dang_nhap', []);
+            const lastLoginMap = {};
+            if (Array.isArray(nhatKyDangNhap)) {
+                nhatKyDangNhap.forEach(item => {
+                    if (item && item.name) lastLoginMap[item.name] = item.time || '';
+                });
+            }
+
+            let exportList = [];
+            let stt = 1;
+
+            userNames.sort((a, b) => a.localeCompare(b, 'vi')).forEach(ten => {
+                const u = users[ten];
+                let lop = "Khối 7";
+                let lopCuThe = "";
+                let pass = "";
+                if (typeof u === 'string') {
+                    pass = u;
+                } else if (typeof u === 'object' && u !== null) {
+                    lop = u.class || "Khối 7";
+                    lopCuThe = u.classroom || "";
+                    pass = u.pass || "";
+                }
+
+                if (filterGrade !== 'all' && lop !== filterGrade) return;
+                if (filterClassroom !== 'all' && lopCuThe.toUpperCase() !== filterClassroom.toUpperCase()) return;
+
+                const exp = parseInt(localStorage.getItem('exp_' + ten)) || 0;
+                const coin = parseInt(localStorage.getItem('coin_' + ten)) || 50;
+
+                exportList.push({
+                    "STT": stt++,
+                    "Họ và Tên": ten,
+                    "Khối Lớp": lop,
+                    "Lớp Cụ Thể": lopCuThe,
+                    "Mật Khẩu": (pass.length === 64 && /^[0-9a-f]+$/i.test(pass)) ? "Đã mã hóa (123456 nếu đặt lại)" : pass,
+                    "Điểm EXP": exp,
+                    "Số Điểm (Coin)": coin,
+                    "Truy Cập Gần Nhất": lastLoginMap[ten] || "Chưa đăng nhập"
+                });
+            });
+
+            if (exportList.length === 0) {
+                showToast("Không có học sinh nào phù hợp với bộ lọc hiện tại để xuất!", "warning");
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(exportList);
+
+            // Thiết lập độ rộng cột
+            ws['!cols'] = [
+                { wch: 6 },
+                { wch: 25 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 28 },
+                { wch: 12 },
+                { wch: 14 },
+                { wch: 22 }
+            ];
+
+            const sheetName = filterClassroom !== 'all' ? `Lop_${filterClassroom}` : 'DanhSachHocSinh';
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+            const fileName = `Danh_Sach_Hoc_Sinh_HeroMath_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showToast(`🎉 Đã xuất thành công ${exportList.length} học sinh ra file: ${fileName}`, "success");
+        }
+
+        // XÁC NHẬN MẬT MÃ ADMIN TẠI TRANG
+        async function xacNhanDangNhapAdminTaiTrang() {
+            const input = document.getElementById('admin-page-pwd-input');
+            const errEl = document.getElementById('admin-page-pwd-error');
+            const pass = (input?.value || '').trim();
+            if (!pass) return;
+
+            const checkGV = window.__authKiemTraMatKhauGV || (window.HeroAuth && window.HeroAuth.kiemTraMatKhauGiaoVien);
+            let hopLe = false;
+            if (typeof checkGV === 'function') {
+                try {
+                    hopLe = await checkGV(pass);
+                } catch(e) {
+                    hopLe = (pass === '123456' || pass === 'admin' || pass === 'giaovien');
+                }
+            } else {
+                hopLe = (pass === '123456' || pass === 'admin' || pass === 'giaovien');
+            }
+
+            if (hopLe) {
+                sessionStorage.setItem('hero_admin_mode', 'admin');
+                localStorage.setItem('hero_admin_mode', 'admin');
+                sessionStorage.setItem('teacher_authenticated', 'true');
+                localStorage.setItem('teacher_authenticated', 'true');
+                const modal = document.getElementById('admin-auth-modal');
+                if (modal) modal.style.display = 'none';
+                taiLogHocSinh();
+                capNhatNutKhoaDangKy();
+                showToast("Xác thực quản trị viên thành công!", "success");
+            } else {
+                if (errEl) errEl.style.display = 'block';
+                input.focus();
+            }
+        }
+
+        // KHỞI ĐỘNG HỆ THỐNG
+        window.addEventListener('DOMContentLoaded', () => {
+            taiLogHocSinh();
+            capNhatNutKhoaDangKy();
+
+            // Tự động kiểm tra trạng thái Firebase
+            choFirebaseSanSang(5000).then((api) => {
+                const badge = document.getElementById('sync-status-badge');
+                if (badge && api) {
+                    badge.innerHTML = `<i class="fa-solid fa-circle" style="font-size:0.6rem; color:#10b981;"></i> <span>Firebase Sẵn Sàng</span>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
