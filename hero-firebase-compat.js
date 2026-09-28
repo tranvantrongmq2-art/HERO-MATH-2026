@@ -285,6 +285,24 @@
       }
     });
 
+    // KHÓA DANH SÁCH: Chỉ giữ đúng học sinh thuộc danh sách chuẩn, tuyệt đối không nạp thêm học sinh ngoài danh sách
+    const dsChuanObj = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
+    if (dsChuanObj && typeof dsChuanObj === 'object' && Object.keys(dsChuanObj).length > 0) {
+      const setChuan = new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase()));
+      Object.keys(merged).forEach(k => {
+        if (!setChuan.has(k.trim().toLowerCase())) {
+          delete merged[k];
+          hasNewLocal = true; // Đánh dấu để loại bỏ triệt để khỏi Cloud
+        }
+      });
+      // Đảm bảo đủ các học sinh chuẩn
+      Object.keys(dsChuanObj).forEach(k => {
+        if (!merged[k]) {
+          merged[k] = dsChuanObj[k];
+        }
+      });
+    }
+
     return { merged, hasNewLocal };
   }
 

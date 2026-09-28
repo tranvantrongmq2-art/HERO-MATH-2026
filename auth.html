@@ -1243,8 +1243,13 @@
                   let dsDaXoa = [];
                   try { dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]'); } catch(e) {}
                   const lowerName = String(bk?.name || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-                  const daBiXoa = Array.isArray(dsDaXoa) && dsDaXoa.some(t => String(t || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase() === lowerName);
-                  if (daBiXoa) {
+                  const dsDaXoaLower = Array.isArray(dsDaXoa) ? dsDaXoa.map(t => String(t || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase()) : [];
+                  const daBiXoa = dsDaXoaLower.includes(lowerName);
+                  const dsChuanObj = window.HERO_DANH_SACH_CHUAN_USERS;
+                  const setChuan = dsChuanObj ? new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase())) : null;
+                  const hopLeTrongChuan = !setChuan || setChuan.has(lowerName);
+
+                  if (daBiXoa || !hopLeTrongChuan) {
                     localStorage.removeItem("hero_my_account_backup");
                   } else if (bk && bk.name && bk.record) {
                     if (!usersSau[bk.name]) {
@@ -1564,6 +1569,23 @@
             return;
           }
 
+          // ========================================================
+          // KHÓA DANH SÁCH CHUẨN: Chỉ cho phép đăng ký nếu tên học sinh
+          // nằm trong danh sách 203 học sinh chuẩn từ 5 file Excel.
+          // Học sinh ngoài danh sách sẽ bị từ chối hoàn toàn.
+          // ========================================================
+          const dsChuanCheck = window.HERO_DANH_SACH_CHUAN_USERS;
+          if (dsChuanCheck && typeof dsChuanCheck === 'object' && Object.keys(dsChuanCheck).length > 0) {
+            const setChuan = new Set(Object.keys(dsChuanCheck).map(n => n.trim().toLowerCase()));
+            if (!setChuan.has(ten.toLowerCase().trim())) {
+              showToast(
+                "⚠️ Tên \"" + ten + "\" không có trong danh sách học sinh do Thầy quản lý. Hãy kiểm tra lại họ tên hoặc liên hệ Thầy!",
+                "error",
+              );
+              return;
+            }
+          }
+
           let users =
             JSON.parse(localStorage.getItem("math_hero_users_v2")) || {};
           const lower = ten.toLowerCase().trim();
@@ -1749,9 +1771,14 @@
             users = {};
           }
 
-          // Bảo vệ tài khoản vừa đăng ký: một bản Cloud rỗng/cũ không được xóa bản local hợp lệ.
+          // Bảo vệ tài khoản: chỉ phục hồi nếu nằm trong danh sách chuẩn, tuyệt đối không nạp thêm tài khoản lạ
           let coTaiKhoanDuocKhoiPhuc = false;
+          const dsChuanObj = window.HERO_DANH_SACH_CHUAN_USERS;
+          const setChuan = dsChuanObj ? new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase())) : null;
+
           Object.keys(usersLocalTruocDongBo).forEach((key) => {
+            const normKey = String(key || '').trim().toLowerCase();
+            if (setChuan && !setChuan.has(normKey)) return; // BỎ QUA tài khoản ngoài danh sách
             const record = usersLocalTruocDongBo[key];
             if (
               !users[key] &&
@@ -2130,15 +2157,19 @@
           });
         }
 
-        // 2. Thêm và ghi đè từ dữ liệu thực tế (bao gồm học sinh Thầy thêm mới sau này)
+        // 2. Chỉ cập nhật thông tin lớp/lớp cụ thể từ users nếu học sinh đó nằm trong danh sách chuẩn
+        const dsChuanObj = window.HERO_DANH_SACH_CHUAN_USERS;
+        const setChuan = dsChuanObj ? new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase())) : null;
+
         Object.keys(users).forEach(ten => {
           const lower = String(ten || '').trim().toLowerCase();
-          if (!setDaXoa.has(lower)) {
+          if (!setDaXoa.has(lower) && (!setChuan || setChuan.has(lower))) {
             const u = users[ten];
+            const existing = studentMap.get(lower) || {};
             studentMap.set(lower, {
-              name: ten,
-              class: typeof u === "object" ? (u.class || "Khối 7") : "Khối 7",
-              classroom: typeof u === "object" ? (u.classroom || "") : ""
+              name: existing.name || ten,
+              class: typeof u === "object" ? (u.class || existing.class || "Khối 7") : (existing.class || "Khối 7"),
+              classroom: typeof u === "object" ? (u.classroom || existing.classroom || "") : (existing.classroom || "")
             });
           }
         });

@@ -1618,161 +1618,153 @@
         }
         .theory-reminder-card {
             background: linear-gradient(165deg, rgba(28, 16, 52, 0.96) 0%, rgba(10, 8, 26, 0.98) 100%);
-            border: 2px solid rgba(0, 255, 230, 0.5);
-            border-radius: 24px;
-            padding: 26px 22px 20px;
+            border: 1.5px solid rgba(0, 255, 230, 0.55);
+            border-radius: 20px;
+            padding: 18px 20px 14px;
             width: 100%;
-            max-width: 480px;
+            max-width: 390px;
             text-align: center;
-            box-shadow: 0 0 50px rgba(0, 255, 230, 0.25), inset 0 0 25px rgba(120, 60, 220, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 230, 0.2), inset 0 0 20px rgba(120, 60, 220, 0.15);
             position: relative;
-            animation: zoomInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+            animation: zoomInCard 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2);
         }
         @keyframes zoomInCard {
             from { opacity: 0; transform: scale(0.92) translateY(12px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        .theory-reminder-badge-top {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(90deg, #7f77dd, #d4537e);
+        .theory-reminder-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.3rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: color 0.2s;
+        }
+        .theory-reminder-close-btn:hover {
             color: #fff;
-            font-size: 0.72rem;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 4px 12px;
-            border-radius: 20px;
-            box-shadow: 0 0 14px rgba(212, 83, 126, 0.6);
+        }
+        .theory-reminder-header-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
             margin-bottom: 12px;
+            padding-right: 20px;
         }
         .theory-reminder-icon-glow {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 10px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,255,230,0.3) 0%, rgba(127,119,221,0.1) 70%);
-            border: 2px solid rgba(0,255,230,0.6);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: radial-gradient(circle, rgba(0,255,230,0.25) 0%, rgba(127,119,221,0.1) 70%);
+            border: 1.5px solid rgba(0,255,230,0.6);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 0 25px rgba(0,255,230,0.4);
-            animation: floatIcon 3s ease-in-out infinite;
+            font-size: 1.35rem;
+            box-shadow: 0 0 15px rgba(0,255,230,0.3);
+            flex-shrink: 0;
         }
-        @keyframes floatIcon {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
+        .theory-reminder-badge-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(90deg, #7f77dd, #d4537e);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 3px;
         }
         .theory-reminder-title {
             font-family: 'Cinzel Decorative', 'Montserrat', serif;
             font-weight: 900;
-            font-size: 1.35rem;
+            font-size: 1.05rem;
             color: #f7a8c3;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 0 18px rgba(212, 83, 126, 0.6);
-            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 12px rgba(212, 83, 126, 0.5);
+            margin: 0;
+            line-height: 1.25;
         }
         .theory-reminder-subtitle {
-            color: #c9c3e0;
-            font-size: 0.88rem;
-            line-height: 1.45;
-            margin-bottom: 14px;
+            background: rgba(14, 11, 32, 0.7);
+            border: 1px solid rgba(127, 119, 221, 0.3);
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: #d1cbe5;
+            font-size: 0.83rem;
+            line-height: 1.5;
+            text-align: left;
+            margin-bottom: 10px;
         }
         .theory-preview-box {
-            background: rgba(14, 11, 32, 0.75);
-            border: 1px solid rgba(127, 119, 221, 0.35);
-            border-radius: 14px;
-            padding: 12px 14px;
-            margin-bottom: 12px;
-            text-align: left;
-            max-height: 140px;
-            overflow-y: auto;
-        }
-        .theory-preview-box::-webkit-scrollbar { width: 4px; }
-        .theory-preview-box::-webkit-scrollbar-thumb { background: #7f77dd; border-radius: 4px; }
-        .theory-preview-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 6px 0;
-            border-bottom: 1px dashed rgba(255,255,255,0.08);
-        }
-        .theory-preview-item:last-child { border-bottom: none; }
-        .theory-preview-bullet {
-            color: #00ffff;
-            font-size: 0.8rem;
-            margin-top: 2px;
-            flex-shrink: 0;
-        }
-        .theory-preview-title {
-            color: #ffffff;
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-        .theory-preview-sub {
-            color: #a39bc0;
-            font-size: 0.75rem;
-            margin-top: 2px;
+            display: none;
         }
         .theory-reward-pill {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            background: rgba(241, 196, 15, 0.12);
-            border: 1px solid rgba(241, 196, 15, 0.45);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 0.82rem;
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid rgba(241, 196, 15, 0.4);
+            border-radius: 16px;
+            padding: 5px 12px;
+            font-size: 0.78rem;
             color: #f1c40f;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             font-weight: 600;
         }
         .theory-reminder-actions {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
         .btn-remind-action {
             width: 100%;
             border: none;
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
             font-family: 'Montserrat', sans-serif;
-            font-weight: 900;
-            font-size: 0.86rem;
+            font-weight: 800;
+            font-size: 0.83rem;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
             box-sizing: border-box;
         }
         .btn-remind-view {
             background: linear-gradient(135deg, #00c6ff 0%, #0072ff 50%, #9b51e0 100%);
             color: #ffffff;
-            box-shadow: 0 4px 18px rgba(0, 198, 255, 0.45);
+            box-shadow: 0 4px 15px rgba(0, 198, 255, 0.4);
         }
         .btn-remind-view:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(0, 198, 255, 0.65);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 198, 255, 0.55);
         }
         .btn-remind-skip {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             color: #b7add1;
         }
         .btn-remind-skip:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
         }
         .theory-reminder-footer {
-            margin-top: 12px;
+            margin-top: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1782,7 +1774,7 @@
             align-items: center;
             gap: 6px;
             color: #8c82ab;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             cursor: pointer;
             user-select: none;
         }
@@ -2485,26 +2477,30 @@
     </div> <!-- end container -->
 
 
-    <!-- MODAL BÍ KÍP TRI THỨC NGÀY MỚI (NHẮC NHỞ XEM LÝ THUYẾT) -->
+    <!-- MODAL BÍ KÍP TRI THỨC NGÀY MỚI (GỌN GÀNG - NHẮC NHỞ XEM LÝ THUYẾT TRƯỚC KHI LÀM BÀI) -->
     <div class="theory-reminder-modal" id="modal-nhac-nho-ly-thuyet" style="display: none;">
         <div class="theory-reminder-card">
-            <div class="theory-reminder-badge-top">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> SỨ GIẢ TRI THỨC
-            </div>
-            <div class="theory-reminder-icon-glow">
-                <span class="theory-icon-symbol">📜</span>
-            </div>
-            <h3 class="theory-reminder-title">BÍ KÍP TRI THỨC NGÀY MỚI</h3>
-            <p class="theory-reminder-subtitle">
-                Chào chiến binh <b id="lbl-remind-student-name" style="color:#00ffff;">..</b>! Trước khi xuất kích giải nhiệm vụ hôm nay, hãy dành 1 phút ôn lại lý thuyết trọng tâm của <b id="lbl-remind-student-grade" style="color:#f1c40f;">..</b> để tự tin bách chiến bách thắng nhé!
-            </p>
-
-            <!-- TÓM TẮT BÀI HỌC GẦN ĐÂY CỦA KHỐI -->
-            <div class="theory-preview-box" id="box-theory-preview-content">
-                <div style="padding: 10px; text-align: center; color: #a39bc0; font-size: 0.82rem;">
-                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải bài học mới nhất...
+            <button type="button" class="theory-reminder-close-btn" onclick="dongModalNhacNhoLyThuyet(false)" title="Đóng & Vào sảnh">&times;</button>
+            
+            <div class="theory-reminder-header-compact">
+                <div class="theory-reminder-icon-glow">
+                    <span class="theory-icon-symbol">📜</span>
+                </div>
+                <div>
+                    <div class="theory-reminder-badge-top">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> SỨ GIẢ TRI THỨC
+                    </div>
+                    <h3 class="theory-reminder-title">BÍ KÍP TRI THỨC NGÀY MỚI</h3>
                 </div>
             </div>
+
+            <!-- LỜI NHẮC TRỌNG TÂM: VÀO MỤC LÝ THUYẾT TRÊN TRANG INDEX XEM TRƯỚC KHI LÀM BÀI -->
+            <div class="theory-reminder-subtitle">
+                Chào chiến binh <strong id="lbl-remind-student-name" style="color:#00ffff;">..</strong>!<br>
+                Trước khi làm bài, em hãy nhớ vào mục <strong style="color:#f1c40f;"><i class="fa-solid fa-book-open"></i> Lý Thuyết</strong> ở menu trên sảnh chính để xem lại kiến thức trọng tâm của <strong id="lbl-remind-student-grade" style="color:#00ffff;">..</strong> nhé! Nắm vững lý thuyết sẽ giúp em làm bài tự tin và đạt điểm tối đa 💯
+            </div>
+
+            <div id="box-theory-preview-content" style="display: none;"></div>
 
             <!-- PHẦN THƯỞNG EXP KHUYẾN KHÍCH -->
             <div class="theory-reward-pill">
@@ -2514,10 +2510,10 @@
 
             <div class="theory-reminder-actions">
                 <button type="button" class="btn-remind-action btn-remind-view" onclick="xuLyXemLyThuyetTuNhacNho()">
-                    <i class="fa-solid fa-book-open-reader"></i> Khám Phá Lý Thuyết Ngay (+20 EXP)
+                    <i class="fa-solid fa-book-open-reader"></i> Xem Lý Thuyết Ngay (+20 EXP)
                 </button>
                 <button type="button" class="btn-remind-action btn-remind-skip" onclick="dongModalNhacNhoLyThuyet(false)">
-                    <i class="fa-solid fa-shield-halved"></i> Em Đã Nắm Vững, Vào Sảnh Luôn
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Em Đã Nắm Vững, Vào Sảnh Luôn
                 </button>
             </div>
 
@@ -4105,52 +4101,8 @@
             if (lblName) lblName.innerText = tenHs;
             if (lblGrade) lblGrade.innerText = lopHs || 'Khối của em';
 
-            // Tải danh sách bài học lý thuyết tương ứng
-            let rawLs = localStorage.getItem('danh_sach_bai_hoc_ly_thuyet');
-            let dsBaiHoc = [];
-            try { if (rawLs) dsBaiHoc = JSON.parse(rawLs); } catch(e){}
-            if (!Array.isArray(dsBaiHoc)) dsBaiHoc = [];
-
-            // Lọc theo khối lớp
-            let dsLoc = dsBaiHoc.filter(b => !b.hidden);
-            if (lopHs && lopHs !== 'all') {
-                const soKhoiHs = (lopHs.match(/\d+/) || [])[0];
-                if (soKhoiHs) {
-                    const dsKhoi = dsLoc.filter(b => {
-                        if (!b.grade || b.grade === 'all') return true;
-                        const soKhoiBai = (b.grade.match(/\d+/) || [])[0];
-                        return soKhoiBai === soKhoiHs;
-                    });
-                    if (dsKhoi.length > 0) dsLoc = dsKhoi;
-                }
-            }
-
             const boxContent = document.getElementById('box-theory-preview-content');
-            if (boxContent) {
-                if (dsLoc.length === 0) {
-                    boxContent.innerHTML = `
-                        <div style="padding: 10px; text-align: center; color: #a39bc0; font-size: 0.82rem;">
-                            <i class="fa-solid fa-feather-pointed" style="color:#00ffff;"></i> Thư viện đang cập nhật bài học mới. Em có thể vào thư viện để xem tổng thể nhé!
-                        </div>
-                    `;
-                } else {
-                    // Lấy tối đa 3 bài học mới nhất
-                    let htmlList = dsLoc.slice(0, 3).map((bh, idx) => {
-                        let soMuc = Array.isArray(bh.children) ? bh.children.length : 0;
-                        let subText = soMuc > 0 ? `${soMuc} mục kiến thức & công thức` : (bh.content ? 'Bài học tóm tắt' : 'Đang cập nhật');
-                        return `
-                            <div class="theory-preview-item">
-                                <span class="theory-preview-bullet">✦</span>
-                                <div style="flex:1;">
-                                    <div class="theory-preview-title">${bh.title || `Bài học ${idx + 1}`}</div>
-                                    <div class="theory-preview-sub"><i class="fa-solid fa-bookmark" style="font-size:0.7rem; color:#7f77dd;"></i> ${subText}</div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                    boxContent.innerHTML = htmlList;
-                }
-            }
+            if (boxContent) boxContent.style.display = 'none';
 
             modal.style.display = 'flex';
         }

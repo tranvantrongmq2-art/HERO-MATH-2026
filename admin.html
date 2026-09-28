@@ -1253,6 +1253,9 @@
                 <button onclick="doiSoatTaiKhoanVoiCloud(true)" class="btn-header btn-sync" title="Đối soát danh sách tài khoản học sinh giữa máy này và Firebase, tự bổ sung tài khoản còn thiếu">
                     <i class="fa-solid fa-user-check"></i> Đối Soát Tài Khoản
                 </button>
+                <button onclick="docSachCloudVeDanhSachChuan()" class="btn-header" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: 1px solid #e74c3c; font-weight: bold;" title="Ghi đè danh sách 203 học sinh chuẩn lên Firebase Cloud, xóa sạch tài khoản rác">
+                    <i class="fa-solid fa-broom"></i> Dọn Cloud → 203 HS
+                </button>
                 <button onclick="moModalSaoLuu()" class="btn-header btn-backup" title="Sao lưu hoặc phục hồi dữ liệu từ file JSON">
                     <i class="fa-solid fa-file-shield"></i> Sao Lưu / Phục Hồi
                 </button>
@@ -2242,6 +2245,86 @@
         }
 
         // ============================================================
+        //  DỌN SẠCH CLOUD → DANH SÁCH 203 HỌC SINH CHUẨN
+        //  Ghi đè thẳng lên Firebase mathhero_global/math_hero_users_v2
+        //  bằng danh sách chuẩn từ hero-danh-sach-chuan.js
+        //  → Xóa triệt để mọi tài khoản rác, ma, thừa trên Cloud
+        // ============================================================
+        async function docSachCloudVeDanhSachChuan() {
+            if (typeof customConfirm !== 'function') { alert('Chưa sẵn sàng'); return; }
+            customConfirm(
+                "⚠️ XÁC NHẬN DỌN SẠCH CLOUD\n\n" +
+                "Hệ thống sẽ GHI ĐÈ lên Firebase Cloud danh sách đúng 203 học sinh chuẩn (từ 5 file Excel).\n\n" +
+                "• Tất cả tài khoản NGOÀI danh sách sẽ bị xóa vĩnh viễn khỏi Cloud.\n" +
+                "• Dữ liệu EXP, Coin, thú cưng, ngân hàng đề... KHÔNG bị ảnh hưởng.\n" +
+                "• Mật khẩu đã đổi của 203 học sinh chuẩn được giữ nguyên.\n\n" +
+                "Tiếp tục?",
+                async () => {
+                    try {
+                        showToast("Đang dọn sạch Cloud → 203 học sinh chuẩn...", "warning");
+
+                        const dsChuanObj = window.HERO_DANH_SACH_CHUAN_USERS;
+                        if (!dsChuanObj || Object.keys(dsChuanObj).length === 0) {
+                            showToast("Không tìm thấy danh sách chuẩn (HERO_DANH_SACH_CHUAN_USERS)!", "error");
+                            return;
+                        }
+
+                        // Lấy danh sách hiện tại ở máy (để giữ mật khẩu đã đổi)
+                        let usersHienTai = {};
+                        try { usersHienTai = JSON.parse(localStorage.getItem('math_hero_users_v2') || '{}'); } catch(e) {}
+
+                        // Gộp: lấy base từ danh sách chuẩn, override bằng mật khẩu đã đổi (nếu có)
+                        const setChuan = new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase()));
+                        const danhSachSach = {};
+                        Object.keys(dsChuanObj).forEach(ten => {
+                            const norm = ten.trim().toLowerCase();
+                            // Tìm key tương ứng trong users hiện tại (case-insensitive)
+                            const existingKey = Object.keys(usersHienTai).find(k => k.trim().toLowerCase() === norm);
+                            if (existingKey && usersHienTai[existingKey] && usersHienTai[existingKey].pass) {
+                                // Giữ mật khẩu đã đổi + thông tin lớp từ chuẩn
+                                danhSachSach[ten] = Object.assign({}, dsChuanObj[ten], {
+                                    pass: usersHienTai[existingKey].pass,
+                                    _hashed: usersHienTai[existingKey]._hashed || true,
+                                    _defaultPass: usersHienTai[existingKey]._defaultPass
+                                });
+                            } else {
+                                danhSachSach[ten] = dsChuanObj[ten];
+                            }
+                        });
+
+                        // Ghi vào localStorage
+                        localStorage.setItem('math_hero_users_v2', JSON.stringify(danhSachSach));
+
+                        // Force ghi đè lên Firebase Cloud (KHÔNG merge, ghi đè hoàn toàn)
+                        const compat = window.HeroFirebaseCompat || window.FirebaseSync;
+                        if (compat && typeof compat.forceGhiDeFirebase === 'function') {
+                            await compat.forceGhiDeFirebase('mathhero_global', 'math_hero_users_v2', {
+                                value: JSON.stringify(danhSachSach),
+                                _capNhatLanCuoi: new Date().toISOString()
+                            });
+                        } else if (compat && typeof compat.dayCauHinhToanCuc === 'function') {
+                            await compat.dayCauHinhToanCuc('math_hero_users_v2');
+                        }
+
+                        // Đếm số tài khoản đã loại bỏ
+                        const soLoaiBo = Object.keys(usersHienTai).filter(k => !setChuan.has(k.trim().toLowerCase())).length;
+
+                        if (typeof taiLogHocSinh === 'function') taiLogHocSinh();
+                        showToast(
+                            `✅ Đã dọn sạch Cloud! Giữ đúng ${Object.keys(danhSachSach).length} học sinh chuẩn` +
+                            (soLoaiBo > 0 ? `, loại bỏ ${soLoaiBo} tài khoản rác.` : '.'),
+                            "success"
+                        );
+                        console.log('[Admin] Dọn Cloud → 203 HS chuẩn. Loại bỏ:', soLoaiBo, 'tài khoản rác.');
+                    } catch (loi) {
+                        console.error('[Admin] Lỗi dọn Cloud:', loi);
+                        showToast("Lỗi khi dọn Cloud: " + (loi && loi.message ? loi.message : loi), "error");
+                    }
+                }
+            );
+        }
+
+        // ============================================================
         //  ĐỐI SOÁT TÀI KHOẢN HỌC SINH GIỮA MÁY NÀY VÀ FIREBASE (chỉ bổ sung, không đổi cấu trúc)
         //  - Đọc THẲNG mathhero_global/math_hero_users_v2 trên Firestore (không qua lớp gộp)
         //  - Tài khoản có trên Cloud mà máy chưa có  → thêm vào máy, gỡ khỏi "bia mộ" nếu có
@@ -2300,6 +2383,13 @@
                 // 1) Cloud → máy (Loại bỏ triệt để học sinh đã xóa)
                 let themVaoMay = 0;
                 let coXoaTrenCloud = false;
+
+                // KHÓA DANH SÁCH CHUẨN: Chỉ nạp từ Cloud những học sinh có trong danh sách chuẩn
+                const dsChuanAdmin = window.HERO_DANH_SACH_CHUAN_USERS;
+                const setChuan = (dsChuanAdmin && typeof dsChuanAdmin === 'object' && Object.keys(dsChuanAdmin).length > 0)
+                    ? new Set(Object.keys(dsChuanAdmin).map(n => n.trim().toLowerCase()))
+                    : null;
+
                 for (const ten of Object.keys(cloud)) {
                     if (!hopLe(cloud[ten])) continue;
                     const norm = String(ten || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
@@ -2310,11 +2400,28 @@
                         coXoaTrenCloud = true;
                         continue;
                     }
+                    // BỎ QUA học sinh ngoài danh sách chuẩn — KHÔNG nạp vào máy
+                    if (setChuan && !setChuan.has(norm)) {
+                        console.log('[Admin] Bỏ qua học sinh lạ ngoài danh sách chuẩn:', ten);
+                        continue;
+                    }
                     if (!hopLe(users[ten])) {
                         users[ten] = cloud[ten];
                         themVaoMay++;
                     }
                 }
+
+                // Loại bỏ học sinh lạ đang tồn tại ở máy local
+                if (setChuan) {
+                    Object.keys(users).forEach(ten => {
+                        const norm = String(ten || '').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                        if (!setChuan.has(norm)) {
+                            delete users[ten];
+                            coXoaTrenCloud = true; // Đánh dấu cần đẩy lại lên Cloud
+                        }
+                    });
+                }
+
                 if (themVaoMay > 0 || khoiPhucTuMayThat > 0 || coXoaTrenCloud) safeJsonSet('math_hero_users_v2', users);
 
                 // 2) Máy → Cloud (Chỉ đẩy những học sinh còn sống hợp lệ)

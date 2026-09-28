@@ -470,28 +470,45 @@ function gopTaiKhoanHocSinh(localRaw, cloudRaw) {
     return { merged: {}, hasNewLocal: true };
   }
 
-  // Gộp thông minh: bảo toàn toàn bộ tài khoản cả Cloud lẫn Local, giữ mật khẩu mới nhất
-  const merged = Object.assign({}, cloudUsers);
-  let hasNewLocal = false;
-  Object.keys(localUsers).forEach(k => {
-    if (!merged[k]) {
-      merged[k] = localUsers[k];
-      hasNewLocal = true;
-    } else {
-      const loc = localUsers[k];
-      const cld = merged[k];
-      if (loc && typeof loc === 'object') {
-        merged[k] = Object.assign({}, cld, loc);
-        if (loc.pass && loc.pass !== cld.pass) hasNewLocal = true;
-      } else if (loc !== cld) {
-        merged[k] = loc;
+    // Gộp thông minh: bảo toàn toàn bộ tài khoản cả Cloud lẫn Local, giữ mật khẩu mới nhất
+    const merged = Object.assign({}, cloudUsers);
+    let hasNewLocal = false;
+    Object.keys(localUsers).forEach(k => {
+      if (!merged[k]) {
+        merged[k] = localUsers[k];
         hasNewLocal = true;
+      } else {
+        const loc = localUsers[k];
+        const cld = merged[k];
+        if (loc && typeof loc === 'object') {
+          merged[k] = Object.assign({}, cld, loc);
+          if (loc.pass && loc.pass !== cld.pass) hasNewLocal = true;
+        } else if (loc !== cld) {
+          merged[k] = loc;
+          hasNewLocal = true;
+        }
       }
-    }
-  });
+    });
 
-  return { merged, hasNewLocal };
-}
+    // KHÓA DANH SÁCH: Chỉ giữ đúng học sinh thuộc danh sách chuẩn, tuyệt đối không nạp thêm học sinh ngoài danh sách
+    const dsChuanObj = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
+    if (dsChuanObj && typeof dsChuanObj === 'object' && Object.keys(dsChuanObj).length > 0) {
+      const setChuan = new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase()));
+      Object.keys(merged).forEach(k => {
+        if (!setChuan.has(k.trim().toLowerCase())) {
+          delete merged[k];
+          hasNewLocal = true;
+        }
+      });
+      Object.keys(dsChuanObj).forEach(k => {
+        if (!merged[k]) {
+          merged[k] = dsChuanObj[k];
+        }
+      });
+    }
+
+    return { merged, hasNewLocal };
+  }
 
 
 // ============================================================
