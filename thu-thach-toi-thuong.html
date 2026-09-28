@@ -12,10 +12,15 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+    <!-- Nạp thư viện 3D Model Viewer cho Linh Thú Đồng Hành -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
     <!-- Nạp Firebase Compat SDK & HeroFirebaseCompat (Chạy 100% trên cả file:/// và máy chủ web) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="./hero-firebase-compat.js"></script>
+    <script src="./hero-ai-companion.js"></script>
+    <script src="./hero-avatar.js"></script>
 
     <style>
         * { box-sizing: border-box; font-family: 'Roboto', sans-serif; margin: 0; padding: 0; }
@@ -505,6 +510,424 @@
             .btn-answer:hover:not(:disabled) { background-color: initial; }
             .bthe-slot:hover:not(.bthe-locked):not(:disabled) { transform: none; box-shadow: none; }
         }
+
+        /* ========================================================
+           BẠN ĐỒNG HÀNH LINH THÚ 3D BAY & BONG BÓNG CHAT (PET COMPANION)
+           - Tự động nhận diện thú cưng của học sinh (Rồng, Cú, Cáo, Robot...)
+           - Linh thú 3D bay lượn sinh động, vỗ cánh mượt mà như sảnh index
+           - Phát ra BONG BÓNG CHAT trực tiếp kết nối với linh thú
+           - TUYỆT ĐỐI KHÔNG CHE KHUẤT CÂU HỎI VÀ NÚT ĐÁP ÁN (In-flow Layout)
+           - Phản ứng sống động: Chúc mừng khi Đúng, Cổ vũ ủi an khi Sai
+           ======================================================== */
+        .portal-flying-pet-stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+            user-select: none;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        /* Khối hiển thị linh thú 3D bay lượn */
+        .portal-flying-pet-3d-wrap {
+            position: relative;
+            width: 125px;
+            height: 118px;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.25s ease;
+        }
+        .portal-flying-pet-3d-wrap:hover {
+            transform: scale(1.06);
+        }
+
+        .portal-flying-pet-hover-anim {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        .portal-flying-pet-hover-anim.idle-anim {
+            animation: petFlyingHover 3.2s ease-in-out infinite alternate;
+        }
+        .portal-flying-pet-hover-anim.celebrate-anim {
+            animation: petCelebrateJump 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .portal-flying-pet-hover-anim.comfort-anim {
+            animation: petComfortSway 0.9s ease-in-out;
+        }
+        .portal-flying-pet-hover-anim.petting-anim {
+            animation: petPettingSpin 0.6s ease;
+        }
+
+        .portal-flying-pet-hover-anim model-viewer {
+            width: 100%;
+            height: 100%;
+            --poster-color: transparent;
+            background: transparent;
+            outline: none;
+            filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+        }
+
+        @keyframes petFlyingHover {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(-1.5deg); }
+            100% { transform: translateY(2px) rotate(1.5deg); }
+        }
+
+        @keyframes petCelebrateJump {
+            0% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-16px) scale(1.22) rotate(-8deg); }
+            60% { transform: translateY(-8px) scale(1.15) rotate(8deg); }
+            80% { transform: translateY(-3px) scale(1.05) rotate(-3deg); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        @keyframes petComfortSway {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg) translateY(3px); }
+            50% { transform: rotate(10deg) translateY(3px); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes petPettingSpin {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.25) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Bóng đổ mờ ảo dưới chân linh thú tạo cảm giác đang bay lơ lửng */
+        .portal-flying-pet-shadow {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 58px;
+            height: 12px;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 75%);
+            border-radius: 50%;
+            animation: petShadowPulse 3.2s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes petShadowPulse {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.6; }
+            50% { transform: translateX(-50%) scale(0.8); opacity: 0.3; }
+            100% { transform: translateX(-50%) scale(1.05); opacity: 0.65; }
+        }
+
+        .pet-stage-pill {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            border: 1px solid var(--pet-theme-color, #2ecc71);
+            color: #ffd700;
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 1px 7px;
+            border-radius: 10px;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 3;
+        }
+
+        /* BONG BÓNG CHAT PHÁT RA TỪ LINH THÚ */
+        .portal-flying-pet-bubble {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(22, 32, 58, 0.94) 100%);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid var(--pet-theme-color, #2ecc71);
+            border-radius: 16px;
+            padding: 10px 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 15px rgba(46, 204, 113, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        /* Mũi tên nhọn bong bóng chỉ vào phía Linh Thú 3D */
+        .portal-flying-pet-bubble::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 10px solid var(--pet-theme-color, #2ecc71);
+            transition: border-right-color 0.3s ease;
+        }
+        .portal-flying-pet-bubble::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-right: 9px solid rgba(15, 23, 42, 0.95);
+        }
+
+        .portal-bubble-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .pet-name-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .pet-name-txt {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.88rem;
+            color: var(--pet-theme-color, #2ecc71);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pet-breed-tag {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 1px 7px;
+            border-radius: 6px;
+        }
+        .pet-mini-collapsed-text {
+            display: none;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .pet-actions-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-pet-action-mini {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .btn-pet-action-mini:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-pet-action-mini.btn-xoa-dau:hover {
+            border-color: #ff6b81;
+            color: #ff6b81;
+            box-shadow: 0 0 8px rgba(255, 107, 129, 0.4);
+        }
+        .btn-pet-action-mini.btn-toggle-box {
+            padding: 3px 6px;
+        }
+
+        .portal-bubble-message {
+            font-size: 0.9rem;
+            line-height: 1.45;
+            color: #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        /* Phản ứng khi Trả Lời ĐÚNG (Ánh ngọc lục bảo rực rỡ) */
+        .portal-flying-pet-bubble.bubble-correct {
+            border-color: #2ecc71;
+            background: linear-gradient(135deg, rgba(14, 38, 25, 0.94) 0%, rgba(15, 23, 42, 0.94) 100%);
+            box-shadow: 0 4px 25px rgba(46, 204, 113, 0.4), 0 0 20px rgba(46, 204, 113, 0.25);
+            animation: bubbleGlowGreen 0.6s ease;
+        }
+        .portal-flying-pet-bubble.bubble-correct::before {
+            border-right-color: #2ecc71;
+        }
+        .portal-flying-pet-bubble.bubble-correct .portal-bubble-message {
+            color: #a8f5c8;
+            font-weight: 500;
+        }
+
+        /* Phản ứng khi Trả Lời SAI (Ánh cam ấm áp ủi an) */
+        .portal-flying-pet-bubble.bubble-wrong {
+            border-color: #e67e22;
+            background: linear-gradient(135deg, rgba(42, 24, 10, 0.94) 0%, rgba(15, 23, 42, 0.94) 100%);
+            box-shadow: 0 4px 25px rgba(230, 126, 34, 0.4), 0 0 20px rgba(230, 126, 34, 0.25);
+            animation: bubbleGlowOrange 0.6s ease;
+        }
+        .portal-flying-pet-bubble.bubble-wrong::before {
+            border-right-color: #e67e22;
+        }
+        .portal-flying-pet-bubble.bubble-wrong .portal-bubble-message {
+            color: #fed7aa;
+            font-weight: 500;
+        }
+
+        @keyframes bubbleGlowGreen {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.015); box-shadow: 0 0 30px rgba(46, 204, 113, 0.6); }
+            100% { transform: scale(1); }
+        }
+        @keyframes bubbleGlowOrange {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.015); box-shadow: 0 0 30px rgba(230, 126, 34, 0.6); }
+            100% { transform: scale(1); }
+        }
+
+        /* Chế độ thu gọn */
+        .portal-flying-pet-stage.collapsed .portal-bubble-message {
+            display: none;
+        }
+        .portal-flying-pet-stage.collapsed .pet-mini-collapsed-text {
+            display: inline-block;
+        }
+        .portal-flying-pet-stage.collapsed .portal-flying-pet-bubble {
+            padding: 6px 12px;
+        }
+
+        /* Responsive di động */
+        @media (max-width: 600px) {
+            .portal-flying-pet-stage {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            .portal-flying-pet-3d-wrap {
+                width: 82px;
+                height: 78px;
+            }
+            .portal-flying-pet-bubble {
+                padding: 8px 10px;
+                border-radius: 12px;
+            }
+            .portal-bubble-header {
+                margin-bottom: 4px;
+            }
+            .pet-name-txt {
+                font-size: 0.8rem;
+            }
+            .pet-breed-tag {
+                font-size: 0.65rem;
+                padding: 1px 5px;
+            }
+            .portal-bubble-message {
+                font-size: 0.8rem;
+                line-height: 1.35;
+            }
+            .portal-flying-pet-bubble::before {
+                top: 20px;
+                left: -8px;
+                border-top: 6px solid transparent;
+                border-bottom: 6px solid transparent;
+                border-right: 8px solid var(--pet-theme-color, #2ecc71);
+            }
+            .portal-flying-pet-bubble::after {
+                top: 21px;
+                left: -6px;
+                border-top: 5px solid transparent;
+                border-bottom: 5px solid transparent;
+                border-right: 7px solid rgba(15, 23, 42, 0.95);
+            }
+        }
+
+        /* Hiệu ứng trái tim bay khi xoa đầu */
+        .pet-floating-heart {
+            position: absolute;
+            pointer-events: none;
+            font-size: 1.3rem;
+            animation: floatHeartUp 1.2s ease-out forwards;
+            z-index: 50;
+        }
+        @keyframes floatHeartUp {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+            20% { opacity: 1; transform: translate(0, -10px) scale(1.2); }
+            100% { transform: translate(var(--tx, 15px), -50px) scale(0.8); opacity: 0; }
+        }
+
+        /* Lời động viên kèm thú cưng trong Feedback Banner dưới câu hỏi */
+        .feedback-pet-quote {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.2);
+            font-family: 'Roboto', sans-serif;
+            text-transform: none;
+        }
+
+        /* Bảng tổng kết kết quả cùng thú cưng */
+        .pet-result-praise-card {
+            background: linear-gradient(135deg, rgba(26, 34, 54, 0.95), rgba(15, 23, 42, 0.95));
+            border: 2px solid var(--pet-theme-color, #f1c40f);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin: 15px auto 20px auto;
+            max-width: 520px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 16px rgba(241, 196, 15, 0.2);
+        }
+        .pet-result-praise-avatar {
+            font-size: 2.6rem;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(15, 23, 42, 0.9) 70%);
+            border: 2px solid var(--pet-theme-color, #f1c40f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 15px var(--pet-theme-color, #f1c40f);
+        }
+        .pet-result-praise-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--pet-theme-color, #f1c40f);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pet-result-praise-msg {
+            font-size: 0.9rem;
+            line-height: 1.45;
+            color: #f1f5f9;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -562,6 +985,62 @@
 
         <!-- QUIZ AREA -->
         <div class="quiz-wrapper" id="quiz-area">
+            <!-- ========================================================
+                 LINH THÚ ĐỒNG HÀNH TRÊN MÀN HÌNH THỬ THÁCH TỐI THƯỢNG
+                 - Hiển thị linh thú 3D bay sinh động như trang index & làm bài
+                 - Phát ra BONG BÓNG CHAT trực tiếp gắn liền với linh thú
+                 - ĐẢM BẢO 100% KHÔNG CHE KHUẤT CÂU HỎI VÀ NÚT CHỌN ĐÁP ÁN
+                 ======================================================== -->
+            <div class="portal-flying-pet-stage" id="pet-companion-box" style="display:none;">
+                <!-- KHỐI LINH THÚ 3D ĐANG BAY -->
+                <div class="portal-flying-pet-3d-wrap" onclick="tuongTacXoaDauLinhThuLamBai()" title="Chạm để cưng nựng linh thú">
+                    <div class="portal-flying-pet-hover-anim idle-anim" id="pet-companion-avatar">
+                        <model-viewer
+                            id="pet-3d-model-viewer"
+                            src="assets/models/dragon.glb"
+                            alt="Linh Thú Bay Đồng Hành"
+                            autoplay
+                            auto-rotate
+                            auto-rotate-delay="400"
+                            rotation-per-second="20deg"
+                            interaction-prompt="none"
+                            camera-controls
+                            disable-zoom
+                            disable-pan
+                            touch-action="pan-y"
+                            shadow-intensity="1.2"
+                            exposure="1.15"
+                            scale="1.05 1.05 1.05"
+                            camera-orbit="0deg 75deg 105%">
+                        </model-viewer>
+                    </div>
+                    <div class="portal-flying-pet-shadow"></div>
+                    <div class="pet-stage-pill" id="pet-companion-stage">🐣 Cấp 1</div>
+                </div>
+
+                <!-- BONG BÓNG CHAT PHÁT RA TỪ LINH THÚ -->
+                <div class="portal-flying-pet-bubble bubble-idle" id="pet-companion-speech">
+                    <div class="portal-bubble-header">
+                        <div class="pet-name-title-wrap">
+                            <span class="pet-name-txt" id="pet-companion-name">🐉 Thanh Long</span>
+                            <span class="pet-breed-tag" id="pet-companion-title">Chiến Binh Kiên Định</span>
+                            <span class="pet-mini-collapsed-text" id="pet-mini-collapsed-text">Đang đồng hành cùng em ✨</span>
+                        </div>
+                        <div class="pet-actions-wrap">
+                            <button type="button" class="btn-pet-action-mini btn-xoa-dau" onclick="tuongTacXoaDauLinhThuLamBai()" title="Xoa đầu linh thú để tăng động lực">
+                                <i class="fa-solid fa-heart" style="color:#ff6b81;"></i> Xoa đầu
+                            </button>
+                            <button type="button" class="btn-pet-action-mini btn-toggle-box" id="btn-toggle-pet-companion" onclick="batTatThuGonLinhThuLamBai()" title="Thu gọn / Mở rộng bong bóng">
+                                <i class="fa-solid fa-chevron-up" id="icon-toggle-pet-companion"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="portal-bubble-message" id="pet-companion-speech-text">
+                        "Chào chủ nhân! Tớ đã sẵn sàng cùng bạn chinh phục Đỉnh Tri Thức hôm nay rồi đấy! 🏔️✨"
+                    </div>
+                </div>
+            </div>
+
             <div class="q-title" id="lbl-question-title">Chặng leo thứ 1</div>
             <div class="q-text" id="lbl-question-text">Đang tải thử thách...</div>
             <div class="q-tip"><i class="fa-solid fa-pencil"></i> Đừng vội chọn — hãy thử giải ra nháp trước, tìm cách của riêng em rồi mới chọn đáp án nhé!</div>
@@ -585,6 +1064,8 @@
             <i class="fa-solid fa-trophy" style="font-size: 3.5rem; color: #f1c40f; margin-bottom: 10px;"></i>
             <h1 id="victory-title">CHINH PHỤC THÀNH CÔNG!</h1>
             <p id="victory-desc" style="margin-bottom: 20px;"></p>
+            <!-- Lời chúc tổng kết từ Bạn Đồng Hành Linh Thú -->
+            <div id="pet-result-praise-container"></div>
             <a href="index.html"><i class="fa-solid fa-house"></i> Trở về sảnh chính</a>
         </div>
     </div>
@@ -779,6 +1260,448 @@
                 return ten;
             }
             return null;
+        }
+
+        // ====================================================================
+        // HỆ THỐNG BẠN ĐỒNG HÀNH LINH THÚ (PET COMPANION)
+        // - Tự động nhận diện thú cưng của học sinh (từ linh-thu.html & index.html)
+        // - Động viên, cổ vũ ấm áp khi làm SAI (tạo tâm lý thoải mái, tích cực)
+        // - Chúc mừng, khích lệ tột độ khi làm ĐÚNG & nổ Combo
+        // - Đặt trực tiếp trong luồng giao diện câu hỏi, KHÔNG BAO GIỜ CHE KHUẤT
+        // ====================================================================
+        let thongTinPetLamBai = null;
+        let petCompanionCollapsed = false;
+
+        const LOI_CHUC_DUNG_PET = [
+            'Tuyệt đỉnh! Đòn tấn công trí tuệ quá sắc bén! 🎉',
+            'Chính xác 100%! Bước leo núi vô cùng vững chãi! 🌟',
+            'Đỉnh của chóp! Giữ vững phong độ này để chạm đỉnh núi nhé! 🚀',
+            'Quá chuẩn xác! Sức mạnh của bạn khiến cả ngọn núi phải nghiêng mình! 👑',
+            'Tuyệt vời ông mặt trời! Đỉnh cao không còn xa nữa rồi! ⚡',
+            'Xuất sắc lắm! Thần Thú tự hào về bạn rất nhiều! 🔥',
+            'Lập luận logic chuẩn không cần chỉnh! Tiến bước nào chiến binh! 💎',
+            'Quá thông minh! Mỗi bước chân đúng đưa ta gần hơn tới vinh quang! ✨'
+        ];
+
+        const LOI_DONG_VIEN_SAI_PET = [
+            'Không sao cả đâu chủ nhân ơi! Đường lên đỉnh núi lúc nào cũng nhiều thử thách! 💪',
+            'Đừng nản lòng nhé! Xem kỹ hướng dẫn giải bên dưới rồi chặng sau mình vượt qua! ✨',
+            'Toán khó rèn ý chí kiên cường! Cố lên, tớ luôn tin vào bạn! 💖',
+            'Thua keo này ta bày keo khác! Hít một hơi thật sâu rồi tiếp tục leo nào! 🌟',
+            'Mỗi lần vấp ngã là một bài học quý giá! Tự tin lên nhé! 🚀',
+            'Bình tĩnh nào, chỉ cần chú ý phân tích là sẽ tìm ra đường lên đỉnh ngay! 💡',
+            'Bạn đã rất dũng cảm thử sức! Cùng tớ xem lại lời giải chi tiết nhé! 🛡️',
+            'Kiên trì và không bỏ cuộc là phẩm chất của nhà leo núi vĩ đại! Cố lên bạn nhé! 🌱'
+        ];
+
+        const LOI_NHAC_CAU_MOI_PET = [
+            'Đọc kỹ đề bài nhé chủ nhân, tớ đang cổ vũ bạn hết mình nè! ✨',
+            'Tập trung cao độ, quan sát kỹ địa hình câu hỏi nhé! 🔍',
+            'Bình tĩnh suy nghĩ, bạn hoàn toàn đủ bản lĩnh vượt qua chặng này! 💡',
+            'Hãy tính toán thật cẩn thận trước khi ra đòn quyết định nhé! 📐',
+            'Chiến binh sẵn sàng chưa? Hãy phát huy toàn bộ sức mạnh tư duy nào! 🚀'
+        ];
+
+        const LOI_XOA_DAU_PET = [
+            'Hì hì, được bạn xoa đầu ấm áp quá! Cùng nhau chạm tay vào cờ chiến thắng nhé! ❤️',
+            'Cảm ơn chủ nhân nhiều nhé! Năng lượng tri thức của tớ đã được nạp đầy 100%! ✨',
+            'Thích quá đi thôi! Hãy vượt qua thử thách này để cùng tớ lớn nhanh nhé! 🐾',
+            'Tớ luôn ở cạnh bạn! Cố lên, đỉnh núi cao đến mấy chúng mình cũng chinh phục được! 🌟'
+        ];
+
+        // Danh mục cấu hình 3D cho các linh thú (được đồng bộ mô hình .glb từ sảnh index & đảo linh thú)
+        const DANH_MUC_PET_3D = {
+            dragon: {
+                id: 'dragon',
+                name: 'Thanh Long Con',
+                title: 'Rồng Lửa Sơ Sinh',
+                icon: '🐉',
+                modelSrc: 'assets/models/dragon.glb',
+                baseScale: 1.05,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#2ecc71',
+                accentColor: '#ffd700'
+            },
+            fox: {
+                id: 'fox',
+                name: 'Cáo Con Tí Hon',
+                title: 'Hồ Ly Tri Thức',
+                icon: '🦊',
+                modelSrc: 'assets/models/fox.glb',
+                baseScale: 0.024,
+                cameraOrbit: '25deg 75deg 105%',
+                themeColor: '#e67e22',
+                accentColor: '#00f2fe'
+            },
+            horse: {
+                id: 'horse',
+                name: 'Bạch Mã Con',
+                title: 'Thiên Mã Kỷ Luật',
+                icon: '🐎',
+                modelSrc: 'assets/models/horse.glb',
+                baseScale: 0.0075,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#3498db',
+                accentColor: '#ffd700'
+            },
+            robot: {
+                id: 'robot',
+                name: 'Mecha Tí Hon',
+                title: 'Robot AI Siêu Cấp',
+                icon: '🤖',
+                modelSrc: 'assets/models/robot.glb',
+                baseScale: 0.85,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#00f2fe',
+                accentColor: '#e74c3c'
+            },
+            flamingo: {
+                id: 'flamingo',
+                name: 'Hồng Hạc Con',
+                title: 'Hạc Thần Phù Trợ',
+                icon: '🦩',
+                modelSrc: 'assets/models/flamingo.glb',
+                baseScale: 0.011,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#ff6b81',
+                accentColor: '#ffd700'
+            },
+            parrot: {
+                id: 'parrot',
+                name: 'Vẹt Con Líu Lo',
+                title: 'Hiền Triết Rừng Xanh',
+                icon: '🦜',
+                modelSrc: 'assets/models/parrot.glb',
+                baseScale: 0.02,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#1abc9c',
+                accentColor: '#f39c12'
+            },
+            stork: {
+                id: 'stork',
+                name: 'Bạch Hạc Con',
+                title: 'Cổ Thụ Bất Tử',
+                icon: '🦢',
+                modelSrc: 'assets/models/stork.glb',
+                baseScale: 0.012,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#9b59b6',
+                accentColor: '#00f2fe'
+            },
+            ghost: {
+                id: 'ghost',
+                name: 'Slime Ma Thuật',
+                title: 'Slime Tinh Nghịch',
+                icon: '👻',
+                modelSrc: 'assets/models/ghost.glb',
+                baseScale: 1.4,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#a55eea',
+                accentColor: '#2ed573'
+            },
+            duck: {
+                id: 'duck',
+                name: 'Vịt Con Hoàng Kim',
+                title: 'Sứ Giả Thần Tài',
+                icon: '🦆',
+                modelSrc: 'assets/models/duck.glb',
+                baseScale: 1.3,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#f1c40f',
+                accentColor: '#e67e22'
+            },
+            owl: {
+                id: 'owl',
+                name: 'Cú Trí Tuệ',
+                title: 'Sứ Giả Tập Trung',
+                icon: '🦉',
+                modelSrc: 'assets/models/parrot.glb',
+                baseScale: 0.02,
+                cameraOrbit: '0deg 75deg 105%',
+                themeColor: '#9b59b6',
+                accentColor: '#ffd700'
+            },
+            cat: {
+                id: 'cat',
+                name: 'Mèo Thần Tài',
+                title: 'Linh Miêu May Mắn',
+                icon: '🐱',
+                modelSrc: 'assets/models/fox.glb',
+                baseScale: 0.024,
+                cameraOrbit: '25deg 75deg 105%',
+                themeColor: '#e67e22',
+                accentColor: '#ffd700'
+            }
+        };
+
+        function layDuLieuPetLamBai() {
+            let ten = layTenHocSinhHienTai() || 'hero_student';
+            let customName = '';
+            let petType = 'dragon';
+            let evoStage = 1;
+            let coPetChinhThong = false;
+
+            // 1. Kiểm tra math_hero_pet_ (chính thống từ linh-thu.html & index.html)
+            try {
+                let raw = JSON.parse(localStorage.getItem('math_hero_pet_' + ten));
+                if (raw && raw.type) {
+                    petType = raw.type;
+                    if (raw.customName) customName = raw.customName;
+                    if (raw.evoStage) evoStage = raw.evoStage;
+                    coPetChinhThong = true;
+                }
+            } catch(e){}
+
+            // 2. Nếu chưa có math_hero_pet_, kiểm tra hero_discipline_pet_
+            if (!coPetChinhThong) {
+                try {
+                    let raw2 = JSON.parse(localStorage.getItem('hero_discipline_pet_' + ten));
+                    if (raw2 && raw2.loai) {
+                        petType = raw2.loai;
+                        if (raw2.tenDat) customName = raw2.tenDat;
+                        if (raw2.capDo) evoStage = raw2.capDo;
+                        coPetChinhThong = true;
+                    }
+                } catch(e){}
+            }
+
+            // 3. Fallback lấy qua window.layThongTinPetHocSinh nếu vẫn chưa có
+            if (!coPetChinhThong && typeof window.layThongTinPetHocSinh === 'function') {
+                try {
+                    let info = window.layThongTinPetHocSinh(ten);
+                    if (info && info.loai) {
+                        petType = info.loai;
+                        if (info.tenPet && info.tenPet !== 'hero_student') customName = info.tenPet;
+                    }
+                } catch(e){}
+            }
+
+            let def3D = DANH_MUC_PET_3D[petType] || DANH_MUC_PET_3D.dragon;
+            let def = (window.DANH_SACH_LINH_THU && window.DANH_SACH_LINH_THU[petType]) || def3D;
+
+            let tenCapHienThi = '🐣 Cấp 1';
+            if (evoStage === 2) tenCapHienThi = '🐣 Cấp 2';
+            else if (evoStage === 3) tenCapHienThi = '🌟 Cấp 3';
+            else if (evoStage >= 4) tenCapHienThi = '👑 Thần Thú';
+
+            let finalName = customName || def.name || def3D.name;
+
+            return {
+                tenHocSinh: ten,
+                type: petType,
+                name: finalName,
+                breedName: def.name || def3D.name,
+                title: def.title || def3D.title || 'Chiến Binh Đồng Hành',
+                icon: def.icon || def3D.icon || '🐉',
+                modelSrc: def3D.modelSrc,
+                baseScale: def3D.baseScale,
+                cameraOrbit: def3D.cameraOrbit,
+                themeColor: def.themeColor || def3D.themeColor || '#2ecc71',
+                accentColor: def.accentColor || def3D.accentColor || '#ffd700',
+                capDo: evoStage,
+                tenCap: tenCapHienThi
+            };
+        }
+
+        function khoiTaoLinhThuLamBai() {
+            thongTinPetLamBai = layDuLieuPetLamBai();
+            let box = document.getElementById('pet-companion-box');
+            if (!box) return;
+
+            box.style.setProperty('--pet-theme-color', thongTinPetLamBai.themeColor);
+            box.style.setProperty('--pet-accent-color', thongTinPetLamBai.accentColor);
+
+            let elModelViewer = document.getElementById('pet-3d-model-viewer');
+            let elStage = document.getElementById('pet-companion-stage');
+            let elName = document.getElementById('pet-companion-name');
+            let elTitle = document.getElementById('pet-companion-title');
+
+            if (elModelViewer) {
+                if (elModelViewer.getAttribute('src') !== thongTinPetLamBai.modelSrc) {
+                    elModelViewer.setAttribute('src', thongTinPetLamBai.modelSrc);
+                }
+                let scaleVal = (thongTinPetLamBai.baseScale * (thongTinPetLamBai.capDo >= 3 ? 1.05 : (thongTinPetLamBai.capDo === 2 ? 0.95 : 0.85))).toFixed(4);
+                elModelViewer.setAttribute('scale', `${scaleVal} ${scaleVal} ${scaleVal}`);
+                if (thongTinPetLamBai.cameraOrbit) {
+                    elModelViewer.setAttribute('camera-orbit', thongTinPetLamBai.cameraOrbit);
+                }
+            }
+
+            if (elStage) elStage.innerText = thongTinPetLamBai.tenCap;
+            if (elName) elName.innerHTML = `${thongTinPetLamBai.icon} ${thongTinPetLamBai.name}`;
+            if (elTitle) elTitle.innerText = thongTinPetLamBai.title;
+
+            // Khôi phục trạng thái thu gọn nếu học sinh đã từng thu gọn
+            try {
+                if (sessionStorage.getItem('hero_pet_collapsed') === '1') {
+                    petCompanionCollapsed = true;
+                    box.classList.add('collapsed');
+                    let iconToggle = document.getElementById('icon-toggle-pet-companion');
+                    if (iconToggle) iconToggle.className = 'fa-solid fa-chevron-down';
+                }
+            } catch(e){}
+
+            box.style.display = 'flex';
+        }
+
+        function capNhatLinhThuCauHoiMoi(indexCau, tongSo) {
+            if (!thongTinPetLamBai) khoiTaoLinhThuLamBai();
+            let box = document.getElementById('pet-companion-box');
+            let speechBubble = document.getElementById('pet-companion-speech');
+            let speechText = document.getElementById('pet-companion-speech-text');
+            let avatar = document.getElementById('pet-companion-avatar');
+            if (!box || !speechBubble) return;
+
+            speechBubble.className = 'portal-flying-pet-bubble bubble-idle';
+
+            if (avatar) {
+                avatar.className = 'portal-flying-pet-hover-anim idle-anim';
+            }
+
+            let loiNoi = LOI_NHAC_CAU_MOI_PET[Math.floor(Math.random() * LOI_NHAC_CAU_MOI_PET.length)];
+            let fullMsg = `"${loiNoi}"`;
+            if (speechText) speechText.innerHTML = fullMsg;
+            else speechBubble.innerHTML = fullMsg;
+
+            box.style.display = 'flex';
+        }
+
+        function phanHoiLinhThuKhiLamBai(dungHaySai, combo) {
+            if (!thongTinPetLamBai) khoiTaoLinhThuLamBai();
+            let box = document.getElementById('pet-companion-box');
+            let speechBubble = document.getElementById('pet-companion-speech');
+            let speechText = document.getElementById('pet-companion-speech-text');
+            let avatar = document.getElementById('pet-companion-avatar');
+            if (!box || !speechBubble) return '';
+
+            speechBubble.classList.remove('bubble-correct', 'bubble-wrong', 'bubble-idle');
+            void speechBubble.offsetWidth; // Trigger reflow
+
+            let quote = '';
+            if (dungHaySai) {
+                speechBubble.className = 'portal-flying-pet-bubble bubble-correct';
+                if (avatar) {
+                    avatar.className = 'portal-flying-pet-hover-anim celebrate-anim';
+                    setTimeout(() => { if (avatar) avatar.className = 'portal-flying-pet-hover-anim idle-anim'; }, 850);
+                }
+
+                if (combo >= 2) {
+                    quote = `BƯỚC TIẾN VƯỢT BẬC! Sức mạnh tư duy đang đưa chúng ta tiến gần đỉnh núi! 🔥⚡`;
+                } else {
+                    quote = LOI_CHUC_DUNG_PET[Math.floor(Math.random() * LOI_CHUC_DUNG_PET.length)];
+                }
+                let fullMsg = `"${quote}"`;
+                if (speechText) speechText.innerHTML = fullMsg;
+                else speechBubble.innerHTML = fullMsg;
+
+                if (typeof phatAmThanhPet === 'function') {
+                    phatAmThanhPet('chirp');
+                }
+            } else {
+                speechBubble.className = 'portal-flying-pet-bubble bubble-wrong';
+                if (avatar) {
+                    avatar.className = 'portal-flying-pet-hover-anim comfort-anim';
+                    setTimeout(() => { if (avatar) avatar.className = 'portal-flying-pet-hover-anim idle-anim'; }, 950);
+                }
+
+                quote = LOI_DONG_VIEN_SAI_PET[Math.floor(Math.random() * LOI_DONG_VIEN_SAI_PET.length)];
+                let fullMsg = `"${quote}"`;
+                if (speechText) speechText.innerHTML = fullMsg;
+                else speechBubble.innerHTML = fullMsg;
+            }
+
+            return quote;
+        }
+
+        function tuongTacXoaDauLinhThuLamBai() {
+            if (!thongTinPetLamBai) khoiTaoLinhThuLamBai();
+            let avatar = document.getElementById('pet-companion-avatar');
+            let speechBubble = document.getElementById('pet-companion-speech');
+            let speechText = document.getElementById('pet-companion-speech-text');
+
+            if (avatar) {
+                avatar.className = 'portal-flying-pet-hover-anim petting-anim';
+                setTimeout(() => { if (avatar) avatar.className = 'portal-flying-pet-hover-anim idle-anim'; }, 650);
+
+                // Tạo hạt tim bay
+                let wrap = avatar.closest('.portal-flying-pet-3d-wrap') || avatar.parentElement;
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        let heart = document.createElement('div');
+                        heart.className = 'pet-floating-heart';
+                        heart.innerHTML = ['❤️', '💖', '✨'][i % 3];
+                        let offsetLeft = 45 + (Math.random() * 30 - 15);
+                        let tx = (Math.random() * 40 - 20) + 'px';
+                        heart.style.left = offsetLeft + 'px';
+                        heart.style.top = '15px';
+                        heart.style.setProperty('--tx', tx);
+                        wrap.appendChild(heart);
+                        setTimeout(() => heart.remove(), 1250);
+                    }, i * 150);
+                }
+            }
+
+            if (typeof phatAmThanhPet === 'function') {
+                phatAmThanhPet('chirp');
+            } else if (typeof phatAmThanhHanhDong === 'function') {
+                phatAmThanhHanhDong('hit_boss');
+            }
+
+            let loiXoa = LOI_XOA_DAU_PET[Math.floor(Math.random() * LOI_XOA_DAU_PET.length)];
+            if (speechBubble) {
+                speechBubble.className = 'portal-flying-pet-bubble bubble-idle';
+                let msg = `"${loiXoa} ❤️"`;
+                if (speechText) speechText.innerHTML = msg;
+                else speechBubble.innerHTML = msg;
+            }
+        }
+
+        function batTatThuGonLinhThuLamBai() {
+            let box = document.getElementById('pet-companion-box');
+            let icon = document.getElementById('icon-toggle-pet-companion');
+            if (!box) return;
+
+            petCompanionCollapsed = !petCompanionCollapsed;
+            if (petCompanionCollapsed) {
+                box.classList.add('collapsed');
+                if (icon) icon.className = 'fa-solid fa-chevron-down';
+                try { sessionStorage.setItem('hero_pet_collapsed', '1'); } catch(e){}
+            } else {
+                box.classList.remove('collapsed');
+                if (icon) icon.className = 'fa-solid fa-chevron-up';
+                try { sessionStorage.removeItem('hero_pet_collapsed'); } catch(e){}
+            }
+        }
+
+        function phanHoiLinhThuKetThuc(soDung, tongSo, isVictory) {
+            if (!thongTinPetLamBai) khoiTaoLinhThuLamBai();
+            let container = document.getElementById('pet-result-praise-container');
+            if (!container) return;
+
+            let tieuDe = 'LỜI CHÚC TỪ BẠN ĐỒNG HÀNH';
+            let loiChuc = '';
+
+            if (isVictory) {
+                tieuDe = '👑 THẦN THÚ BÁI PHỤC CHIẾN THẦN!';
+                loiChuc = `Vỡ òa cảm xúc! Bạn đã chinh phục thành công đỉnh núi tri thức (${soDung}/${tongSo} câu đúng)! ${thongTinPetLamBai.name} vô cùng tự hào và ngưỡng mộ trí tuệ đỉnh cao của bạn! Hãy giữ vững phong độ này nhé! 🏆`;
+            } else {
+                tieuDe = '💖 LUÔN ĐỒNG HÀNH CÙNG BẠN!';
+                loiChuc = `Thử Thách Tối Thượng rất cam go, nhưng bạn đã chiến đấu vô cùng dũng cảm (${soDung}/${tongSo} câu đúng)! Xem lại cách giải chi tiết rồi cùng ${thongTinPetLamBai.name} phục thù ở lượt sau nhé! Cố lên! 🌱`;
+            }
+
+            container.innerHTML = `
+                <div class="pet-result-praise-card" style="--pet-theme-color:${thongTinPetLamBai.themeColor};">
+                    <div class="pet-result-praise-avatar" onclick="tuongTacXoaDauLinhThuLamBai()" style="cursor:pointer;" title="Chạm để cưng nựng ${thongTinPetLamBai.name}">
+                        ${thongTinPetLamBai.icon}
+                    </div>
+                    <div style="flex:1;">
+                        <div class="pet-result-praise-title">
+                            <i class="fa-solid fa-crown"></i> ${tieuDe}
+                        </div>
+                        <p class="pet-result-praise-msg">${loiChuc}</p>
+                    </div>
+                </div>
+            `;
         }
 
         function layKhoiHocSinhHienTai() {
@@ -1155,6 +2078,7 @@
 
             renderBossCardBar();
             batDauNhacNenHoiHop();
+            khoiTaoLinhThuLamBai();
 
             indexCauHienTai = 0;
             taiCauHoiHT();
@@ -1173,6 +2097,8 @@
             document.getElementById('feedback-banner').style.display = 'none';
             document.getElementById('explain-container').style.display = 'none';
             document.getElementById('next-btn').style.display = 'none';
+
+            capNhatLinhThuCauHoiMoi(indexCauHienTai, danhSachCauHoi.length);
 
             let cauHoi = danhSachCauHoi[indexCauHienTai];
 
@@ -1242,10 +2168,17 @@
                 bossHP = Math.max(0, bossHP - giatDamage);
                 document.getElementById(`btn-ans-${indexHocSinhChon}`).classList.add('correct');
 
+                let loiKhenPet = phanHoiLinhThuKhiLamBai(true, soCauDungBoss);
+                let tenPetHien = thongTinPetLamBai ? thongTinPetLamBai.name : 'Bạn Đồng Hành';
+                let iconPetHien = thongTinPetLamBai ? thongTinPetLamBai.icon : '✨';
+
                 banner.style.backgroundColor = "rgba(46,204,113,0.2)";
                 banner.style.color = "#2ecc71";
                 banner.style.border = "1px solid #2ecc71";
-                banner.innerHTML = `🏔️ Chính xác! Bạn đã tiến thêm ${giatDamage} bước gần đỉnh hơn!`;
+                banner.innerHTML = `🏔️ Chính xác! Bạn đã tiến thêm ${giatDamage} bước gần đỉnh hơn!
+                    <div class="feedback-pet-quote">
+                        <span>${iconPetHien} <strong>${tenPetHien}:</strong> "${loiKhenPet}"</span>
+                    </div>`;
                 phatAmThanhHanhDong('hit_boss');
             } else {
                 cauTraLoiHienTaiDaSai = true;
@@ -1255,20 +2188,36 @@
                     bossGiat = 0;
                     document.getElementById(`btn-ans-${indexHocSinhChon}`).classList.add('wrong');
                     document.getElementById(`btn-ans-${viTriDung}`).classList.add('correct');
+
+                    let loiDongVienPet = phanHoiLinhThuKhiLamBai(false, 0);
+                    let tenPetHien = thongTinPetLamBai ? thongTinPetLamBai.name : 'Bạn Đồng Hành';
+                    let iconPetHien = thongTinPetLamBai ? thongTinPetLamBai.icon : '💖';
+
                     banner.style.backgroundColor = "rgba(52,152,219,0.2)";
                     banner.style.color = "#3498db";
                     banner.style.border = "1px solid #3498db";
-                    banner.innerHTML = `🪢 DÂY AN TOÀN: Giữ bạn vững vàng! Sức bền không hao.`;
+                    banner.innerHTML = `🪢 DÂY AN TOÀN: Giữ bạn vững vàng! Sức bền không hao.
+                        <div class="feedback-pet-quote">
+                            <span>${iconPetHien} <strong>${tenPetHien}:</strong> "${loiDongVienPet}"</span>
+                        </div>`;
                     cauTraLoiHienTaiDaSai = false;
                 } else {
                     soCauSaiBoss++;
                     playerHP = Math.max(0, playerHP - bossGiat);
                     document.getElementById(`btn-ans-${indexHocSinhChon}`).classList.add('wrong');
                     document.getElementById(`btn-ans-${viTriDung}`).classList.add('correct');
+
+                    let loiDongVienPet = phanHoiLinhThuKhiLamBai(false, 0);
+                    let tenPetHien = thongTinPetLamBai ? thongTinPetLamBai.name : 'Bạn Đồng Hành';
+                    let iconPetHien = thongTinPetLamBai ? thongTinPetLamBai.icon : '💖';
+
                     banner.style.backgroundColor = "rgba(243,156,18,0.15)";
                     banner.style.color = "#f39c12";
                     banner.style.border = "1px solid #f39c12";
-                    banner.innerHTML = `🔍 Chưa đúng rồi, nhưng không sao cả — sai là một bước để hiểu bài hơn! Xem lại cách giải bên dưới rồi thử sức ở câu tiếp theo nhé. (-${bossGiat} sức bền)`;
+                    banner.innerHTML = `🔍 Chưa đúng rồi, nhưng không sao cả — sai là một bước để hiểu bài hơn! Xem lại cách giải bên dưới rồi thử sức ở câu tiếp theo nhé. (-${bossGiat} sức bền)
+                        <div class="feedback-pet-quote">
+                            <span>${iconPetHien} <strong>${tenPetHien}:</strong> "${loiDongVienPet}"</span>
+                        </div>`;
                     document.body.style.animation = "nudgeScreen 0.4s 1";
                     setTimeout(() => document.body.style.animation = "", 450);
                 }
@@ -1312,6 +2261,7 @@
                     document.getElementById('boss-avatar').innerText = '🚩';
                     theTieuDe.innerText = "CHINH PHỤC THÀNH CÔNG! 🎉";
                     theTieuDe.style.color = "#2ecc71";
+                    phanHoiLinhThuKetThuc(soCauDungBoss, danhSachCauHoi.length, true);
 
                     let tyLe = playerHP / HP_MAX;
                     let expThuong = Math.floor(200 + 300 * tyLe);
@@ -1337,6 +2287,7 @@
                     document.getElementById('victory-area').style.borderColor = "#f39c12";
                     document.getElementById('boss-avatar').innerText = '🏕️';
                     theTieuDe.innerText = "CHƯA LÊN ĐẾN ĐỈNH LẦN NÀY! 💪";
+                    phanHoiLinhThuKetThuc(soCauDungBoss, danhSachCauHoi.length, false);
 
                     let tienDoGayDamage = Math.min(1, Math.max(0, (HP_MAX - bossHP) / HP_MAX));
                     let expAnUi = Math.floor(30 + 70 * tienDoGayDamage);
@@ -1558,6 +2509,7 @@
             document.getElementById('victory-area').style.borderColor = "#e74c3c";
             document.getElementById('boss-avatar').innerText = '🏕️';
             theTieuDe.innerText = "CHƯA LÊN ĐẾN ĐỈNH LẦN NÀY! 💪";
+            phanHoiLinhThuKetThuc(soCauDungBoss, danhSachCauHoi.length, false);
 
             let tienDoGayDamage = Math.min(1, Math.max(0, (HP_MAX - bossHP) / HP_MAX));
             let expAnUi = Math.floor(30 + 70 * tienDoGayDamage);
