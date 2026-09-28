@@ -2335,15 +2335,6 @@
                 <a href="cua-hang.html" class="header-signpost" onclick="phatAmThanhClick()">Cửa Hàng</a>
                 <a href="bang-xep-hang.html" class="header-signpost" onclick="phatAmThanhClick()">BXH</a>
                 <button class="header-signpost" onclick="openTeacherPasswordModal()">Giáo viên</button>
-                <!-- NÚT GÓP Ý (thêm vào header) -->
-                <button class="header-signpost" onclick="moFormGopY()" style="border-color: rgba(241,196,15,0.5); color: #f1c40f;">
-                    <i class="fa-regular fa-comment-dots"></i> Góp ý
-                </button>
-                <!-- NÚT XEM PHẢN HỒI TỪ GIÁO VIÊN -->
-                <button class="header-signpost" id="btn-xem-phan-hoi" onclick="moModalPhanHoiHocSinh()" style="display:none; position:relative; border-color: rgba(52,152,219,0.5); color: #3498db;">
-                    <i class="fa-solid fa-bell"></i> Phản hồi
-                    <span id="badge-phan-hoi-moi" class="badge-phan-hoi-so" style="display:none;">0</span>
-                </button>
             </div>
             <div class="resize-handle" data-handle-for="header-navbar"></div>
         </div>
@@ -2493,30 +2484,6 @@
 
     </div> <!-- end container -->
 
-    <!-- MODAL GÓP Ý -->
-    <div class="feedback-modal" id="feedback-modal">
-        <div class="feedback-card">
-            <h4><i class="fa-regular fa-pen-to-square"></i> Góp ý cho ứng dụng</h4>
-            <p>Hãy chia sẻ ý kiến của bạn để chúng tôi ngày càng hoàn thiện hơn!</p>
-            <textarea class="feedback-textarea" id="feedback-content" placeholder="Viết góp ý của bạn ở đây..."></textarea>
-            <div class="feedback-btn-row">
-                <button class="feedback-btn feedback-btn-cancel" onclick="dongFormGopY()"><i class="fa-solid fa-xmark"></i> Hủy</button>
-                <button class="feedback-btn feedback-btn-send" onclick="guiGopY()"><i class="fa-regular fa-paper-plane"></i> Gửi</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL PHẢN HỒI TỪ GIÁO VIÊN -->
-    <div class="feedback-modal" id="modal-phan-hoi-hs">
-        <div class="feedback-card" style="border-color:#3498db; box-shadow: 0 0 40px rgba(52,152,219,0.2), inset 0 0 20px rgba(52,152,219,0.1);">
-            <h4 style="color:#3498db; text-shadow: 0 0 15px rgba(52,152,219,0.5);"><i class="fa-solid fa-chalkboard-user"></i> Phản hồi từ giáo viên</h4>
-            <p>Những phản hồi Thầy/Cô đã gửi cho các góp ý của bạn.</p>
-            <div class="phan-hoi-list-body" id="phan-hoi-list-body"></div>
-            <div class="feedback-btn-row">
-                <button class="feedback-btn feedback-btn-cancel" style="flex:none; padding:12px 28px; margin:0 auto;" onclick="dongModalPhanHoiHocSinh()"><i class="fa-solid fa-xmark"></i> Đóng</button>
-            </div>
-        </div>
-    </div>
 
     <!-- MODAL BÍ KÍP TRI THỨC NGÀY MỚI (NHẮC NHỞ XEM LÝ THUYẾT) -->
     <div class="theory-reminder-modal" id="modal-nhac-nho-ly-thuyet" style="display: none;">
@@ -2724,121 +2691,13 @@
     </script>
 
     <script>
-// ===== GÓP Ý =====
-        function moFormGopY() {
-            document.getElementById('feedback-modal').classList.add('show');
-            document.getElementById('feedback-content').value = '';
-            document.getElementById('feedback-content').focus();
-            phatAmThanhClick();
-        }
-
-        function dongFormGopY() {
-            document.getElementById('feedback-modal').classList.remove('show');
-        }
-
-        function guiGopY() {
-            const noiDung = document.getElementById('feedback-content').value.trim();
-            if (!noiDung) {
-                showToast('Vui lòng viết góp ý trước khi gửi.', 'error');
-                return;
-            }
-            const ten = sessionStorage.getItem('hoc_school_student_name') || 'Khách';
-            const lop = sessionStorage.getItem('hoc_school_student_class') || 'Chưa có';
-            const thoiGian = new Date().toLocaleString('vi-VN');
-
-            let danhSach = JSON.parse(localStorage.getItem('danh_sach_gop_y')) || [];
-            danhSach.push({
-                ten: ten,
-                lop: lop,
-                noiDung: noiDung,
-                thoiGian: thoiGian
-            });
-            localStorage.setItem('danh_sach_gop_y', JSON.stringify(danhSach));
-
-            dongFormGopY();
-            showToast('💬 Cảm ơn góp ý của bạn! Chúng tôi sẽ xem xét để hoàn thiện hơn.', 'success');
-            phatAmThanhClick();
-        }
-
-        // ===== PHẢN HỒI CỦA GIÁO VIÊN CHO HỌC SINH =====
-        function thoatHtmlAnToan(chuoi) {
-            const tam = document.createElement('div');
-            tam.innerText = chuoi == null ? '' : String(chuoi);
-            return tam.innerHTML;
-        }
-
-        function laySignaturePhanHoi(item) {
-            return (item.thoiGian || '') + '__' + (item.thoiGianPhanHoi || '') + '__' + (item.phanHoi || '');
-        }
-
-        function layDanhSachPhanHoiCuaToi(tenLuu) {
-            if (!tenLuu) return [];
-            let danhSach = JSON.parse(localStorage.getItem('danh_sach_gop_y')) || [];
-            let cuaToi = danhSach.filter(item => item && item.ten === tenLuu && item.phanHoi && item.phanHoi.trim() !== '');
-            return cuaToi.reverse(); // mới nhất lên đầu
-        }
-
-        function capNhatBadgePhanHoi() {
-            const tenLuu = sessionStorage.getItem('hoc_school_student_name');
-            const btnXem = document.getElementById('btn-xem-phan-hoi');
-            const badge = document.getElementById('badge-phan-hoi-moi');
-            if (!tenLuu || !btnXem || !badge) return [];
-
-            const dsPhanHoi = layDanhSachPhanHoiCuaToi(tenLuu);
-            btnXem.style.display = dsPhanHoi.length > 0 ? 'inline-flex' : 'none';
-
-            const daDoc = JSON.parse(localStorage.getItem('da_doc_phan_hoi_' + tenLuu)) || [];
-            const chuaDoc = dsPhanHoi.filter(item => !daDoc.includes(laySignaturePhanHoi(item)));
-
-            if (chuaDoc.length > 0) {
-                badge.innerText = chuaDoc.length > 9 ? '9+' : chuaDoc.length;
-                badge.style.display = 'inline-flex';
-            } else {
-                badge.style.display = 'none';
-            }
-            return chuaDoc;
-        }
-
-        function moModalPhanHoiHocSinh() {
-            phatAmThanhClick();
-            const tenLuu = sessionStorage.getItem('hoc_school_student_name');
-            const dsPhanHoi = layDanhSachPhanHoiCuaToi(tenLuu);
-            const body = document.getElementById('phan-hoi-list-body');
-
-            if (dsPhanHoi.length === 0) {
-                body.innerHTML = '<div class="phan-hoi-empty"><i class="fa-regular fa-comment"></i><br>Chưa có phản hồi nào từ giáo viên.</div>';
-            } else {
-                body.innerHTML = dsPhanHoi.map(item => `
-                    <div class="phan-hoi-item">
-                        <div class="phan-hoi-goc">
-                            <i class="fa-regular fa-comment-dots"></i> Góp ý của bạn ${item.thoiGian ? '(' + thoatHtmlAnToan(item.thoiGian) + ')' : ''}:
-                            <span class="noi-dung">"${thoatHtmlAnToan(item.noiDung)}"</span>
-                        </div>
-                        <div class="phan-hoi-tra-loi">
-                            <i class="fa-solid fa-chalkboard-user"></i> Thầy/Cô phản hồi ${item.thoiGianPhanHoi ? '(' + thoatHtmlAnToan(item.thoiGianPhanHoi) + ')' : ''}:
-                            <span class="noi-dung">${thoatHtmlAnToan(item.phanHoi)}</span>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            document.getElementById('modal-phan-hoi-hs').classList.add('show');
-
-            // Đánh dấu tất cả đã đọc
-            if (tenLuu && dsPhanHoi.length > 0) {
-                let daDoc = JSON.parse(localStorage.getItem('da_doc_phan_hoi_' + tenLuu)) || [];
-                dsPhanHoi.forEach(item => {
-                    const sig = laySignaturePhanHoi(item);
-                    if (!daDoc.includes(sig)) daDoc.push(sig);
-                });
-                localStorage.setItem('da_doc_phan_hoi_' + tenLuu, JSON.stringify(daDoc));
-            }
-            capNhatBadgePhanHoi();
-        }
-
-        function dongModalPhanHoiHocSinh() {
-            document.getElementById('modal-phan-hoi-hs').classList.remove('show');
-        }
+        // Hệ thống góp ý đã được lược bỏ theo yêu cầu
+        function moFormGopY() {}
+        function dongFormGopY() {}
+        function guiGopY() {}
+        function capNhatBadgePhanHoi() { return []; }
+        function moModalPhanHoiHocSinh() {}
+        function dongModalPhanHoiHocSinh() {}
 
         // ============================================================
         //  Các hàm edit mode, âm thanh, đăng nhập (giữ nguyên từ bản gốc)
@@ -3819,13 +3678,6 @@
                 document.getElementById('badge-the').style.display = 'inline-flex';
             }
 
-            // Kiểm tra phản hồi mới từ giáo viên khi học sinh đăng nhập
-            let dsPhanHoiChuaDoc = capNhatBadgePhanHoi();
-            if (dsPhanHoiChuaDoc && dsPhanHoiChuaDoc.length > 0) {
-                setTimeout(() => {
-                    showToast('💌 Bạn có ' + dsPhanHoiChuaDoc.length + ' phản hồi mới từ giáo viên! Chạm nút "Phản hồi" trên menu để xem.', 'success');
-                }, 800);
-            }
 
             // Tự động kiểm tra và nhắc nhở xem lý thuyết ngày mới (sau khi tải xong dữ liệu học sinh)
             setTimeout(() => {
@@ -3948,6 +3800,20 @@
             const modal = document.getElementById('student-change-pwd-modal');
             if (modal) modal.style.display = 'none';
         }
+
+        // Tự động mở modal đổi mật khẩu nếu được điều hướng từ trang đăng nhập
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const canDoiPass = sessionStorage.getItem('hero_tu_dong_mo_doi_mat_khau') === 'true' || urlParams.get('doi_mat_khau') === '1';
+            if (canDoiPass) {
+                sessionStorage.removeItem('hero_tu_dong_mo_doi_mat_khau');
+                setTimeout(() => {
+                    if (typeof moModalDoiMatKhauHocSinh === 'function') {
+                        moModalDoiMatKhauHocSinh();
+                    }
+                }, 600);
+            }
+        });
 
         function toggleHienMatKhauDoi(fieldId, btn) {
             phatAmThanhClick();
