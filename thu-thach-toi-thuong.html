@@ -941,13 +941,9 @@
                 <span id="boss-student-grade-badge" style="background:#1e293b; color:#38bdf8; padding:6px 14px; border-radius:20px; font-weight:700; font-size:0.85rem; border:1px solid rgba(56, 189, 248, 0.3); display:inline-flex; align-items:center; gap:6px;">
                     <i class="fa-solid fa-graduation-cap"></i> <span id="txt-boss-student-grade">Khối lớp</span>
                 </span>
-                <select id="sel-boss-switch-grade" onchange="chuyenDoiKhoiLopBoss(this.value)" style="background:#0b111e; color:#cbd5e1; border:1px solid #334155; padding:5px 10px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer;" title="Chuyển đổi khối đề Thử Thách Tối Thượng">
-                    <option value="">-- Chọn khối đề --</option>
-                    <option value="Khối 6">Khối 6</option>
-                    <option value="Khối 7">Khối 7</option>
-                    <option value="Khối 8">Khối 8</option>
-                    <option value="Khối 9">Khối 9</option>
-                </select>
+                <span id="boss-student-turns-badge" style="background:#1e293b; color:#f1c40f; padding:6px 14px; border-radius:20px; font-weight:700; font-size:0.85rem; border:1px solid rgba(241, 196, 15, 0.3); display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-bolt"></i> Lượt còn lại: <span id="txt-boss-student-turns">3/3</span>
+                </span>
             </div>
             <a href="index.html" class="btn-home-boss"><i class="fa-solid fa-circle-chevron-left"></i> Trở về</a>
         </div>
@@ -976,12 +972,10 @@
                     <div class="player-name-tag" id="player-name-tag">Nhà leo núi</div>
                 </div>
             </div>
-
-            <!-- DỤNG CỤ HỖ TRỢ -->
-            <div class="boss-card-bar" id="boss-card-bar">
-                <div class="boss-card-bar-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Dụng Cụ Hỗ Trợ</div>
-            </div>
         </div>
+
+        <!-- THÔNG BÁO LƯỢT THỬ THÁCH TỐI THƯỢNG -->
+        <div id="boss-luot-status" style="display:none; margin-top: 14px; margin-bottom: 14px; padding: 12px 18px; border-radius: 10px; border: 1px solid; font-size: 0.95rem; font-weight: 600; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.25);"></div>
 
         <!-- QUIZ AREA -->
         <div class="quiz-wrapper" id="quiz-area">
@@ -1085,9 +1079,9 @@
                 return await window.HeroFirebaseCompat.dayDuLieuLenMay(ten);
             }
         };
-        window.__fbTaiCauHinhToanCuc = async () => {
+        window.__fbTaiCauHinhToanCuc = async (tuyChon) => {
             if (window.HeroFirebaseCompat && typeof window.HeroFirebaseCompat.taiCauHinhToanCuc === 'function') {
-                return await window.HeroFirebaseCompat.taiCauHinhToanCuc();
+                return await window.HeroFirebaseCompat.taiCauHinhToanCuc(tuyChon);
             }
         };
         window.__fbDayCauHinhToanCuc = async (key) => {
@@ -1212,6 +1206,7 @@
 
         let daBamChonChua = false;
         let cauTraLoiHienTaiDaSai = false;
+        let dangTrongTranBoss = false;
 
         let giapHoMenhConLai = false;
         let chiMangSamSetSan = false;
@@ -1705,42 +1700,96 @@
         }
 
         function layKhoiHocSinhHienTai() {
-            let lop = sessionStorage.getItem('hoc_school_student_class') || localStorage.getItem('hoc_school_student_class');
-            if (lop) return lop;
-            let lopCuThe = sessionStorage.getItem('hoc_school_student_classroom') || localStorage.getItem('hoc_school_student_classroom');
-            if (lopCuThe) return lopCuThe;
             let ten = layTenHocSinhHienTai();
             if (ten) {
-                let users = JSON.parse(localStorage.getItem('math_hero_users_v2')) || {};
-                if (users[ten] && (users[ten].class || users[ten].className)) {
-                    return users[ten].class || users[ten].className;
-                }
-                let nhatKy = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
-                let myLog = [...nhatKy].reverse().find(it => it.name === ten);
-                if (myLog && (myLog.className || myLog.class)) {
-                    return myLog.className || myLog.class;
-                }
+                try {
+                    let users = JSON.parse(localStorage.getItem('math_hero_users_v2')) || {};
+                    let u = users[ten];
+                    if (u) {
+                        let k = u.className || u.class || u.classroom || u.lop;
+                        let so = trichXuatSoKhoiLop(k);
+                        if (so) {
+                            let khoiChuan = 'Khối ' + so;
+                            sessionStorage.setItem('hoc_school_student_class', khoiChuan);
+                            localStorage.setItem('hoc_school_student_class', khoiChuan);
+                            return khoiChuan;
+                        }
+                    }
+                } catch (e) {}
+
+                try {
+                    let nhatKy = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
+                    let myLog = [...nhatKy].reverse().find(it => it && it.name === ten);
+                    if (myLog) {
+                        let k = myLog.className || myLog.class || myLog.classroom;
+                        let so = trichXuatSoKhoiLop(k);
+                        if (so) {
+                            let khoiChuan = 'Khối ' + so;
+                            sessionStorage.setItem('hoc_school_student_class', khoiChuan);
+                            localStorage.setItem('hoc_school_student_class', khoiChuan);
+                            return khoiChuan;
+                        }
+                    }
+                } catch (e) {}
             }
+
+            let lop = sessionStorage.getItem('hoc_school_student_class') || localStorage.getItem('hoc_school_student_class');
+            if (lop) {
+                let so = trichXuatSoKhoiLop(lop);
+                if (so) return 'Khối ' + so;
+                return lop;
+            }
+
+            let lopCuThe = sessionStorage.getItem('hoc_school_student_classroom') || localStorage.getItem('hoc_school_student_classroom');
+            if (lopCuThe) {
+                let so = trichXuatSoKhoiLop(lopCuThe);
+                if (so) return 'Khối ' + so;
+                return lopCuThe;
+            }
+
             return 'Khối 7';
         }
 
         function laySoLuotBossToiDa() {
-            return parseInt(localStorage.getItem('so_luot_boss_toi_da')) || 3;
+            let val = parseInt(localStorage.getItem('so_luot_boss_toi_da'));
+            return (!isNaN(val) && val > 0) ? val : 3;
         }
+
         function layKeyLuotBoss() {
             let ten = layTenHocSinhHienTai();
             return ten ? ('luot_boss_' + ten) : null;
         }
+
         function layDuLieuLuotBoss() {
             let key = layKeyLuotBoss();
             if (!key) return null;
-            let raw = JSON.parse(localStorage.getItem(key)) || null;
-            if (!raw) {
-                raw = { soLuotConLai: laySoLuotBossToiDa() };
+            let soMax = laySoLuotBossToiDa();
+            let raw = null;
+            try {
+                raw = JSON.parse(localStorage.getItem(key));
+            } catch (e) {
+                raw = null;
+            }
+
+            if (!raw || typeof raw.soLuotConLai !== 'number') {
+                raw = { soLuotConLai: soMax, soLuotToiDa: soMax };
                 localStorage.setItem(key, JSON.stringify(raw));
+            } else {
+                // Tự động đồng bộ khi Quản trị viên thay đổi số lượt tối đa trong Admin
+                if (typeof raw.soLuotToiDa === 'number' && raw.soLuotToiDa !== soMax) {
+                    let soLuotDaDung = Math.max(0, raw.soLuotToiDa - raw.soLuotConLai);
+                    raw.soLuotConLai = Math.max(0, soMax - soLuotDaDung);
+                    raw.soLuotToiDa = soMax;
+                    localStorage.setItem(key, JSON.stringify(raw));
+                } else if (raw.soLuotToiDa === undefined) {
+                    raw.soLuotToiDa = soMax;
+                    if (raw.soLuotConLai > soMax) raw.soLuotConLai = soMax;
+                    localStorage.setItem(key, JSON.stringify(raw));
+                }
             }
             return raw;
         }
+
         function truLuotBoss() {
             let key = layKeyLuotBoss();
             if (!key) return;
@@ -1748,6 +1797,60 @@
             if (!duLieu) return;
             duLieu.soLuotConLai = Math.max(0, duLieu.soLuotConLai - 1);
             localStorage.setItem(key, JSON.stringify(duLieu));
+
+            let ten = layTenHocSinhHienTai();
+            if (ten && typeof window.__fbDayDuLieuLenMay === 'function') {
+                window.__fbDayDuLieuLenMay(ten);
+            }
+            capNhatHienThiLuotConLai();
+        }
+
+        function capNhatHienThiLuotConLai() {
+            let duLieu = layDuLieuLuotBoss();
+            let soMax = laySoLuotBossToiDa();
+            let conLai = duLieu ? duLieu.soLuotConLai : soMax;
+
+            let badgeTurns = document.getElementById('txt-boss-student-turns');
+            if (badgeTurns) {
+                badgeTurns.innerText = `${conLai}/${soMax}`;
+            }
+
+            let badgeGrade = document.getElementById('txt-boss-student-grade');
+            if (badgeGrade) {
+                let k = layKhoiHocSinhHienTai();
+                let so = trichXuatSoKhoiLop(k);
+                badgeGrade.innerText = so ? ('Khối ' + so) : k;
+            }
+
+            let thongBaoEl = document.getElementById('boss-luot-status');
+            if (thongBaoEl && duLieu) {
+                thongBaoEl.style.display = 'block';
+                if (dangTrongTranBoss) {
+                    if (conLai <= 0) {
+                        thongBaoEl.style.background = 'rgba(241,196,15,0.10)';
+                        thongBaoEl.style.borderColor = 'rgba(241,196,15,0.4)';
+                        thongBaoEl.style.color = '#f1c40f';
+                        thongBaoEl.innerHTML = `<i class="fa-solid fa-fire"></i> Đây là lượt Thử Thách Tối Thượng cuối cùng của em! Tập trung cao độ để chinh phục đỉnh núi nhé! 🌟`;
+                    } else {
+                        thongBaoEl.style.background = 'rgba(56, 189, 248, 0.10)';
+                        thongBaoEl.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                        thongBaoEl.style.color = '#38bdf8';
+                        thongBaoEl.innerHTML = `<i class="fa-solid fa-mountain"></i> Đang trong hành trình chinh phục! Sau lượt này em còn <b>${conLai}/${soMax} lượt</b>.`;
+                    }
+                } else {
+                    if (conLai <= 0) {
+                        thongBaoEl.style.background = 'rgba(231,76,60,0.12)';
+                        thongBaoEl.style.borderColor = '#e74c3c';
+                        thongBaoEl.style.color = '#e74c3c';
+                        thongBaoEl.innerHTML = `<i class="fa-solid fa-lock"></i> Em đã dùng hết <b>${soMax}/${soMax} lượt</b> Thử Thách Tối Thượng! Hẹn gặp lại em sau nhé, cố lên! 💪`;
+                    } else {
+                        thongBaoEl.style.background = 'rgba(241,196,15,0.10)';
+                        thongBaoEl.style.borderColor = 'rgba(241,196,15,0.4)';
+                        thongBaoEl.style.color = '#f1c40f';
+                        thongBaoEl.innerHTML = `<i class="fa-solid fa-mountain"></i> Em còn <b>${conLai}/${soMax} lượt</b> Thử Thách Tối Thượng. Cố lên, em làm được! 🌟`;
+                    }
+                }
+            }
         }
 
         function capNhatHP() {
@@ -1758,38 +1861,10 @@
         }
 
         // ============================================================
-        //  THẺ ĐẶC QUYỀN
+        //  THẺ ĐẶC QUYỀN (Đã lược bỏ thanh Dụng Cụ Hỗ Trợ trên giao diện)
         // ============================================================
         function renderBossCardBar() {
-            let bar = document.getElementById('boss-card-bar');
-            if (!bar) return;
-            let label = bar.querySelector('.boss-card-bar-label');
-            bar.innerHTML = '';
-            if (label) bar.appendChild(label);
-
-            let ten = layTenHocSinhHienTai();
-            let ruong = ten ? (JSON.parse(localStorage.getItem('ruong_do_' + ten)) || []) : [];
-            let cacTenCoBoss = BOSS_PRIVILEGE_ITEMS.map(it => it.name);
-            let cacTheCoSan = ruong.filter(item => cacTenCoBoss.includes(item.name) && item.status === 'cho_nhan');
-            let setCoSan = new Set(cacTheCoSan.map(it => it.name));
-
-            BOSS_PRIVILEGE_ITEMS.forEach(meta => {
-                let coSan = setCoSan.has(meta.name);
-                let slot = document.createElement('button');
-                slot.className = 'bthe-slot' + (coSan ? '' : ' bthe-locked');
-                slot.id = 'bslot-' + meta.id;
-                slot.title = meta.desc;
-                slot.disabled = !coSan;
-                slot.innerHTML = `
-                    <span class="bthe-icon">${meta.icon}</span>
-                    <span class="bthe-name">${meta.name}</span>
-                    <span class="bthe-note">${coSan ? 'Bấm dùng' : 'Chưa có'}</span>
-                `;
-                if (coSan) {
-                    slot.onclick = () => dungTheInline(meta.id);
-                }
-                bar.appendChild(slot);
-            });
+            // Đã bỏ phần Dụng Cụ Hỗ Trợ theo yêu cầu
         }
 
         function dungTheInline(idThe) {
@@ -2000,14 +2075,10 @@
             let khoiHocSinh = khoiEpBuoc || layKhoiHocSinhHienTai();
             let soKhoiHs = trichXuatSoKhoiLop(khoiHocSinh);
 
-            // Cập nhật nhãn hiển thị khối lớp & dropdown chuyển khối
+            // Cập nhật nhãn hiển thị khối lớp
             let badgeKhoiText = document.getElementById('txt-boss-student-grade');
             if (badgeKhoiText) {
                 badgeKhoiText.innerText = soKhoiHs ? ('Khối ' + soKhoiHs) : khoiHocSinh;
-            }
-            let selSwitch = document.getElementById('sel-boss-switch-grade');
-            if (selSwitch && soKhoiHs) {
-                selSwitch.value = 'Khối ' + soKhoiHs;
             }
 
             // Lọc bộ đề phù hợp: không bị ẩn VÀ đúng khối của học sinh (học sinh khối nào chỉ hiện đề khối đó)
@@ -2042,7 +2113,7 @@
 
             if (khoCauHoiBoss.length === 0) {
                 if (msgEl) {
-                    msgEl.innerHTML = `<span style="color:#e74c3c;"><i class="fa-solid fa-circle-exclamation"></i> Chưa có câu hỏi nào cho <b>${khoiHocSinh}</b>. Thầy cô vui lòng nạp đề trong Admin hoặc chọn khối lớp khác ở góc trên!</span>`;
+                    msgEl.innerHTML = `<span style="color:#e74c3c;"><i class="fa-solid fa-circle-exclamation"></i> Chưa có câu hỏi nào cho <b>${khoiHocSinh}</b>. Thầy cô vui lòng nạp đề trong Admin!</span>`;
                 }
                 if (qArea) qArea.style.display = 'block';
                 return;
@@ -2070,6 +2141,7 @@
             daDungBinhMau = false;
             Object.keys(thesDaDung).forEach(k => thesDaDung[k] = false);
 
+            dangTrongTranBoss = true;
             truLuotBoss();
 
             let ten = layTenHocSinhHienTai();
@@ -2252,7 +2324,9 @@
                 document.getElementById('quiz-area').style.display = 'none';
                 document.getElementById('victory-area').style.display = 'block';
 
+                dangTrongTranBoss = false;
                 dungNhacNenHoiHop();
+                capNhatHienThiLuotConLai();
 
                 let theTieuDe = document.getElementById('victory-title');
                 let theMoTa = document.getElementById('victory-desc');
@@ -2320,7 +2394,7 @@
             let tenSomKiemTra = layTenHocSinhHienTai();
             try {
                 if (typeof window.__fbTaiCauHinhToanCuc === 'function') {
-                    await window.__fbTaiCauHinhToanCuc();
+                    await window.__fbTaiCauHinhToanCuc({ force: true });
                 }
                 if (tenSomKiemTra && typeof window.__fbTaiDuLieuTuMay === 'function') {
                     await window.__fbTaiDuLieuTuMay(tenSomKiemTra);
@@ -2349,20 +2423,11 @@
             let statusEl = document.getElementById('boss-luot-status');
             if (statusEl) statusEl.style.display = 'none';
 
-            let khoiHienTai = layKhoiHocSinhHienTai();
-            let soKhoi = trichXuatSoKhoiLop(khoiHienTai) || '9';
-
             document.querySelector('.boss-card').insertAdjacentHTML('afterend', `
                 <div id="quick-login-box" style="background:#1a2236; padding:18px; border-radius:12px; margin-top:14px; text-align:center; border:1px solid #3498db; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-                    <p style="color:#f1c40f; font-weight:bold; font-size:1rem; margin-bottom:10px;"><i class="fa-solid fa-circle-exclamation"></i> Nhập họ tên và chọn khối lớp để bắt đầu Thử Thách Tối Thượng!</p>
+                    <p style="color:#f1c40f; font-weight:bold; font-size:1rem; margin-bottom:10px;"><i class="fa-solid fa-circle-exclamation"></i> Nhập họ và tên học sinh để bắt đầu Thử Thách Tối Thượng!</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                         <input type="text" id="quick-name-input" placeholder="Họ và tên học sinh..." style="padding:10px 14px; border-radius:8px; background:#0b111e; border:1px solid #233354; color:white; font-size:0.95rem; flex:2; min-width:180px;">
-                        <select id="quick-grade-select" style="padding:10px 14px; border-radius:8px; background:#0b111e; border:1px solid #233354; color:white; font-size:0.95rem; flex:1; min-width:110px;">
-                            <option value="Khối 6" ${soKhoi === '6' ? 'selected' : ''}>Khối 6</option>
-                            <option value="Khối 7" ${soKhoi === '7' ? 'selected' : ''}>Khối 7</option>
-                            <option value="Khối 8" ${soKhoi === '8' ? 'selected' : ''}>Khối 8</option>
-                            <option value="Khối 9" ${soKhoi === '9' ? 'selected' : ''}>Khối 9</option>
-                        </select>
                         <button onclick="dangNhapNhanh()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; display:inline-flex; align-items:center; gap:6px;">
                             <i class="fa-solid fa-play"></i> Vào Trận
                         </button>
@@ -2376,8 +2441,20 @@
             if (!input) return;
             let name = input.value.trim();
             if (!name) return alert('Vui lòng nhập họ và tên!');
-            let selGrade = document.getElementById('quick-grade-select');
-            let grade = selGrade ? selGrade.value : 'Khối 9';
+
+            // Tự động nhận diện khối lớp của học sinh từ danh sách tài khoản, không cần chọn khối
+            let grade = 'Khối 7';
+            try {
+                let users = JSON.parse(localStorage.getItem('math_hero_users_v2')) || {};
+                if (users[name]) {
+                    let k = users[name].className || users[name].class || users[name].classroom || users[name].lop;
+                    let so = trichXuatSoKhoiLop(k);
+                    if (so) grade = 'Khối ' + so;
+                } else {
+                    let khoiHienTai = layKhoiHocSinhHienTai();
+                    if (khoiHienTai) grade = khoiHienTai;
+                }
+            } catch (e) {}
 
             sessionStorage.setItem('hoc_school_student_name', name);
             localStorage.setItem('hoc_school_student_name', name);
@@ -2404,33 +2481,18 @@
             let duLieu = layDuLieuLuotBoss();
             let soLuotToiDa = laySoLuotBossToiDa();
 
-            let thongBaoEl = document.getElementById('boss-luot-status');
-            if (!thongBaoEl) {
-                thongBaoEl = document.createElement('div');
-                thongBaoEl.id = 'boss-luot-status';
-                thongBaoEl.style.cssText = 'margin-top: 12px; padding: 12px 16px; border-radius: 8px; border: 1px solid; font-size: 0.9rem; font-weight: 500; text-align: center;';
-                document.querySelector('.boss-card').after(thongBaoEl);
-            }
+            capNhatHienThiLuotConLai();
 
             if (!duLieu) {
-                thongBaoEl.style.display = 'none';
                 return false;
             }
-
-            thongBaoEl.style.display = 'block';
 
             if (duLieu.soLuotConLai <= 0) {
-                thongBaoEl.style.background = 'rgba(231,76,60,0.12)';
-                thongBaoEl.style.borderColor = '#e74c3c';
-                thongBaoEl.style.color = '#e74c3c';
-                thongBaoEl.innerHTML = `<i class="fa-solid fa-lock"></i> Em đã dùng hết <b>${soLuotToiDa} lượt</b> Thử Thách Tối Thượng tuần này! Hẹn gặp lại em tuần sau nhé, cố lên! 💪`;
+                let quizArea = document.getElementById('quiz-area');
+                if (quizArea) quizArea.style.display = 'none';
                 return false;
             }
 
-            thongBaoEl.style.background = 'rgba(231,76,60,0.10)';
-            thongBaoEl.style.borderColor = '#e74c3c';
-            thongBaoEl.style.color = '#f1c40f';
-            thongBaoEl.innerHTML = `<i class="fa-solid fa-mountain"></i> Em còn <b>${duLieu.soLuotConLai}</b> lượt Thử Thách Tối Thượng tuần này. Cố lên, em làm được! 🌟`;
             return true;
         }
 
@@ -2541,7 +2603,5 @@
             xuLyPhatRoiManHinhBoss();
         });
 </script>
-
-<span id="boss-luot-status" style="display:none;"></span>
 </body>
 </html>
