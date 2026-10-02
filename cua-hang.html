@@ -297,6 +297,8 @@
         .btn-danger-small { background: #e74c3c; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: none; }
         .setting-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
 
+
+
         /* ===== TOAST ===== */
         #toast-box { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; max-width: calc(100vw - 40px); pointer-events: none; }
         .toast-msg { background: rgba(15, 10, 30, 0.95); backdrop-filter: blur(10px); border-left: 4px solid #00ffff; color: #fff; padding: 14px 18px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; }
@@ -335,15 +337,9 @@
     </div>
 
     <div id="teacher-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-card teacher-modal">
-            <div class="modal-title"><i class="fa-solid fa-user-shield"></i> CỔNG ĐIỀU HÀNH TỐI CAO</div>
+        <div class="modal-card teacher-modal" style="max-width: 550px;">
+            <div class="modal-title"><i class="fa-solid fa-store"></i> QUẢN TRỊ CỬA HÀNG</div>
             
-            <div class="tabs-container" style="margin-bottom: 16px; border-radius: 12px;">
-                <button class="tab-btn active tab-btn-teacher" data-tab="tab-shop-teacher" onclick="switchTeacherTab('tab-shop-teacher', this)"><i class="fa-solid fa-store"></i> Shop</button>
-                <button class="tab-btn tab-btn-teacher" data-tab="tab-students" onclick="switchTeacherTab('tab-students', this)"><i class="fa-solid fa-users"></i> Học Viên</button>
-                <button class="tab-btn tab-btn-teacher" data-tab="tab-settings" onclick="switchTeacherTab('tab-settings', this)"><i class="fa-solid fa-sliders"></i> Hệ Thống</button>
-            </div>
-
             <div id="tab-shop-teacher" class="tab-content active">
                 <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 12px; text-align: left; margin-bottom: 12px; border: 1px dashed #f1c40f;">
                     <div style="color: #f1c40f; font-weight: 900; margin-bottom: 8px; font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> CHẾ TẠO VẬT PHẨM MỚI</div>
@@ -366,42 +362,9 @@
                     <div style="text-align: left; color: #00ffff; font-weight: bold; font-size: 0.8rem;"><i class="fa-solid fa-tags"></i> ĐIỀU CHỈNH GIÁ THỊ TRƯỜNG:</div>
                     <button class="btn-small btn-cancel" style="font-size:0.65rem;" onclick="datLaiGiaMacDinh()" title="Khôi phục bảng giá chuẩn theo kinh tế hoạt động"><i class="fa-solid fa-rotate-left"></i> Khôi phục giá chuẩn</button>
                 </div>
-                <div id="price-edit-list" style="max-height: 25vh; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;"></div>
+                <div id="price-edit-list" style="max-height: 35vh; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;"></div>
                 <button class="btn-action" style="margin-top: 12px;" onclick="luuBangGiaMoi()">LƯU BẢNG GIÁ</button>
                 <button class="btn-cancel-modal" style="width: 100%; margin-top: 8px;" onclick="dongModalTeacher()">ĐÓNG</button>
-            </div>
-
-            <div id="tab-students" class="tab-content" style="display: none;">
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
-                    <button class="btn-small btn-use" onclick="resetAllLuot('lam_bai')">Hồi LB</button>
-                    <button class="btn-small btn-use" onclick="resetAllLuot('boss')">Hồi Boss</button>
-                    <button class="btn-small btn-use" onclick="resetAllLuot('vong_quay')">Hồi VQ</button>
-                    <button class="btn-small btn-use" onclick="resetAllLuot('vuot_ai')">Hồi VA</button>
-                    <button class="btn-small btn-sell" onclick="if(confirm('Xóa TOÀN BỘ dữ liệu học sinh?')){localStorage.clear(); location.reload();}">CLEAR ALL</button>
-                </div>
-                <div class="table-wrap">
-                    <table class="custom-table" id="teacher-student-table">
-                        <thead><tr><th>#</th><th>Danh Xưng</th><th>Lớp</th><th>EXP</th><th>Điểm</th><th>Rank</th><th>LB</th><th>Bs</th><th>VQ</th><th>VA</th><th>Act</th></tr></thead>
-                        <tbody id="teacher-student-tbody"></tbody>
-                    </table>
-                </div>
-                <button class="btn-cancel-modal" style="width: 100%; margin-top: 12px;" onclick="dongModalTeacher()">ĐÓNG</button>
-            </div>
-
-            <div id="tab-settings" class="tab-content" style="display: none;">
-                <div class="setting-grid">
-                    <div><label style="font-size: 0.65rem; color:#a3c2db;">Lượt Nhiệm Vụ / Ngày</label><div style="display:flex;gap:4px;"><input type="number" id="max-luot-lam-bai" class="modal-input" style="padding:6px;"><button class="btn-small btn-use" onclick="saveMaxLuot('lam_bai')">Lưu</button></div></div>
-                    <div><label style="font-size: 0.65rem; color:#a3c2db;">Lượt Boss / Ngày</label><div style="display:flex;gap:4px;"><input type="number" id="max-luot-boss" class="modal-input" style="padding:6px;"><button class="btn-small btn-use" onclick="saveMaxLuot('boss')">Lưu</button></div></div>
-                    <div><label style="font-size: 0.65rem; color:#a3c2db;">Lượt Vòng Quay / Ngày</label><div style="display:flex;gap:4px;"><input type="number" id="max-luot-vong-quay" class="modal-input" style="padding:6px;"><button class="btn-small btn-use" onclick="saveMaxLuot('vong_quay')">Lưu</button></div></div>
-                    <div><label style="font-size: 0.65rem; color:#a3c2db;">Lượt Vượt Ải / Ngày</label><div style="display:flex;gap:4px;"><input type="number" id="max-luot-vuot-ai" class="modal-input" style="padding:6px;"><button class="btn-small btn-use" onclick="saveMaxLuot('vuot_ai')">Lưu</button></div></div>
-                </div>
-                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <a href="nang-cap-tu-duy.html" class="btn-small" style="text-align:center; background:#8b5cf6; text-decoration:none;">Vượt Ải</a>
-                    <a href="lam-bai.html" class="btn-small" style="text-align:center; background:#3498db; text-decoration:none;">Nhiệm Vụ</a>
-                    <a href="thu-thach-toi-thuong.html" class="btn-small" style="text-align:center; background:#f1c40f; color:#000; text-decoration:none;">Đánh Boss</a>
-                    <a href="vong-quay.html" class="btn-small" style="text-align:center; background:#ff2a85; text-decoration:none;">Vòng Quay</a>
-                </div>
-                <button class="btn-cancel-modal" style="width: 100%; margin-top: 12px;" onclick="dongModalTeacher()">ĐÓNG</button>
             </div>
         </div>
     </div>
@@ -1160,6 +1123,8 @@
             }
         }
 
+
+
         /* --- QUẢN TRỊ GV --- */
         function xacThucGiaoVien() { 
             let pInput = document.getElementById('teacher-password-input');
@@ -1178,7 +1143,7 @@
 
         function xacNhanMatKhauGiaoVien() { 
             let val = (document.getElementById('teacher-password-input').value || '').trim();
-            if(val === "thaytrongmath" || val === "123456") { 
+            if(val === "thaytrongmath") { 
                 sessionStorage.setItem('teacher_authenticated', 'true');
                 localStorage.setItem('teacher_authenticated', 'true');
                 sessionStorage.setItem('hero_admin_mode', 'admin');
@@ -1211,97 +1176,15 @@
             listEl.innerHTML = h;
         }
 
-        async function moModalQuanTri() {
+        function moModalQuanTri() {
             document.getElementById('teacher-modal').style.display = 'flex'; 
-            hienThiToast("Đang đồng bộ dữ liệu quản trị...");
-            try {
-                if (typeof window.__fbTaiToanBoHocSinhTuMay === 'function') {
-                    let all = await window.__fbTaiToanBoHocSinhTuMay();
-                    if (Array.isArray(all)) {
-                        all.forEach(hs => {
-                            if (hs && hs.data) {
-                                Object.keys(hs.data).forEach(k => {
-                                    if(k!=='_capNhatLanCuoi' && k!=='_lop' && k!=='_lopCuThe') localStorage.setItem(k, hs.data[k]);
-                                });
-                            }
-                        });
-                    }
-                }
-            } catch(e) {
-                console.warn("[Cửa Hàng] Không thể tải danh sách học sinh:", e);
-            }
             renderPriceEditList();
-            renderTeacherStudentList();
         }
 
         function dongModalTeacher() { 
             let m = document.getElementById('teacher-modal');
             if (m) m.style.display = 'none'; 
         }
-
-        function switchTeacherTab(id, btn) {
-            document.querySelectorAll('.teacher-modal .tab-content').forEach(e=>e.style.display='none');
-            document.querySelectorAll('.tab-btn-teacher').forEach(e=>e.classList.remove('active'));
-            document.getElementById(id).style.display = 'block'; btn.classList.add('active');
-        }
-
-        function renderTeacherStudentList() {
-            let s = [];
-            for(let i=0; i<localStorage.length; i++) { let k = localStorage.key(i); if(k.startsWith('exp_')) { let t=k.replace('exp_',''); s.push({ten:t, exp:parseInt(localStorage.getItem(k))||0, coin:parseInt(localStorage.getItem('coin_'+t))||0, luotLB:getLuot(t,'lam_bai'), luotBs:getLuot(t,'boss'), luotVQ:getLuot(t,'vong_quay'), luotVA:getLuot(t,'vuot_ai')}); } }
-            s.sort((a,b)=>b.exp-a.exp);
-            let bd = document.getElementById('teacher-student-tbody'); bd.innerHTML="";
-            s.forEach((x,i) => {
-                bd.innerHTML += `<tr><td>${i+1}</td><td>${x.ten}</td><td>-</td><td><span class="editable-cell" onclick="editF('${x.ten}','exp',this)">${x.exp}</span></td><td><span class="editable-cell" onclick="editF('${x.ten}','coin',this)">${x.coin}</span></td><td>-</td><td>${x.luotLB}</td><td>${x.luotBs}</td><td>${x.luotVQ}</td><td>${x.luotVA}</td><td><button class="btn-danger-small" onclick="delS('${x.ten}')">Xóa</button></td></tr>`;
-            });
-        }
-
-        function getLuot(t,l) { let d=JSON.parse(localStorage.getItem('luot_'+l+'_'+t)); return (d && d.date===new Date().toLocaleDateString('vi-VN')) ? d.soLuotConLai : 0; }
-        function editF(t,f,el) { let v=prompt(`Điểm/EXP mới:`, el.innerText); if(v && !isNaN(v)) { localStorage.setItem(f==='exp'?'exp_'+t:'coin_'+t, parseInt(v)); el.innerText=v; window.__fbDayDuLieuLenMay(t); capNhatGiaoDienEXP(); } }
-        function delS(t) { 
-            if(confirm(`Bạn có chắc muốn XÓA học sinh [${t}] khỏi hệ thống?`)) { 
-                // 1. Xóa khỏi math_hero_users_v2
-                let users = JSON.parse(localStorage.getItem('math_hero_users_v2') || '{}');
-                delete users[t];
-                localStorage.setItem('math_hero_users_v2', JSON.stringify(users));
-                if (typeof window.__fbDayCauHinhToanCuc === 'function') {
-                    window.__fbDayCauHinhToanCuc('math_hero_users_v2');
-                }
-
-                // 2. Ghi nhận vào danh_sach_hs_da_xoa
-                let dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]');
-                if (!dsDaXoa.includes(t)) {
-                    dsDaXoa.push(t);
-                    localStorage.setItem('danh_sach_hs_da_xoa', JSON.stringify(dsDaXoa));
-                    if (typeof window.__fbDayCauHinhToanCuc === 'function') {
-                        window.__fbDayCauHinhToanCuc('danh_sach_hs_da_xoa');
-                    }
-                }
-
-                localStorage.removeItem('exp_' + t);
-                localStorage.removeItem('coin_' + t);
-                localStorage.removeItem('ruong_do_' + t);
-                localStorage.removeItem('danh_hieu_active_' + t);
-                localStorage.removeItem('khung_avatar_active_' + t);
-                localStorage.removeItem('luot_lam_bai_' + t);
-                localStorage.removeItem('luot_boss_' + t);
-                localStorage.removeItem('luot_vong_quay_' + t);
-                localStorage.removeItem('luot_vuot_ai_' + t);
-                if (typeof window.__fbXoaHocSinhTrenMay === 'function') {
-                    window.__fbXoaHocSinhTrenMay(t); 
-                }
-                renderTeacherStudentList(); 
-                hienThiToast(`Đã xóa học sinh [${t}]!`);
-            } 
-        }
-
-        function resetAllLuot(l) { 
-            let max = parseInt(localStorage.getItem('so_luot_'+l+'_toi_da'))||3; let s=getAllStudents(); let d=new Date().toLocaleDateString('vi-VN');
-            s.forEach(x=>{ localStorage.setItem('luot_'+l+'_'+x.ten, JSON.stringify({date:d, soLuotConLai:max})); window.__fbDayDuLieuLenMay(x.ten); });
-            renderTeacherStudentList(); hienThiToast("Reset lượt OK!");
-        }
-
-        function getAllStudents() { let s=[]; for(let i=0;i<localStorage.length;i++){ let k=localStorage.key(i); if(k.startsWith('exp_')) s.push({ten:k.replace('exp_','')}); } return s; }
-        function saveMaxLuot(l) { let v = parseInt(document.getElementById('max-luot-'+l).value); if(v>0) { localStorage.setItem('so_luot_'+l+'_toi_da',v); window.__fbDayCauHinhToanCuc('so_luot_'+l+'_toi_da'); hienThiToast("Lưu max lượt!"); } }
 
         function luuBangGiaMoi() { 
             (danhSachSanPham || []).forEach((i, x) => { 

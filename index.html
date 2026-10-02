@@ -998,12 +998,12 @@
             animation: signpostIlluminate 4s ease-in-out infinite;
             pointer-events: none;
         }
-        .sign-today-task::before    { animation-delay: 0s; }
-        .sign-theory-vault::before  { animation-delay: 0.8s; }
-        .sign-essay-challenge::before { animation-delay: 1.6s; }
-        .sign-boss-fight::before    { animation-delay: 2.4s; }
-        .sign-lucky-wheel::before   { animation-delay: 3.2s; }
-        .sign-spirit-pet::before    { animation-delay: 3.6s; }
+        .sign-today-task::before      { animation-delay: 0s; }
+        .sign-theory-vault::before    { animation-delay: 0.7s; }
+        .sign-essay-challenge::before { animation-delay: 1.4s; }
+        .sign-boss-fight::before      { animation-delay: 2.1s; }
+        .sign-lucky-wheel::before     { animation-delay: 2.8s; }
+        .sign-pvp-arena::before       { animation-delay: 3.5s; }
 
         @keyframes signpostIlluminate {
             0%   { opacity: 0; }
@@ -1088,10 +1088,10 @@
 
         /* Vị trí các nút – dùng % để tự co giãn theo khung */
         .sign-today-task {
-            width: 27%;
-            height: 15%;
-            left: 7%;
-            top: 14%;
+            width: 28%;
+            height: 13%;
+            left: 4.5%;
+            top: 10%;
             animation-delay: 0s;
             border-color: rgba(0, 198, 255, 0.4);
         }
@@ -1103,10 +1103,10 @@
         }
 
         .sign-theory-vault {
-            width: 27%;
-            height: 15%;
-            left: 36.5%;
-            top: 14%;
+            width: 28%;
+            height: 13%;
+            left: 36%;
+            top: 10%;
             animation-delay: 0.4s;
             border-color: rgba(56, 239, 125, 0.4);
         }
@@ -1118,10 +1118,10 @@
         }
 
         .sign-essay-challenge {
-            width: 27%;
-            height: 15%;
-            left: 66%;
-            top: 14%;
+            width: 28%;
+            height: 13%;
+            left: 67.5%;
+            top: 10%;
             animation-delay: 0.8s;
             border-color: rgba(142, 45, 226, 0.4);
         }
@@ -1134,9 +1134,9 @@
 
         .sign-boss-fight {
             width: 28%;
-            height: 15%;
-            left: 17%;
-            top: 34%;
+            height: 13%;
+            left: 4.5%;
+            top: 25.5%;
             animation-delay: 1.2s;
             border-color: rgba(255, 65, 108, 0.4);
         }
@@ -1149,9 +1149,9 @@
 
         .sign-lucky-wheel {
             width: 28%;
-            height: 15%;
-            left: 55%;
-            top: 34%;
+            height: 13%;
+            left: 36%;
+            top: 25.5%;
             animation-delay: 1.6s;
             border-color: rgba(241, 39, 17, 0.4);
         }
@@ -1160,6 +1160,23 @@
         }
         .sign-lucky-wheel .signpost-title {
             text-shadow: 0 0 12px #f5af19;
+        }
+
+        .sign-pvp-arena {
+            width: 28%;
+            height: 13%;
+            left: 67.5%;
+            top: 25.5%;
+            animation-delay: 2.0s;
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.4), 0 0 10px rgba(0, 229, 255, 0.4);
+        }
+        .sign-pvp-arena .signpost-sub {
+            background: linear-gradient(135deg, #ff0844, #ff8c00);
+            box-shadow: 0 2px 10px rgba(255, 8, 68, 0.6);
+        }
+        .sign-pvp-arena .signpost-title {
+            text-shadow: 0 0 12px #ffd700, 0 0 20px #ff3366;
         }
 
         /* ===== LINH THÚ THẦN TIÊN NGAY TẠI VÒNG SÁNG TRUNG TÂM SẢNH CHÍNH ===== */
@@ -2465,6 +2482,13 @@
                     <div class="resize-handle" data-handle-for="sign-lucky-wheel"></div>
                 </a>
 
+                <a href="dau-doi-khang.html" class="signpost-item sign-pvp-arena editable-zone" data-zone-id="sign-pvp-arena" onclick="phatAmThanhClick()">
+                    <span class="zone-label">Đấu 1v1</span>
+                    <span class="signpost-title">Đấu Trường<br>1v1</span>
+                    <span class="signpost-sub">SO GĂNG</span>
+                    <div class="resize-handle" data-handle-for="sign-pvp-arena"></div>
+                </a>
+
                 <!-- NÚT BẬT TẮT NHẠC NHỎ GỌN TẠI GÓC BẢN ĐỒ -->
                 <button id="btn-music-toggle" class="btn-toggle-music muted" onclick="xuLyBatTatAmThanhNen()" title="Bật / Tắt nhạc nền">
                     <i id="icon-music-toggle" class="fa-solid fa-volume-xmark"></i>
@@ -2699,7 +2723,7 @@
         //  Các hàm edit mode, âm thanh, đăng nhập (giữ nguyên từ bản gốc)
         // ============================================================
 
-        const OVERLAY_POS_KEY = 'hero_overlay_positions_v1';
+        const OVERLAY_POS_KEY = 'hero_overlay_positions_v2';
         const EDIT_LOCK_KEY = 'hero_edit_locked_v1';
         const TOOLBAR_POS_KEY = 'hero_toolbar_position_v1';
         const FONTPANEL_POS_KEY = 'hero_fontpanel_position_v1';

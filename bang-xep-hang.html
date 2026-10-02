@@ -20,6 +20,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="./hero-firebase-compat.js"></script>
     <script src="./hero-avatar.js"></script>
+    <script src="./hero-danh-sach-chuan.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -91,218 +92,7 @@
             transform: translateX(6px);
         }
 
-        /* ===== MODAL GIÁO VIÊN & ĐĂNG NHẬP THEO PHONG CÁCH ẢNH 2 ===== */
-        .modal-overlay {
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background: rgba(3, 5, 10, 0.9);
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(6px);
-            padding: 16px;
-            animation: fadeIn 0.3s ease;
-        }
-        .modal-card {
-            background: #0d1527;
-            border: 2px solid #22d3ee;
-            box-shadow: 0 0 25px rgba(34, 211, 238, 0.25), inset 0 0 20px rgba(34, 211, 238, 0.05);
-            border-radius: 16px;
-            padding: 24px;
-            width: 100%;
-            max-width: 720px;
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-card h3 {
-            font-family: 'Montserrat', sans-serif;
-            color: #22d3ee;
-            text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
-            margin-top: 0;
-            font-weight: 900;
-            letter-spacing: 0.05em;
-        }
-        .modal-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: #050811;
-            border: 1px solid #1e293b;
-            color: white;
-            border-radius: 10px;
-            font-size: 1rem;
-            text-align: center;
-            font-weight: bold;
-            margin: 16px 0;
-            transition: all 0.3s;
-        }
-        .modal-input:focus {
-            border-color: #22d3ee;
-            box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
-            outline: none;
-        }
-
-        /* Nút bấm phong cách Gradient cực nét từ hình ảnh của bạn */
-        .btn-magenta-glow {
-            background: linear-gradient(90deg, #d946ef 0%, #a855f7 100%);
-            box-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
-            color: #fff;
-            font-weight: 900;
-            text-transform: uppercase;
-            transition: all 0.3s;
-        }
-        .btn-magenta-glow:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 25px rgba(217, 70, 239, 0.7);
-        }
-
-        .btn-cyan-glow {
-            background: linear-gradient(90deg, #38bdf8 0%, #1d4ed8 100%);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-            color: #fff;
-            font-weight: 800;
-            transition: all 0.3s;
-        }
-        .btn-cyan-glow:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.7);
-        }
-
-        .btn-dark-translucent {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            transition: all 0.3s;
-        }
-        .btn-dark-translucent:hover {
-            background: rgba(30, 41, 59, 0.7);
-            border-color: rgba(255, 255, 255, 0.3);
-            color: #ffffff;
-        }
-
-        .btn-action {
-            color: #fff;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 800;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-        }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
-        .btn-danger:hover { box-shadow: 0 0 18px rgba(239, 68, 68, 0.6); transform: scale(1.02); }
-        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); color: #000; }
-        .btn-warning:hover { box-shadow: 0 0 18px rgba(245, 158, 11, 0.6); transform: scale(1.02); }
-
-        .teacher-table-wrap {
-            overflow-x: auto;
-            margin-top: 14px;
-            border-radius: 12px;
-            border: 1px solid #1e293b;
-            background: #050811;
-        }
-        .teacher-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 750px;
-        }
-        .teacher-table th {
-            background: #0f172a;
-            color: #22d3ee;
-            text-align: left;
-            padding: 12px 14px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            border-bottom: 2px solid #1e293b;
-        }
-        .teacher-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid #1e293b;
-            color: #e2e8f0;
-            vertical-align: middle;
-        }
-        .teacher-table tr:hover td { background: rgba(34, 211, 238, 0.04); }
-
-        .editable-cell {
-            cursor: pointer;
-            transition: 0.2s;
-            padding: 4px 10px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            display: inline-block;
-            font-weight: bold;
-            color: #38bdf8;
-        }
-        .editable-cell:hover {
-            background: rgba(34, 211, 238, 0.15);
-            border-color: #22d3ee;
-        }
-        .btn-small {
-            padding: 4px 10px;
-            font-size: 0.65rem;
-            border-radius: 6px;
-            cursor: pointer;
-            border: none;
-            font-weight: bold;
-            white-space: nowrap;
-            transition: 0.2s;
-        }
-        .btn-small:hover { transform: scale(1.08); }
-
-        .tab-btn-teacher {
-            background: #0f172a;
-            color: #94a3b8;
-            border: 1px solid #1e293b;
-            padding: 8px 16px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.75rem;
-            margin-right: 6px;
-        }
-        .tab-btn-teacher.active {
-            background: #22d3ee;
-            color: #04060b;
-            border-color: #22d3ee;
-            box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
-        }
-        .tab-content-teacher { display: none; animation: fadeIn 0.3s ease; padding-top: 14px; }
-        .tab-content-teacher.active { display: block; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        .nhatky-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            background: rgba(255,255,255,0.01);
-            margin-bottom: 4px;
-            border-radius: 6px;
-        }
-        .nhatky-item .time { color: #38bdf8; font-weight: bold; }
-
-        @media (max-width: 640px) {
-            .modal-card { padding: 16px; max-width: 100%; }
-            .teacher-table { font-size: 0.7rem; min-width: 550px; }
-            .teacher-table th, .teacher-table td { padding: 8px 8px; }
-            .tab-btn-teacher { font-size: 0.65rem; padding: 6px 12px; }
-        }
 
         .btn-tab-public {
             background: rgba(15, 23, 42, 0.85);
@@ -334,14 +124,9 @@
             <a href="index.html" class="flex items-center gap-2 btn-dark-translucent font-bold px-6 py-2.5 rounded-full transition-all text-sm shadow-lg">
                 <i class="fa-solid fa-arrow-left text-cyan-400"></i> Sảnh Chính
             </a>
-            <div class="flex items-center gap-4">
-                <button onclick="openTeacherLogin()" class="flex items-center gap-2 btn-cyan-glow px-5 py-2.5 rounded-full transition-all text-sm shadow-lg">
-                    <i class="fa-solid fa-user-tie"></i> Giáo viên
-                </button>
-                <div class="text-right">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Mùa Giải Đấu Toán Học</p>
-                    <p class="text-xs text-emerald-400 font-semibold mt-0.5"><i class="fa-solid fa-circle fa-fade text-[8px] mr-1"></i> Bảng điểm cập nhật liên tục</p>
-                </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Mùa Giải Đấu Toán Học</p>
+                <p class="text-xs text-emerald-400 font-semibold mt-0.5"><i class="fa-solid fa-circle fa-fade text-[8px] mr-1"></i> Bảng điểm cập nhật liên tục</p>
             </div>
         </div>
 
@@ -440,141 +225,7 @@
 
     </div>
 
-    <div id="teacher-login-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 420px;">
-            <h3><i class="fa-solid fa-lock mb-2 block text-3xl"></i> XÁC THỰC GIÁO VIÊN</h3>
-            <p style="font-size:0.85rem; color:#94a3b8; font-weight: 500;">Vui lòng nhập mật mã để mở Cổng Điều Hành:</p>
-            <input type="password" id="teacher-password-input" class="modal-input" placeholder="Mật mã Giáo viên" autocomplete="off" onkeydown="if(event.key==='Enter') verifyTeacherPassword()">
-            <div class="flex gap-3 justify-center mt-2">
-                <button class="btn-dark-translucent px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider" onclick="closeTeacherLogin()">Hủy bỏ</button>
-                <button class="btn-magenta-glow px-6 py-2 rounded-lg text-xs tracking-wider" onclick="verifyTeacherPassword()">Xác Nhận</button>
-            </div>
-        </div>
-    </div>
 
-    <div id="teacher-panel-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 1100px; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 14px;">
-                <h3 style="margin:0; color:#22d3ee; font-size:1.2rem;"><i class="fa-solid fa-user-shield"></i> CỔNG ĐIỀU HÀNH QUẢN TRỊ</h3>
-                <button class="btn-dark-translucent" onclick="closeTeacherPanel()" style="padding: 6px 14px; font-size:0.75rem; border-radius: 6px; font-weight: bold;">ĐÓNG</button>
-            </div>
-
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                <button class="tab-btn-teacher active" data-tab="tab-student" onclick="switchTeacherTab('tab-student', this)"><i class="fa-solid fa-users"></i> Chiến binh</button>
-                <button class="tab-btn-teacher" data-tab="tab-log" onclick="switchTeacherTab('tab-log', this)"><i class="fa-solid fa-clock-rotate-left"></i> Nhật ký</button>
-                <button class="tab-btn-teacher" data-tab="tab-effort" onclick="switchTeacherTab('tab-effort', this)"><i class="fa-solid fa-fire"></i> Xếp Hạng Nỗ Lực</button>
-                <button class="tab-btn-teacher" data-tab="tab-setting" onclick="switchTeacherTab('tab-setting', this)"><i class="fa-solid fa-sliders"></i> Cài đặt</button>
-            </div>
-
-            <div id="tab-student" class="tab-content-teacher active">
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
-                    <button class="btn-action" onclick="xuatExcelChienBinh()" style="background: linear-gradient(135deg, #10b981, #059669); font-size:0.65rem; padding:6px 12px;"><i class="fa-solid fa-file-excel"></i> Xuất Excel Chiến Binh (EXP)</button>
-                    <button class="btn-action btn-warning" onclick="resetAllLuot('lam_bai')" style="font-size:0.65rem; padding:6px 12px;"><i class="fa-solid fa-rotate"></i> Reset LB tất cả</button>
-                    <button class="btn-action btn-warning" onclick="resetAllLuot('vuot_ai')" style="font-size:0.65rem; padding:6px 12px;"><i class="fa-solid fa-rotate"></i> Reset Vượt ải tất cả</button>
-                    <button class="btn-action btn-warning" onclick="resetAllLuot('vong_quay')" style="font-size:0.65rem; padding:6px 12px;"><i class="fa-solid fa-rotate"></i> Reset VQ tất cả</button>
-                    <button class="btn-action btn-danger" onclick="if(confirm('Xóa TOÀN BỘ dữ liệu học sinh?')){localStorage.clear(); location.reload();}" style="font-size:0.65rem; padding:6px 12px;"><i class="fa-solid fa-trash-can"></i> Xóa toàn bộ</button>
-                </div>
-                <div class="teacher-table-wrap">
-                    <table class="teacher-table" id="teacher-student-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Họ tên</th>
-                                <th>Lớp</th>
-                                <th>EXP</th>
-                                <th>Điểm</th>
-                                <th>Danh hiệu</th>
-                                <th>Lượt LB</th>
-                                <th>Lượt Vượt ải</th>
-                                <th>Lượt VQ</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="teacher-student-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="tab-log" class="tab-content-teacher">
-                <div style="max-height: 400px; overflow-y: auto; background: #050811; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;" id="nhat-ky-list"></div>
-            </div>
-
-            <div id="tab-effort" class="tab-content-teacher">
-                <p style="font-size:0.75rem; color:#94a3b8; margin: 0 0 12px 0; line-height:1.5;">
-                    Xếp hạng theo <b style="color:#22d3ee;">nỗ lực</b> (không chỉ theo điểm đúng), gồm 4 tiêu chí:
-                    Chuyên cần <b style="color:#f1c40f;">30%</b> · Cố gắng <b style="color:#f1c40f;">25%</b> ·
-                    Kết quả <b style="color:#f1c40f;">30%</b> · Tiến bộ <b style="color:#f1c40f;">15%</b>.
-                    Dữ liệu lấy từ Làm bài, Vượt ải, Boss cuối tuần và Bài tập tự luận.
-                </p>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; background: rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid #1e293b;">
-                    <select id="effort-period-type" class="modal-input" style="width:auto; margin:0; padding:8px 12px;" onchange="capNhatGiaoDienChonKy()">
-                        <option value="tuan_nay">Tuần này</option>
-                        <option value="thang_nay">Tháng này</option>
-                        <option value="tuan_cu_the">Chọn tuần cụ thể</option>
-                        <option value="thang_cu_the">Chọn tháng cụ thể</option>
-                    </select>
-                    <input type="date" id="effort-week-picker" class="modal-input" style="width:auto; margin:0; padding:8px 12px; display:none;">
-                    <input type="month" id="effort-month-picker" class="modal-input" style="width:auto; margin:0; padding:8px 12px; display:none;">
-                    <button class="btn-cyan-glow px-4 py-2 rounded-lg text-xs font-bold" onclick="tinhBangXepHangNoLuc()"><i class="fa-solid fa-magnifying-glass-chart"></i> Tính bảng xếp hạng</button>
-                    <button class="btn-magenta-glow px-4 py-2 rounded-lg text-xs font-bold" onclick="xuatExcelNoLuc()"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
-                    <span id="effort-status" style="font-size:0.7rem; color:#64748b; font-weight:600;"></span>
-                </div>
-                <div class="teacher-table-wrap">
-                    <table class="teacher-table" id="effort-table">
-                        <thead>
-                            <tr>
-                                <th>Hạng</th>
-                                <th>Họ tên</th>
-                                <th>Lớp</th>
-                                <th>Điểm Nỗ Lực (10)</th>
-                                <th>Xếp loại</th>
-                                <th>Chuyên cần (30%)</th>
-                                <th>Cố gắng (25%)</th>
-                                <th>Kết quả (30%)</th>
-                                <th>Tiến bộ (15%)</th>
-                                <th>Số ngày TG</th>
-                                <th>Số lượt</th>
-                                <th>Đúng/Sai</th>
-                            </tr>
-                        </thead>
-                        <tbody id="effort-tbody"><tr><td colspan="12" style="text-align:center; color:#64748b; padding:24px; font-weight:500;">Bấm "Tính bảng xếp hạng" để xem dữ liệu.</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="tab-setting" class="tab-content-teacher">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 8px;">
-                    <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 10px; border: 1px solid #1e293b;">
-                        <label style="color:#94a3b8; font-size:0.75rem; display:block; font-weight:bold; margin-bottom:4px;">Số lượt làm bài tối đa / ngày</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="max-luot-lam-bai" class="modal-input" style="width:90px; margin:0; padding:6px 10px;" min="1" value="3">
-                            <button class="btn-cyan-glow px-4 py-1.5 rounded-lg text-xs font-bold" onclick="saveMaxLuot('lam_bai')">Lưu</button>
-                        </div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 10px; border: 1px solid #1e293b;">
-                        <label style="color:#94a3b8; font-size:0.75rem; display:block; font-weight:bold; margin-bottom:4px;">Số lượt vượt ải tối đa / ngày</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="max-luot-vuot-ai" class="modal-input" style="width:90px; margin:0; padding:6px 10px;" min="1" value="3">
-                            <button class="btn-cyan-glow px-4 py-1.5 rounded-lg text-xs font-bold" onclick="saveMaxLuot('vuot_ai')">Lưu</button>
-                        </div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 10px; border: 1px solid #1e293b;">
-                        <label style="color:#94a3b8; font-size:0.75rem; display:block; font-weight:bold; margin-bottom:4px;">Số lượt vòng quay tối đa / ngày</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="max-luot-vong-quay" class="modal-input" style="width:90px; margin:0; padding:6px 10px;" min="1" value="5">
-                            <button class="btn-cyan-glow px-4 py-1.5 rounded-lg text-xs font-bold" onclick="saveMaxLuot('vong_quay')">Lưu</button>
-                        </div>
-                    </div>
-                </div>
-                <p style="font-size:0.75rem; color:#64748b; margin-top:14px; font-weight: 500;">* Các giá trị này áp dụng cho tất cả học sinh khi hệ thống tiến hành reset lượt.</p>
-                <div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px;">
-                    <a href="nang-cap-tu-duy.html" class="btn-action" style="background:#8b5cf6; color:#fff; text-decoration:none; padding:6px 14px; font-size:0.7rem; border-radius:6px; font-weight:bold;"><i class="fa-solid fa-mountain"></i> Vào Vượt ải</a>
-                    <a href="lam-bai.html" class="btn-action" style="background:#3498db; color:#fff; text-decoration:none; padding:6px 14px; font-size:0.7rem; border-radius:6px; font-weight:bold;"><i class="fa-solid fa-book"></i> Vào Làm bài</a>
-                    <a href="vong-quay.html" class="btn-action" style="background:#f39c12; color:#000; text-decoration:none; padding:6px 14px; font-size:0.7rem; border-radius:6px; font-weight:bold;"><i class="fa-solid fa-rotate"></i> Vào Vòng quay</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
 // Thiết lập dự phòng an toàn cho Firebase Sync (chạy 100% trên cả file:/// và máy chủ web)
@@ -677,6 +328,96 @@
         let currentFilterLop = 'all'; // 'all', 'khoi_6', 'khoi_7', 'khoi_8', 'khoi_9', hoặc lớp cụ thể 'lop_...'
         let duLieuNoLucTuanNay = null; // Cache nỗ lực tuần này
 
+        function layLopChuanCuaHocSinh(hsObj, tenHs) {
+            const ten = (tenHs || (typeof hsObj === 'string' ? hsObj : (hsObj?.ten || hsObj?.name || ''))).trim();
+            const tenChuan = ten.replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+
+            // 1. Ưu tiên tuyệt đối: Tra cứu từ danh sách chuẩn 203 học sinh (window.HERO_DANH_SACH_CHUAN_USERS)
+            if (ten && window.HERO_DANH_SACH_CHUAN_USERS) {
+                if (window.HERO_DANH_SACH_CHUAN_USERS[ten]) {
+                    const cr = window.HERO_DANH_SACH_CHUAN_USERS[ten].classroom;
+                    if (cr && cr !== '—' && !cr.toLowerCase().startsWith('khối')) {
+                        return String(cr).trim().replace(/^lớp\s*/i, '');
+                    }
+                }
+                for (let k in window.HERO_DANH_SACH_CHUAN_USERS) {
+                    let kNorm = k.replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                    if (kNorm === tenChuan) {
+                        const cr = window.HERO_DANH_SACH_CHUAN_USERS[k].classroom;
+                        if (cr && cr !== '—' && !cr.toLowerCase().startsWith('khối')) {
+                            return String(cr).trim().replace(/^lớp\s*/i, '');
+                        }
+                    }
+                }
+            }
+
+            // 2. Tra cứu từ danh sách mảng chuẩn window.HERO_DANH_SACH_CHUAN_LIST
+            if (ten && window.HERO_DANH_SACH_CHUAN_LIST && Array.isArray(window.HERO_DANH_SACH_CHUAN_LIST)) {
+                const found = window.HERO_DANH_SACH_CHUAN_LIST.find(it => {
+                    if (!it || !it.name) return false;
+                    let itNorm = String(it.name).replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                    return itNorm === tenChuan;
+                });
+                if (found && found.classroom && found.classroom !== '—' && !found.classroom.toLowerCase().startsWith('khối')) {
+                    return String(found.classroom).trim().replace(/^lớp\s*/i, '');
+                }
+            }
+
+            // 3. Tra cứu từ hsObj truyền vào (nếu có classroom hoặc class/lop hợp lệ)
+            if (hsObj && typeof hsObj === 'object') {
+                let cr = hsObj.classroom || hsObj.lop;
+                if (typeof cr === 'string' && cr.trim() && cr !== '—' && !cr.toLowerCase().startsWith('khối')) {
+                    return cr.trim().replace(/^lớp\s*/i, '');
+                }
+                let cl = hsObj.class;
+                if (typeof cl === 'string' && cl.trim() && cl !== '—' && !cl.toLowerCase().startsWith('khối')) {
+                    return cl.trim().replace(/^lớp\s*/i, '');
+                }
+            }
+
+            // 4. Tra cứu từ math_hero_users_v2 trong localStorage
+            if (ten) {
+                try {
+                    const usersLocal = JSON.parse(localStorage.getItem('math_hero_users_v2')) || {};
+                    const u = usersLocal[ten];
+                    if (u && typeof u === 'object') {
+                        let cr = u.classroom || u.lop;
+                        if (typeof cr === 'string' && cr.trim() && cr !== '—' && !cr.toLowerCase().startsWith('khối')) {
+                            return cr.trim().replace(/^lớp\s*/i, '');
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            // 5. Tra cứu từ nhật ký đăng nhập gần nhất
+            if (ten) {
+                try {
+                    const nhatKy = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
+                    const logItem = [...nhatKy].reverse().find(it => {
+                        if (!it || !it.name) return false;
+                        let itNorm = String(it.name).replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                        return itNorm === tenChuan && it.classroom && !it.classroom.toLowerCase().startsWith('khối');
+                    });
+                    if (logItem && logItem.classroom) {
+                        return String(logItem.classroom).trim().replace(/^lớp\s*/i, '');
+                    }
+                } catch(e) {}
+            }
+
+            // 6. Phân bổ lớp mặc định theo khối nếu chưa rõ (TUYỆT ĐỐI không trả về "Khối 7" vào ô Lớp)
+            let khoiStr = '';
+            if (hsObj && typeof hsObj === 'object') {
+                khoiStr = hsObj.classroom || hsObj.class || hsObj.lop || hsObj.grade || '';
+            }
+            const khoi = layKhoiCuaHocSinh(khoiStr);
+            const num = khoi.match(/\d+/)?.[0] || '7';
+            if (num === '7') return '7A2';
+            if (num === '9') return '9A4';
+            if (num === '6') return '6A1';
+            if (num === '8') return '8A1';
+            return num + 'A1';
+        }
+
         function layKhoiCuaHocSinh(lop) {
             if (!lop) return 'Khối 7';
             let s = lop.toString().toLowerCase().trim();
@@ -692,8 +433,19 @@
             if (!selectEl) return;
             let students = getAllStudents();
             let uniqueClasses = new Set();
+
+            // Khởi tạo các lớp chuẩn từ danh sách 203 học sinh
+            if (window.HERO_DANH_SACH_LOP && Array.isArray(window.HERO_DANH_SACH_LOP)) {
+                window.HERO_DANH_SACH_LOP.forEach(cls => uniqueClasses.add(cls));
+            } else {
+                ['7A2', '7A4', '7A7', '9A4', '9A6'].forEach(cls => uniqueClasses.add(cls));
+            }
+
             students.forEach(s => {
-                if (s.lop && !s.lop.toLowerCase().startsWith('khối') && s.lop !== '---') uniqueClasses.add(s.lop.trim());
+                let lopChuan = layLopChuanCuaHocSinh(s, s.ten);
+                if (lopChuan && !lopChuan.toLowerCase().startsWith('khối') && lopChuan !== '---') {
+                    uniqueClasses.add(lopChuan.trim().replace(/^lớp\s*/i, ''));
+                }
             });
             let currentVal = selectEl.value || currentFilterLop || 'all';
             let baseOptions = `
@@ -748,10 +500,13 @@
                     gomDuLieuHocSinhTrongKy(tuNgayTruoc, denNgayTruoc)
                 ]);
                 let roster = getAllStudents();
-                let ketQua = roster.map(hs => ({
-                    name: hs.ten, ten: hs.ten, class: hs.lop, lop: hs.lop,
-                    ...tinhDiemNoLuc(hs, duLieuKyNay[hs.ten], duLieuKyTruoc[hs.ten], soNgayTrongKy, soNgayTrongKy * 1.5)
-                }));
+                let ketQua = roster.map(hs => {
+                    let lopChuan = layLopChuanCuaHocSinh(hs, hs.ten);
+                    return {
+                        name: hs.ten, ten: hs.ten, class: lopChuan, lop: lopChuan,
+                        ...tinhDiemNoLuc(hs, duLieuKyNay[hs.ten], duLieuKyTruoc[hs.ten], soNgayTrongKy, soNgayTrongKy * 1.5)
+                    };
+                });
                 ketQua.sort((a, b) => b.diem10 - a.diem10 || b.soNgayTG - a.soNgayTG || b.tongLuot - a.tongLuot || b.soCauDung - a.soCauDung || a.ten.localeCompare(b.ten, 'vi'));
                 duLieuNoLucTuanNay = ketQua;
                 window.duLieuNoLucTuanNay = ketQua;
@@ -768,9 +523,6 @@
             loadLeaderboardData();
             napDuLieuNoLucTuanNay();
             initFireworksEngine();
-            if (document.getElementById('max-luot-lam-bai')) document.getElementById('max-luot-lam-bai').value = localStorage.getItem('so_luot_lam_bai_toi_da') || 3;
-            if (document.getElementById('max-luot-vuot-ai')) document.getElementById('max-luot-vuot-ai').value = localStorage.getItem('so_luot_vuot_ai_toi_da') || 3;
-            if (document.getElementById('max-luot-vong-quay')) document.getElementById('max-luot-vong-quay').value = localStorage.getItem('so_luot_vong_quay_toi_da') || 5;
 
             // Đồng bộ dữ liệu mới nhất từ Cloud nếu có mạng
             try {
@@ -780,10 +532,14 @@
                 if (typeof window.__fbTaiToanBoHocSinhTuMay === 'function') {
                     let toanBoHocSinh = await window.__fbTaiToanBoHocSinhTuMay();
                     if (Array.isArray(toanBoHocSinh)) {
+                        window.__cloudHsCacheExpCoin = {};
                         toanBoHocSinh.forEach(hs => {
                             if (hs && hs.data) {
+                                window.__cloudHsCacheExpCoin[hs.id || ''] = hs.data;
                                 Object.keys(hs.data).forEach(key => {
                                     if (key === '_capNhatLanCuoi' || key === '_lop' || key === '_lopCuThe') return;
+                                    // [PHƯƠNG ÁN C-A] KHÔNG ghi các key điểm/riêng của học sinh vào localStorage
+                                    if (/^(exp_|coin_|luot_|ruong_do_|hero_linh_thu_|hero_avatar_selection_|hero_streak_count_|hero_streak_last_date_|dang_nhap_|nhat_ky_hoat_dong_)/.test(key)) return;
                                     localStorage.setItem(key, hs.data[key]);
                                 });
                             }
@@ -794,12 +550,6 @@
             } catch(err) {
                 console.warn("[Bảng Xếp Hạng] Lỗi đồng bộ đám mây:", err);
             }
-
-            // Khởi tạo mặc định cho bộ chọn kỳ của tab "Xếp Hạng Nỗ Lực"
-            let homNay = new Date();
-            document.getElementById('effort-week-picker').value = toISODate(homNay);
-            document.getElementById('effort-month-picker').value = homNay.getFullYear() + '-' + String(homNay.getMonth() + 1).padStart(2, '0');
-            capNhatGiaoDienChonKy();
         });
 
         async function loadLeaderboardData() {
@@ -814,13 +564,14 @@
                 // Lọc theo lớp / khối
                 let filtered = roster.filter(s => {
                     if (currentFilterLop === 'all') return true;
+                    let sLopChuan = layLopChuanCuaHocSinh(s, s.ten);
                     if (currentFilterLop.startsWith('khoi_')) {
                         let tenKhoi = 'Khối ' + currentFilterLop.replace('khoi_', '');
-                        return layKhoiCuaHocSinh(s.lop) === tenKhoi;
+                        return layKhoiCuaHocSinh(sLopChuan) === tenKhoi;
                     }
                     if (currentFilterLop.startsWith('lop_')) {
-                        let tenLop = currentFilterLop.replace('lop_', '');
-                        return s.lop === tenLop;
+                        let tenLop = currentFilterLop.replace('lop_', '').trim().toUpperCase().replace(/^LỚP\s*/, '');
+                        return sLopChuan.trim().toUpperCase().replace(/^LỚP\s*/, '') === tenLop;
                     }
                     return true;
                 });
@@ -862,6 +613,8 @@
                         }
                     }
 
+                    let lopHienThi = layLopChuanCuaHocSinh(current, current.ten);
+
                     listContainer.innerHTML += `
                         <div class="glass-row flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl gap-3 sm:gap-4">
                             <div class="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
@@ -876,7 +629,7 @@
                                             ${tier.name}
                                         </span>
                                     </div>
-                                    <p class="text-xs text-cyan-400 font-bold mt-0.5"><i class="fa-solid fa-graduation-cap mr-1"></i>Lớp: ${current.lop}</p>
+                                    <p class="text-xs text-cyan-400 font-bold mt-0.5"><i class="fa-solid fa-graduation-cap mr-1"></i>Lớp: ${lopHienThi}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-4 md:gap-8 flex-shrink-0 text-right w-full sm:w-auto justify-end pl-11 sm:pl-0">
@@ -904,13 +657,14 @@
 
                 let filtered = (duLieuNoLucTuanNay || []).filter(s => {
                     if (currentFilterLop === 'all') return true;
+                    let sLopChuan = layLopChuanCuaHocSinh(s, s.ten || s.name);
                     if (currentFilterLop.startsWith('khoi_')) {
                         let tenKhoi = 'Khối ' + currentFilterLop.replace('khoi_', '');
-                        return layKhoiCuaHocSinh(s.lop) === tenKhoi;
+                        return layKhoiCuaHocSinh(sLopChuan) === tenKhoi;
                     }
                     if (currentFilterLop.startsWith('lop_')) {
-                        let tenLop = currentFilterLop.replace('lop_', '');
-                        return s.lop === tenLop;
+                        let tenLop = currentFilterLop.replace('lop_', '').trim().toUpperCase().replace(/^LỚP\s*/, '');
+                        return sLopChuan.trim().toUpperCase().replace(/^LỚP\s*/, '') === tenLop;
                     }
                     return true;
                 });
@@ -954,6 +708,8 @@
                         huyHieuNoLuc += `<span class="text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full shadow-sm border bg-purple-500/20 text-purple-300 border-purple-500/50">📈 Tiến Bộ Vượt Bậc</span>`;
                     }
 
+                    let lopHienThi = layLopChuanCuaHocSinh(r, r.ten);
+
                     listContainer.innerHTML += `
                         <div class="glass-row flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl gap-3 sm:gap-4">
                             <div class="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
@@ -967,7 +723,7 @@
                                         ${huyHieuNoLuc}
                                     </div>
                                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 mt-1">
-                                        <span class="text-cyan-400 font-bold"><i class="fa-solid fa-graduation-cap mr-1"></i>Lớp: ${r.lop}</span>
+                                        <span class="text-cyan-400 font-bold"><i class="fa-solid fa-graduation-cap mr-1"></i>Lớp: ${lopHienThi}</span>
                                         <span>📅 Chuyên cần: <b class="text-slate-200">${r.soNgayTG} ngày</b> (${r.diemChuyenCan}/10)</span>
                                         <span>📝 Luyện tập: <b class="text-slate-200">${r.tongLuot} bài</b></span>
                                         <span>🎯 Đúng: <b class="text-emerald-400">${r.soCauDung}</b>/<b class="text-rose-400">${r.soCauSai}</b></span>
@@ -1003,7 +759,7 @@
             }
 
             let ten = player.ten || player.name;
-            let lop = player.lop || player.class;
+            let lop = layLopChuanCuaHocSinh(player, ten);
             document.getElementById(`top${rank}-name`).innerText = ten;
             document.getElementById(`top${rank}-class`).innerText = `Lớp: ${lop}`;
             if (tabMode === 'effort') {
@@ -1130,42 +886,7 @@
         }
 
         // ============================================================
-        // CHẾ ĐỘ GIÁO VIÊN
-        // ============================================================
-        function openTeacherLogin() {
-            document.getElementById('teacher-password-input').value = "";
-            document.getElementById('teacher-login-modal').style.display = 'flex';
-            setTimeout(() => document.getElementById('teacher-password-input').focus(), 100);
-        }
-        function closeTeacherLogin() {
-            document.getElementById('teacher-login-modal').style.display = 'none';
-        }
-        function verifyTeacherPassword() {
-            let matKhau = document.getElementById('teacher-password-input').value;
-            if (matKhau === "thaytrongmath") {
-                closeTeacherLogin();
-                openTeacherPanel();
-            } else {
-                alert("Mật mã không chính xác!");
-            }
-        }
-        function openTeacherPanel() {
-            document.getElementById('teacher-panel-modal').style.display = 'flex';
-            renderTeacherStudentList();
-            renderNhatKy();
-        }
-        function closeTeacherPanel() {
-            document.getElementById('teacher-panel-modal').style.display = 'none';
-        }
-
-        function switchTeacherTab(tabId, btn) {
-            document.querySelectorAll('.tab-content-teacher').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn-teacher').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
-            if (tabId === 'tab-student') renderTeacherStudentList();
-            if (tabId === 'tab-log') renderNhatKy();
-        }
+        // Các hàm getAllStudents & getLuotConLai dùng chung cho bảng xếp hạng công khai
 
         function getAllStudents() {
             let students = [];
@@ -1176,6 +897,20 @@
             let nhatKy = [];
             try { nhatKy = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || []; } catch(e){}
 
+            // Tự động bổ sung thông tin classroom từ danh sách chuẩn nếu thiếu trong users
+            if (window.HERO_DANH_SACH_CHUAN_USERS) {
+                let changed = false;
+                for (let ten in users) {
+                    if ((!users[ten].classroom || users[ten].classroom === '—' || users[ten].classroom.toLowerCase().startsWith('khối')) && window.HERO_DANH_SACH_CHUAN_USERS[ten]) {
+                        users[ten].classroom = window.HERO_DANH_SACH_CHUAN_USERS[ten].classroom;
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    try { localStorage.setItem('math_hero_users_v2', JSON.stringify(users)); } catch(e){}
+                }
+            }
+
             let allNames = new Set();
 
             // 1. Quét từ danh sách tài khoản học sinh
@@ -1183,7 +918,14 @@
                 if (ten && !danhSachDaXoa.includes(ten)) allNames.add(ten);
             });
 
-            // 2. Quét từ các khóa exp_ trong localStorage
+            // 2. Quét từ danh sách 203 học sinh chuẩn (bảo toàn bia mộ)
+            if (window.HERO_DANH_SACH_CHUAN_USERS) {
+                Object.keys(window.HERO_DANH_SACH_CHUAN_USERS).forEach(ten => {
+                    if (ten && !danhSachDaXoa.includes(ten)) allNames.add(ten);
+                });
+            }
+
+            // 3. Quét từ các khóa exp_ trong localStorage
             for (let i = 0; i < localStorage.length; i++) {
                 let key = localStorage.key(i);
                 if (key && key.startsWith('exp_')) {
@@ -1192,19 +934,37 @@
                 }
             }
 
-            allNames.forEach(ten => {
-                let exp = parseInt(localStorage.getItem('exp_' + ten)) || 0;
-                let coin = parseInt(localStorage.getItem('coin_' + ten)) || 50;
+            // 4. Quét từ cloud cache nếu có
+            if (window.__cloudHsCacheExpCoin) {
+                Object.keys(window.__cloudHsCacheExpCoin).forEach(ten => {
+                    if (ten && !danhSachDaXoa.includes(ten)) allNames.add(ten);
+                });
+            }
 
-                // Xác định lớp: Ưu tiên 1 từ math_hero_users_v2, ưu tiên 2 từ nhat_ky_dang_nhap gần nhất
-                let lop = "Khối 7";
-                let u = users[ten];
-                if (u && typeof u === 'object') {
-                    lop = u.classroom || u.class || "Khối 7";
-                } else {
-                    let timThay = [...nhatKy].reverse().find(item => item && item.name === ten);
-                    if (timThay) lop = timThay.classroom || timThay.className || "Khối 7";
+            allNames.forEach(ten => {
+                let expVal = localStorage.getItem('exp_' + ten);
+                let exp = parseInt(expVal);
+                if (isNaN(exp)) {
+                    if (window.__cloudHsCacheExpCoin && window.__cloudHsCacheExpCoin[ten] && typeof window.__cloudHsCacheExpCoin[ten]['exp_' + ten] !== 'undefined') {
+                        exp = parseInt(window.__cloudHsCacheExpCoin[ten]['exp_' + ten]) || 0;
+                    } else {
+                        exp = 0;
+                    }
                 }
+
+                let coinVal = localStorage.getItem('coin_' + ten);
+                let coin = parseInt(coinVal);
+                if (isNaN(coin)) {
+                    if (window.__cloudHsCacheExpCoin && window.__cloudHsCacheExpCoin[ten] && typeof window.__cloudHsCacheExpCoin[ten]['coin_' + ten] !== 'undefined') {
+                        coin = parseInt(window.__cloudHsCacheExpCoin[ten]['coin_' + ten]) || 50;
+                    } else {
+                        coin = 50;
+                    }
+                }
+
+                // Xác định lớp chuẩn của học sinh
+                let u = users[ten];
+                let lop = layLopChuanCuaHocSinh(u, ten);
 
                 let luotLB = getLuotConLai(ten, 'lam_bai');
                 let luotVA = getLuotConLai(ten, 'vuot_ai');
@@ -1229,190 +989,7 @@
             return data.soLuotConLai || 0;
         }
 
-        function renderTeacherStudentList() {
-            let tbody = document.getElementById('teacher-student-tbody');
-            let students = getAllStudents();
-            if (students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#64748b; padding:24px; font-weight:500;">Chưa có dữ liệu học sinh tham gia sảnh đấu này.</td></tr>`;
-                return;
-            }
-            let html = "";
-            students.forEach((s, idx) => {
-                let tier = getFreeFireTier(s.exp);
-                let tierColor = tier.color;
-                html += `<tr>
-                    <td>${idx+1}</td>
-                    <td><b class="text-white font-bold">${s.ten}</b></td>
-                    <td><span class="text-slate-300 font-medium">${s.lop}</span></td>
-                    <td>
-                        <span class="editable-cell" onclick="editExp('${s.ten}', this)">${s.exp}</span>
-                    </td>
-                    <td>
-                        <span class="editable-cell" style="color:#f59e0b;" onclick="editCoin('${s.ten}', this)">${s.coin}</span>
-                    </td>
-                    <td style="color:${tierColor}; font-weight:900; tracking-wide">${tier.name}</td>
-                    <td class="font-bold text-slate-300">${s.luotLB}</td>
-                    <td class="font-bold text-slate-300">${s.luotVA}</td>
-                    <td class="font-bold text-slate-300">${s.luotVQ}</td>
-                    <td style="white-space:nowrap;">
-                        <button class="btn-small btn-warning" onclick="resetLuot('${s.ten}','lam_bai')" title="Reset lượt làm bài">LB</button>
-                        <button class="btn-small btn-warning" onclick="resetLuot('${s.ten}','vuot_ai')" title="Reset lượt vượt ải">VA</button>
-                        <button class="btn-small btn-warning" onclick="resetLuot('${s.ten}','vong_quay')" title="Reset vòng quay">VQ</button>
-                        <button class="btn-small btn-danger" onclick="deleteStudent('${s.ten}')"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
-        }
 
-        function editExp(ten, el) {
-            let current = parseInt(el.innerText) || 0;
-            let newVal = prompt(`Nhập EXP mới cho ${ten}:`, current);
-            if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
-                let val = parseInt(newVal);
-                if (val < 0) val = 0;
-                localStorage.setItem('exp_' + ten, val);
-                el.innerText = val;
-                window.__fbDayDuLieuLenMay(ten);
-                loadLeaderboardData();
-                renderTeacherStudentList();
-            }
-        }
-
-        function editCoin(ten, el) {
-            let current = parseInt(el.innerText) || 0;
-            let newVal = prompt(`Nhập số Điểm mới cho ${ten}:`, current);
-            if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
-                let val = parseInt(newVal);
-                if (val < 0) val = 0;
-                localStorage.setItem('coin_' + ten, val);
-                el.innerText = val;
-                window.__fbDayDuLieuLenMay(ten);
-                loadLeaderboardData();
-                renderTeacherStudentList();
-            }
-        }
-
-        function resetLuot(ten, loai) {
-            if (!confirm(`Reset lượt "${loai}" cho học sinh ${ten}?`)) return;
-            let key = `luot_${loai}_${ten}`;
-            let maxKey = `so_luot_${loai}_toi_da`;
-            let max = parseInt(localStorage.getItem(maxKey)) || (loai === 'lam_bai' ? 3 : (loai === 'vuot_ai' ? 3 : 5));
-            let homNay = new Date().toLocaleDateString('vi-VN');
-            let data = { date: homNay, soLuotConLai: max };
-            localStorage.setItem(key, JSON.stringify(data));
-            window.__fbDayDuLieuLenMay(ten);
-            renderTeacherStudentList();
-            loadLeaderboardData();
-            alert(`Đã reset lượt ${loai} cho ${ten} về ${max}.`);
-        }
-
-        function resetAllLuot(loai) {
-            if (!confirm(`Reset TẤT CẢ lượt "${loai}" cho toàn bộ học sinh?`)) return;
-            let students = getAllStudents();
-            let maxKey = `so_luot_${loai}_toi_da`;
-            let max = parseInt(localStorage.getItem(maxKey)) || (loai === 'lam_bai' ? 3 : (loai === 'vuot_ai' ? 3 : 5));
-            let homNay = new Date().toLocaleDateString('vi-VN');
-            students.forEach(s => {
-                let key = `luot_${loai}_${s.ten}`;
-                let data = { date: homNay, soLuotConLai: max };
-                localStorage.setItem(key, JSON.stringify(data));
-                window.__fbDayDuLieuLenMay(s.ten);
-            });
-            renderTeacherStudentList();
-            loadLeaderboardData();
-            alert(`Đã reset tất cả lượt ${loai} về ${max}.`);
-        }
-
-        function deleteStudent(ten) {
-            if (!confirm(`Xóa toàn bộ dữ liệu của học sinh "${ten}"?`)) return;
-
-            // 1. Xóa khỏi math_hero_users_v2
-            let users = JSON.parse(localStorage.getItem('math_hero_users_v2') || '{}');
-            delete users[ten];
-            localStorage.setItem('math_hero_users_v2', JSON.stringify(users));
-            if (typeof window.__fbDayCauHinhToanCuc === 'function') {
-                window.__fbDayCauHinhToanCuc('math_hero_users_v2');
-            }
-
-            // 2. Ghi nhận vào danh_sach_hs_da_xoa để không bao giờ bị Cloud hay máy khác kéo lại
-            let dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]');
-            if (!dsDaXoa.includes(ten)) {
-                dsDaXoa.push(ten);
-                localStorage.setItem('danh_sach_hs_da_xoa', JSON.stringify(dsDaXoa));
-                if (typeof window.__fbDayCauHinhToanCuc === 'function') {
-                    window.__fbDayCauHinhToanCuc('danh_sach_hs_da_xoa');
-                }
-            }
-
-            let keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                if (key && (key.startsWith('exp_') || key.startsWith('coin_') || key.startsWith('luot_') || key.startsWith('ruong_do_')) && key.includes(ten)) {
-                    keysToRemove.push(key);
-                }
-            }
-            let nhatKy = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
-            nhatKy = nhatKy.filter(item => item.name !== ten);
-            localStorage.setItem('nhat_ky_dang_nhap', JSON.stringify(nhatKy));
-            if (typeof window.__fbDayCauHinhToanCuc === 'function') {
-                window.__fbDayCauHinhToanCuc('nhat_ky_dang_nhap');
-            }
-
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            if (typeof window.__fbXoaHocSinhTrenMay === 'function') {
-                window.__fbXoaHocSinhTrenMay(ten);
-            }
-            renderTeacherStudentList();
-            loadLeaderboardData();
-            alert(`Đã xóa sạch tài khoản học sinh ${ten}.`);
-        }
-
-        function renderNhatKy() {
-            let container = document.getElementById('nhat-ky-list');
-            let logs = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
-            if (logs.length === 0) {
-                container.innerHTML = `<p style="color:#64748b; font-style:italic; font-size:0.85rem; padding:10px;">Chưa lưu nhận nhật ký đăng nhập nào.</p>`;
-                return;
-            }
-            let reversed = [...logs].reverse();
-            let html = "";
-            reversed.forEach((item, idx) => {
-                let timeStr = item.time || item.dateTime || "Không rõ";
-                html += `<div class="nhatky-item">
-                    <span><b class="text-white">${item.name}</b> - <span class="text-slate-400 font-medium">${item.className || 'Khối 7'} ${item.classroom || ''}</span></span>
-                    <div class="flex items-center gap-3">
-                        <span class="time">${timeStr}</span>
-                        <button class="btn-small btn-danger" onclick="xoaNhatKy(${idx})" style="font-size:0.6rem; padding: 2px 6px;">Xóa</button>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function xoaNhatKy(index) {
-            let logs = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap')) || [];
-            let originalIndex = logs.length - 1 - index;
-            if (originalIndex >= 0 && originalIndex < logs.length) {
-                logs.splice(originalIndex, 1);
-                localStorage.setItem('nhat_ky_dang_nhap', JSON.stringify(logs));
-                window.__fbDayCauHinhToanCuc('nhat_ky_dang_nhap');
-                renderNhatKy();
-            }
-        }
-
-        function saveMaxLuot(loai) {
-            let idMap = { 'lam_bai': 'max-luot-lam-bai', 'vuot_ai': 'max-luot-vuot-ai', 'vong_quay': 'max-luot-vong-quay' };
-            let input = document.getElementById(idMap[loai]);
-            let val = parseInt(input.value);
-            if (isNaN(val) || val < 1) {
-                alert('Vui lòng nhập số nguyên dương hợp lệ.');
-                return;
-            }
-            localStorage.setItem(`so_luot_${loai}_toi_da`, val);
-            window.__fbDayCauHinhToanCuc(`so_luot_${loai}_toi_da`);
-            alert(`Đã lưu số lượt ${loai} tối đa: ${val}`);
-        }
 
         // ============================================================
         // BẢNG XẾP HẠNG NỖ LỰC (đa tiêu chí, quy về thang điểm 10)
@@ -1607,11 +1184,14 @@
                 let roster = getAllStudents();
                 let kyVongLuot = ky.soNgayTrongKy * 1.5;
 
-                let ketQua = roster.map(hs => ({
-                    ten: hs.ten,
-                    lop: hs.lop,
-                    ...tinhDiemNoLuc(hs, duLieuKyNay[hs.ten], duLieuKyTruoc[hs.ten], ky.soNgayTrongKy, kyVongLuot)
-                }));
+                let ketQua = roster.map(hs => {
+                    let lopChuan = layLopChuanCuaHocSinh(hs, hs.ten);
+                    return {
+                        ten: hs.ten,
+                        lop: lopChuan,
+                        ...tinhDiemNoLuc(hs, duLieuKyNay[hs.ten], duLieuKyTruoc[hs.ten], ky.soNgayTrongKy, kyVongLuot)
+                    };
+                });
 
                 ketQua.sort((a, b) => {
                     if (b.diem10 !== a.diem10) return b.diem10 - a.diem10;
@@ -1767,8 +1347,8 @@
                 return {
                     'Hạng': hangTrongLop,
                     'Họ tên': r.ten,
-                    'Khối': layKhoiCuaHocSinh(r.lop),
-                    'Lớp': r.lop,
+                    'Khối': layKhoiCuaHocSinh(layLopChuanCuaHocSinh(r, r.ten)),
+                    'Lớp': layLopChuanCuaHocSinh(r, r.ten),
                     'Điểm Nỗ Lực': diemHienThi,
                     'Xếp loại': r.xepLoai || xepLoaiDanhGia(diemHienThi, r.tongLuot),
                     'Số ngày tham gia': r.soNgayTG || 0,
@@ -1855,8 +1435,8 @@
                 return {
                     'Hạng': hang,
                     'Họ tên': s.ten,
-                    'Khối': layKhoiCuaHocSinh(s.lop),
-                    'Lớp': s.lop,
+                    'Khối': layKhoiCuaHocSinh(layLopChuanCuaHocSinh(s, s.ten)),
+                    'Lớp': layLopChuanCuaHocSinh(s, s.ten),
                     'Điểm EXP': s.exp,
                     'Tài sản (Xu/Coin)': s.coin,
                     'Quân hàm': tier.name,

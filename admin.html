@@ -1244,6 +1244,9 @@
                 <a href="quan-ly-hoc-sinh.html" class="btn-header" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: 1px solid #34d399; font-weight: bold;" title="Chuyển đến trang chuyên biệt Quản lý Học sinh">
                     <i class="fa-solid fa-user-graduate"></i> Quản Lý Học Sinh
                 </a>
+                <a href="quan-ly-diem.html" class="btn-header" style="background: linear-gradient(135deg, #0284c7, #00ffff); color: #04101c; border: 1px solid #00ffff; font-weight: bold;" title="Chuyển đến trang Sổ Điểm Điện Tử theo tuần/tháng">
+                    <i class="fa-solid fa-graduation-cap"></i> Sổ Điểm Điện Tử
+                </a>
                 <div id="sync-status-badge" class="status-badge" title="Trạng thái kết nối Cloud Firestore">
                     <i class="fa-solid fa-circle" style="font-size:0.6rem;"></i> <span>Firebase Sẵn Sàng</span>
                 </div>
@@ -2173,13 +2176,17 @@
                 if (typeof fb.taiToanBoHocSinhTuMay === 'function') {
                     const dsHocSinh = await fb.taiToanBoHocSinhTuMay();
                     if (Array.isArray(dsHocSinh)) {
+                        window.__cloudHsCacheExpCoin = {};
                         dsHocSinh.forEach(hs => {
                             const duLieu = hs.data || {};
+                            window.__cloudHsCacheExpCoin[hs.id] = duLieu;
                             Object.keys(duLieu).forEach(key => {
                                 if (key.startsWith('_')) return;
-                                // KHÔNG cho hồ sơ riêng của học sinh ghi đè các key TOÀN CỤC
-                                // (đây là nguyên nhân học sinh đã xóa bị "sống lại")
                                 if (KHOA_TOAN_CUC_CAM_GHI_DE.includes(key)) return;
+                                // [PHƯƠNG ÁN C-A] KHÔNG ghi các key điểm/thông tin riêng của học sinh
+                                // từ Cloud vào localStorage – để học sinh CHƯA ĐĂNG NHẬP trên máy
+                                // này hiện exp=0 / coin=50, không hiện "điểm ma" từ Cloud.
+                                if (/^(exp_|coin_|luot_|ruong_do_|hero_linh_thu_|hero_avatar_selection_|hero_streak_count_|hero_streak_last_date_|dang_nhap_|nhat_ky_hoat_dong_)/.test(key)) return;
                                 localStorage.setItem(key, duLieu[key]);
                             });
                         });
@@ -4234,7 +4241,9 @@
             users[ten] = {
                 class: lop,
                 classroom: lopCuThe,
-                pass: pass
+                pass: pass,
+                _ngayTao: Date.now(),
+                _nguonThem: 'giao_vien'
             };
             safeJsonSet('math_hero_users_v2', users);
 
@@ -7017,7 +7026,247 @@ BẮT BUỘC trả về DUY NHẤT một mảng JSON thuần túy (không dùng 
                 moAiStudioMode('vuot-ai');
             }
         });
+
+        // ============================================================
+        //  CÔNG CỤ: KIỂM TRA VÀ DỌN DẸP HỌC SINH CŨ KHÔNG HỢP LỆ
+        //  (cho phép đánh dấu "hợp lệ" thủ công những học sinh cũ muốn giữ)
+        // ============================================================
+        var _dsKiemTraOldHsAd = [];
+
+        function _laHopLeTheoLuatMoiAd(ten, hoSo) {
+            try {
+                var _tenChuanHoa = function(s) {
+                    return String(s || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+                };
+                var dsChuan = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
+                if (dsChuan && typeof dsChuan === 'object') {
+                    var normTen = _tenChuanHoa(ten);
+                    for (var k in dsChuan) {
+                        if (_tenChuanHoa(k) === normTen) return true;
+                    }
+                }
+                var hs = (hoSo != null && typeof hoSo === 'object') ? hoSo : {};
+                if (String(hs._nguonThem || '').toLowerCase() === 'giao_vien') return true;
+                var mocCaiDat = 0;
+                try { mocCaiDat = parseInt(localStorage.getItem('hero_moc_cai_dat_v2026') || '0', 10) || 0; } catch(e) {}
+                var ngayTao = parseInt(hs._ngayTao || 0, 10) || 0;
+                if (mocCaiDat > 0 && ngayTao >= mocCaiDat) return true;
+                return false;
+            } catch(e) { return false; }
+        }
+
+        function moModalKiemTraHocSinhCuAd() {
+            var users = safeJsonParse('math_hero_users_v2', {});
+            _dsKiemTraOldHsAd = [];
+            Object.keys(users).forEach(function(ten) {
+                if (!_laHopLeTheoLuatMoiAd(ten, users[ten])) {
+                    _dsKiemTraOldHsAd.push({ ten: ten, hoSo: users[ten], checked: false });
+                }
+            });
+            var modal = document.getElementById('modal-kiem-tra-hs-cu-ad');
+            if (!modal) return;
+            if (_dsKiemTraOldHsAd.length === 0) {
+                document.getElementById('old-hs-empty-msg-ad').style.display = 'block';
+                document.getElementById('old-hs-list-body-ad').innerHTML = '';
+                document.getElementById('old-hs-summary-ad').innerText = 'Tuyệt vời! Không có học sinh cũ nào không hợp lệ trong danh sách.';
+                document.getElementById('btn-don-dep-hs-cu-ad').disabled = true;
+                document.getElementById('btn-check-all-old-hs-ad').disabled = true;
+                document.getElementById('btn-uncheck-all-old-hs-ad').disabled = true;
+            } else {
+                document.getElementById('old-hs-empty-msg-ad').style.display = 'none';
+                document.getElementById('btn-don-dep-hs-cu-ad').disabled = false;
+                document.getElementById('btn-check-all-old-hs-ad').disabled = false;
+                document.getElementById('btn-uncheck-all-old-hs-ad').disabled = false;
+                _renderDsKiemTraHsCuAd();
+                document.getElementById('old-hs-summary-ad').innerText =
+                    'Tìm thấy ' + _dsKiemTraOldHsAd.length + ' học sinh cũ KHÔNG hợp lệ (ngoài 203 chuẩn, chưa có đánh dấu).\n' +
+                    '→ Bấm [ Đánh dấu là hợp lệ ] những em muốn giữ lại.\n' +
+                    '→ Những em KHÔNG được đánh dấu sẽ bị XÓA HOÀN TOÀN khỏi danh sách (đưa vào bia mộ).';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function _renderDsKiemTraHsCuAd() {
+            var tbody = document.getElementById('old-hs-list-body-ad');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            _dsKiemTraOldHsAd.forEach(function(item, idx) {
+                var hs = item.hoSo || {};
+                var lop = (typeof hs === 'object') ? (hs.class || '—') : '—';
+                var lopCuThe = (typeof hs === 'object') ? (hs.classroom || '—') : '—';
+                tbody.innerHTML +=
+                    '<tr>' +
+                        '<td style="text-align:center;">' + (idx + 1) + '</td>' +
+                        '<td title="' + String(item.ten).replace(/"/g, '&quot;') + '" style="color:#f1c40f;font-weight:600;">' + item.ten + '</td>' +
+                        '<td style="color:#95a5a6;">' + lop + '</td>' +
+                        '<td style="color:#95a5a6;">' + lopCuThe + '</td>' +
+                        '<td style="text-align:center;">' +
+                            '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">' +
+                                '<input type="checkbox" data-old-hs-ad-idx="' + idx + '" ' + (item.checked ? 'checked' : '') + ' style="width:18px;height:18px;accent-color:#2ecc71;cursor:pointer;">' +
+                                '<span style="color:' + (item.checked ? '#2ecc71' : '#7f8c8d') + ';font-weight:600;">' + (item.checked ? '✓ Giữ lại (hợp lệ)' : 'Không đánh dấu (sẽ xóa)') + '</span>' +
+                            '</label>' +
+                        '</td>' +
+                    '</tr>';
+            });
+            var inputs = tbody.querySelectorAll('input[data-old-hs-ad-idx]');
+            inputs.forEach(function(inp) {
+                inp.addEventListener('change', function() {
+                    var i = parseInt(inp.getAttribute('data-old-hs-ad-idx') || '-1', 10);
+                    if (i >= 0 && i < _dsKiemTraOldHsAd.length) {
+                        _dsKiemTraOldHsAd[i].checked = inp.checked;
+                        var sp = inp.parentElement.querySelector('span');
+                        if (sp) {
+                            sp.innerText = inp.checked ? '✓ Giữ lại (hợp lệ)' : 'Không đánh dấu (sẽ xóa)';
+                            sp.style.color = inp.checked ? '#2ecc71' : '#7f8c8d';
+                        }
+                    }
+                });
+            });
+        }
+
+        function toggleAllOldHsAd(check) {
+            for (var i = 0; i < _dsKiemTraOldHsAd.length; i++) _dsKiemTraOldHsAd[i].checked = !!check;
+            _renderDsKiemTraHsCuAd();
+        }
+
+        async function xacNhanDonDepHsCuAd() {
+            var soLuong = _dsKiemTraOldHsAd.length;
+            if (soLuong === 0) return;
+            var soGiu = _dsKiemTraOldHsAd.filter(function(x) { return x.checked; }).length;
+            var soXoa = soLuong - soGiu;
+            var msg = 'Sẽ giữ lại ' + soGiu + ' học sinh (đánh dấu hợp lệ) và XÓA ' + soXoa + ' học sinh cũ không hợp lệ ra khỏi danh sách.\nThầy có chắc chắn không?';
+            if (soXoa === 0) msg = 'Tất cả ' + soGiu + ' học sinh cũ được đánh dấu là hợp lệ. Không ai bị xóa.\nTiếp tục?';
+            if (!confirm(msg)) return;
+            try {
+                var users = safeJsonParse('math_hero_users_v2', {});
+                var dsDaXoa = safeJsonParse('danh_sach_hs_da_xoa', []);
+                if (!Array.isArray(dsDaXoa)) dsDaXoa = [];
+                var compat = window.HeroFirebaseCompat || window.FirebaseSync;
+                for (var i = 0; i < _dsKiemTraOldHsAd.length; i++) {
+                    var it = _dsKiemTraOldHsAd[i];
+                    if (it.checked) {
+                        if (!users[it.ten]) continue;
+                        if (typeof users[it.ten] !== 'object') {
+                            var mkCu = users[it.ten];
+                            users[it.ten] = { class: 'Khối 7', classroom: '—', pass: mkCu, _hashed: true };
+                        }
+                        users[it.ten]._nguonThem = 'giao_vien';
+                        users[it.ten]._ngayTao = Date.now();
+                        dsDaXoa = dsDaXoa.filter(function(tn) {
+                            return String(tn || '').trim() !== String(it.ten).trim();
+                        });
+                    } else {
+                        delete users[it.ten];
+                        if (dsDaXoa.indexOf(it.ten) === -1) dsDaXoa.push(it.ten);
+                        try {
+                            var tienTo = ['exp_','coin_','da_quay_','avatar_','equipped_avatar_','danh_hieu_chinh_','danh_hieu_da_mo_','khung_avatar_','equipped_border_','ruong_do_','luot_lam_bai_','luot_boss_','luot_vong_quay_','luot_thach_dau_','luot_vuot_ai_','tien_trinh_vuot_ai_','ai_hien_tai_','da_nop_tu_luan_','math_hero_pet_','hero_discipline_pet_','danh_hieu_active_','khung_avatar_active_','math_hero_current_avatar_','math_hero_unlocked_avatars_','hero_streak_count_','hero_streak_history_','hero_streak_last_date_','hero_exp_doc_ly_thuyet_ngay_','hero_nhac_nho_ly_thuyet_ngay_','da_doc_phan_hoi_','moc_cap_nhat_hs_'];
+                            for (var j = 0; j < localStorage.length; j++) {
+                                var k = localStorage.key(j);
+                                if (!k) continue;
+                                var tonTai = tienTo.some(function(tt) { return k === tt + it.ten; });
+                                if (tonTai) { try { localStorage.removeItem(k); j--; } catch(e) {} }
+                            }
+                        } catch(e) {}
+                        if (compat && typeof compat.xoaHocSinhTrenMay === 'function') {
+                            try { compat.xoaHocSinhTrenMay(it.ten); } catch(e) {}
+                        }
+                    }
+                }
+                safeJsonSet('math_hero_users_v2', users);
+                safeJsonSet('danh_sach_hs_da_xoa', dsDaXoa);
+                showToast('⏳ Đang đồng bộ lên Cloud...', 'warning');
+                if (typeof dongBoToanCuc === 'function') {
+                    try { await dongBoToanCuc('math_hero_users_v2'); } catch(e) {}
+                    try { await dongBoToanCuc('danh_sach_hs_da_xoa'); } catch(e) {}
+                } else if (compat && typeof compat.dayCauHinhToanCuc === 'function') {
+                    try { await compat.dayCauHinhToanCuc('math_hero_users_v2'); } catch(e) {}
+                    try { await compat.dayCauHinhToanCuc('danh_sach_hs_da_xoa'); } catch(e) {}
+                }
+                showToast('✅ Đã dọn dẹp thành công! Giữ lại ' + soGiu + ' học sinh, xóa ' + soXoa + ' học sinh.', 'success');
+                document.getElementById('modal-kiem-tra-hs-cu-ad').style.display = 'none';
+                taiLogHocSinh();
+            } catch(e) {
+                console.error(e);
+                showToast('Lỗi dọn dẹp: ' + (e && e.message ? e.message : e), 'error');
+            }
+        }
+
+        // Thêm nút "Kiểm tra & Dọn dẹp học sinh cũ" vào khu vực quản lý chiến binh khi DOM load xong
+        window.addEventListener('DOMContentLoaded', function() {
+            try {
+                var target = null;
+                // Ưu tiên: tìm nút clearToanBoHocSinh (nút xóa sạch tất cả học sinh) để đặt nút mới ở cạnh
+                var allBtns = document.querySelectorAll('button, [onclick]');
+                for (var b = 0; b < allBtns.length; b++) {
+                    var el = allBtns[b];
+                    var onclk = String(el.getAttribute && el.getAttribute('onclick') ? el.getAttribute('onclick') : (el.onclick ? el.onclick.toString() : ''));
+                    var inner = String(el.textContent || el.innerText || '');
+                    if (onclk.indexOf('clearToanBoHocSinh') !== -1 || inner.indexOf('Xóa Sạch') !== -1 || inner.indexOf('XÓA SẠCH') !== -1) {
+                        target = el.parentElement;
+                        break;
+                    }
+                }
+                // Không tìm thấy → tìm thẻ cha gần bảng tbl-admin-hs
+                if (!target) {
+                    var tbl = document.getElementById('tbl-admin-hs');
+                    if (tbl) target = tbl.closest('div, section');
+                }
+                if (target) {
+                    var btn = document.createElement('button');
+                    btn.className = 'btn-action';
+                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2980b9,#3498db);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600;margin:4px;';
+                    btn.title = 'Tìm và dọn dẹp những học sinh cũ không hợp lệ (ngoài danh sách 203 chuẩn), cho phép đánh dấu thủ công những em muốn giữ lại.';
+                    btn.innerHTML = '<i class="fa-solid fa-clipboard-list"></i> Kiểm tra & Dọn dẹp HS Cũ';
+                    btn.onclick = moModalKiemTraHocSinhCuAd;
+                    // Đặt vào cuối target
+                    target.appendChild(btn);
+                }
+            } catch(e) {}
+        });
 </script>
+
+<!-- ========= MODAL KIỂM TRA & DỌN DẸP HỌC SINH CŨ (Admin) ========= -->
+<div id="modal-kiem-tra-hs-cu-ad" class="pwd-overlay" style="display:none;" onclick="if(event.target===this) this.style.display='none';">
+    <div class="pwd-card" style="max-width:980px;width:96%;background:linear-gradient(135deg,#0b1220,#0f172a);border:2px solid #3498db;box-shadow:0 25px 80px rgba(52,152,219,0.35);text-align:left;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid #2c3e50;padding-bottom:12px;">
+            <h3 style="color:#3498db;margin:0;font-size:1.25rem;"><i class="fa-solid fa-clipboard-list-check"></i> Kiểm tra & Dọn dẹp Học Sinh Cũ Không Hợp Lệ</h3>
+            <button onclick="document.getElementById('modal-kiem-tra-hs-cu-ad').style.display='none';" style="background:none;border:none;color:#95a5a6;font-size:1.6rem;cursor:pointer;line-height:1;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p id="old-hs-summary-ad" style="background:rgba(52,152,219,0.12);color:#ecf0f1;padding:14px;border-radius:10px;font-size:0.95rem;line-height:1.6;margin:0 0 15px;">—</p>
+        <div id="old-hs-empty-msg-ad" style="display:none;padding:40px 20px;text-align:center;color:#95a5a6;">
+            <i class="fa-solid fa-check-circle fa-3x" style="color:#2ecc71;margin-bottom:14px;display:block;"></i>
+            <h4 style="color:#2ecc71;margin:0 0 8px;">Danh sách sạch sẽ!</h4>
+            <p style="margin:0;">Tất cả học sinh hiện tại đều hợp lệ (thuộc 203 chuẩn hoặc đã được Thầy đánh dấu thủ công).</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+            <button id="btn-check-all-old-hs-ad" onclick="toggleAllOldHsAd(true)" class="btn-action" style="background:rgba(46,204,113,0.12);color:#2ecc71;border:1px solid #2ecc71;">
+                <i class="fa-solid fa-check-double"></i> Đánh dấu TẤT CẢ là hợp lệ (giữ lại)
+            </button>
+            <button id="btn-uncheck-all-old-hs-ad" onclick="toggleAllOldHsAd(false)" class="btn-action" style="background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid #e74c3c;">
+                <i class="fa-solid fa-rotate-left"></i> Bỏ chọn TẤT CẢ (sẽ xóa hết)
+            </button>
+            <div style="flex:1;"></div>
+            <button id="btn-don-dep-hs-cu-ad" onclick="xacNhanDonDepHsCuAd()" class="btn-action" style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;font-weight:700;padding:12px 20px;">
+                <i class="fa-solid fa-broom"></i> Xác Nhận & Dọn Dẹp Ngay
+            </button>
+        </div>
+        <div style="max-height:52vh;overflow:auto;border:1px solid #2c3e50;border-radius:12px;background:rgba(11,18,32,0.7);">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead style="position:sticky;top:0;z-index:2;">
+                    <tr style="background:#1a2538;color:#95a5a6;font-size:0.85rem;">
+                        <th style="padding:12px 10px;text-align:center;width:60px;">#</th>
+                        <th style="padding:12px 10px;text-align:left;">Họ và Tên</th>
+                        <th style="padding:12px 10px;text-align:left;width:120px;">Khối</th>
+                        <th style="padding:12px 10px;text-align:left;width:120px;">Lớp</th>
+                        <th style="padding:12px 10px;text-align:center;width:260px;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="old-hs-list-body-ad"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- ======== HẾT MODAL KIỂM TRA HỌC SINH CŨ (Admin) ======== -->
 
 <!-- Fallback elements for Admin scripts -->
 <div style="display:none;"><select id="sel-lt-grade"></select><table id="tbl-admin-login"></table><button id="btn-ai-doc-ten-bai"></button></div>

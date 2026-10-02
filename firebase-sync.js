@@ -426,6 +426,17 @@ function gopMangTheoId(localRaw, cloudRaw, key = '') {
   return { merged, hasNewLocal };
 }
 
+// [MỐC CÀI ĐẶT v2026] – Đánh dấu thời điểm bản vá logic "khóa danh sách + tombstone tuyệt đối" được áp dụng.
+// Chỉ set 1 lần duy nhất, không bao giờ ghi đè lại nếu đã có.
+(function _khoiTaoMocCaiDatHero() {
+  try {
+    const KEY_MOC = 'hero_moc_cai_dat_v2026';
+    if (localStorage.getItem(KEY_MOC) == null) {
+      localStorage.setItem(KEY_MOC, String(Date.now()));
+    }
+  } catch (e) {}
+})();
+
 // Helper gộp tài khoản học sinh
 function gopTaiKhoanHocSinh(localRaw, cloudRaw) {
   let localUsers = {};
@@ -435,26 +446,36 @@ function gopTaiKhoanHocSinh(localRaw, cloudRaw) {
   if (typeof localUsers !== 'object' || localUsers === null) localUsers = {};
   if (typeof cloudUsers !== 'object' || cloudUsers === null) cloudUsers = {};
 
-  // Lọc bỏ các học sinh nằm trong "bia mộ" (danh_sach_hs_da_xoa)
-  // NGUYÊN TẮC: Khi Thầy đã đưa học sinh vào danh sách xóa, học sinh đó PHẢI BỊ XÓA DỨT ĐIỂM!
+  // ---- BƯỚC 0: Đọc Tombstone (bia mộ) LÂU LẦN ĐẦU, NHƯNG KHÔNG lọc ngay – để dành đến BƯỚC CUỐI CÙNG ----
   let dsDaXoa = [];
   try {
     const rawDaXoa = localStorage.getItem('danh_sach_hs_da_xoa');
     if (rawDaXoa) dsDaXoa = JSON.parse(rawDaXoa);
   } catch(e) {}
+  if (!Array.isArray(dsDaXoa)) dsDaXoa = [];
+  const setDaXoa = new Set(dsDaXoa.map(t => String(t || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase()));
 
-  if (Array.isArray(dsDaXoa) && dsDaXoa.length > 0) {
-    // NGUYÊN TẮC BẢO TOÀN XÓA: Khi học sinh nằm trong bia mộ, PHẢI XÓA DỨT ĐIỂM ở cả Local và Cloud
-    const setDaXoa = new Set(dsDaXoa.map(t => String(t || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase()));
-    Object.keys(localUsers).forEach(ten => {
-      const norm = String(ten || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-      if (setDaXoa.has(norm)) delete localUsers[ten];
-    });
-    Object.keys(cloudUsers).forEach(ten => {
-      const norm = String(ten || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-      if (setDaXoa.has(norm)) delete cloudUsers[ten];
-    });
-  }
+  // ---- BƯỚC 0b: Đọc Mốc cài đặt và Danh sách chuẩn ----
+  let mocCaiDat = 0;
+  try { mocCaiDat = parseInt(localStorage.getItem('hero_moc_cai_dat_v2026') || '0', 10) || 0; } catch(e) {}
+  const dsChuanObj = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
+  const setChuanRaw = (dsChuanObj && typeof dsChuanObj === 'object')
+    ? new Set(Object.keys(dsChuanObj).map(n => String(n || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase()))
+    : new Set();
+
+  // Hàm helper: 1 học sinh được coi là "HỢP LỆ" (được giữ lại) khi:
+  //   A) Thuộc danh sách 203 chuẩn, HOẶC
+  //   B) Có field _nguonThem = 'giao_vien' (thầy đã đánh dấu thủ công), HOẶC
+  //   C) Có field _ngayTao >= mốc cài đặt (được tạo SAU khi áp dụng bản vá)
+  const _tenChuanHoa = (s) => String(s || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
+  const laHocSinhHopLe = (ten, hoSo) => {
+    if (setChuanRaw.has(_tenChuanHoa(ten))) return true;
+    const hs = (hoSo != null && typeof hoSo === 'object') ? hoSo : {};
+    if (String(hs._nguonThem || '').toLowerCase() === 'giao_vien') return true;
+    const ngayTao = parseInt(hs._ngayTao || 0, 10) || 0;
+    if (mocCaiDat > 0 && ngayTao >= mocCaiDat) return true;
+    return false;
+  };
 
   // Nếu cả 2 bên đều rỗng
   if (Object.keys(localUsers).length === 0 && Object.keys(cloudUsers).length === 0) {
@@ -470,45 +491,69 @@ function gopTaiKhoanHocSinh(localRaw, cloudRaw) {
     return { merged: {}, hasNewLocal: true };
   }
 
-    // Gộp thông minh: bảo toàn toàn bộ tài khoản cả Cloud lẫn Local, giữ mật khẩu mới nhất
-    const merged = Object.assign({}, cloudUsers);
-    let hasNewLocal = false;
-    Object.keys(localUsers).forEach(k => {
-      if (!merged[k]) {
-        merged[k] = localUsers[k];
+  // ---- BƯỚC 1: Gộp thông minh Local + Cloud bình thường ----
+  const merged = Object.assign({}, cloudUsers);
+  let hasNewLocal = false;
+  Object.keys(localUsers).forEach(k => {
+    if (!merged[k]) {
+      merged[k] = localUsers[k];
+      hasNewLocal = true;
+    } else {
+      const loc = localUsers[k];
+      const cld = merged[k];
+      if (loc && typeof loc === 'object') {
+        merged[k] = Object.assign({}, cld, loc);
+        if (loc.pass && loc.pass !== cld.pass) hasNewLocal = true;
+      } else if (loc !== cld) {
+        merged[k] = loc;
         hasNewLocal = true;
-      } else {
-        const loc = localUsers[k];
-        const cld = merged[k];
-        if (loc && typeof loc === 'object') {
-          merged[k] = Object.assign({}, cld, loc);
-          if (loc.pass && loc.pass !== cld.pass) hasNewLocal = true;
-        } else if (loc !== cld) {
-          merged[k] = loc;
-          hasNewLocal = true;
-        }
+      }
+    }
+  });
+
+  // ---- BƯỚC 2: KHÓA DANH SÁCH MỚI (chỉ giữ HỢP LỆ; tự thêm 203 chuẩn nếu thiếu) ----
+  if (dsChuanObj && typeof dsChuanObj === 'object' && Object.keys(dsChuanObj).length > 0) {
+    // 2a) Xóa những học sinh trong merged mà KHÔNG hợp lệ
+    const cacTenTruoc = Object.keys(merged);
+    cacTenTruoc.forEach(k => {
+      if (!laHocSinhHopLe(k, merged[k])) {
+        delete merged[k];
+        hasNewLocal = true;
       }
     });
-
-    // KHÓA DANH SÁCH: Chỉ giữ đúng học sinh thuộc danh sách chuẩn, tuyệt đối không nạp thêm học sinh ngoài danh sách
-    const dsChuanObj = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
-    if (dsChuanObj && typeof dsChuanObj === 'object' && Object.keys(dsChuanObj).length > 0) {
-      const setChuan = new Set(Object.keys(dsChuanObj).map(n => n.trim().toLowerCase()));
-      Object.keys(merged).forEach(k => {
-        if (!setChuan.has(k.trim().toLowerCase())) {
-          delete merged[k];
-          hasNewLocal = true;
-        }
-      });
-      Object.keys(dsChuanObj).forEach(k => {
-        if (!merged[k]) {
-          merged[k] = dsChuanObj[k];
-        }
-      });
-    }
-
-    return { merged, hasNewLocal };
+    // 2b) Tự thêm các học sinh 203 chuẩn nếu còn thiếu (để đảm bảo đủ 203 HS chuẩn)
+    //     ⚠️ CHỈ thêm nếu HS đó KHÔNG nằm trong tombstone (đã bị thầy xóa trước đó)
+    Object.keys(dsChuanObj).forEach(k => {
+      if (!merged[k] && !setDaXoa.has(_tenChuanHoa(k))) {
+        merged[k] = dsChuanObj[k];
+        hasNewLocal = true;
+      }
+    });
+  } else {
+    // Trên một số môi trường load hero-danh-sach-chuan.js trễ, vẫn phải áp dụng luật "hợp lệ":
+    const cacTenTruoc = Object.keys(merged);
+    cacTenTruoc.forEach(k => {
+      if (!laHocSinhHopLe(k, merged[k])) {
+        delete merged[k];
+        hasNewLocal = true;
+      }
+    });
   }
+
+  // ---- BƯỚC 3 (CUỐI CÙNG – TUYỆT ĐỐI): Lọc Tombstone. Bất kỳ ai nằm trong bia mộ đều bị xóa DỨT ĐIỂM ----
+  // Bước này đặt SAU khóa danh sách để ngăn 203 chuẩn tự hồi sinh tài khoản đã bị thầy xóa.
+  if (setDaXoa.size > 0) {
+    const cacTenMerged = Object.keys(merged);
+    cacTenMerged.forEach(ten => {
+      if (setDaXoa.has(_tenChuanHoa(ten))) {
+        delete merged[ten];
+        hasNewLocal = true;
+      }
+    });
+  }
+
+  return { merged, hasNewLocal };
+}
 
 
 // ============================================================
