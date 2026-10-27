@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>ĐẤU TRƯỜNG ĐỐI KHÁNG 1V1 - MATH HERO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- MathJax for formula rendering -->
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Firebase Compat & Project Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./hero-danh-sach-chuan.js"></script>
+    <script src="./hero-firebase-compat.js"></script>
+    <script src="./firebase-sync.js"></script>
+    <script src="./hero-avatar.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --bg-card: rgba(18, 24, 38, 0.85);
+            --border-glow: rgba(255, 75, 43, 0.35);
+            --neon-red: #ff416c;
+            --neon-orange: #ff4b2b;
+            --neon-gold: #f1c40f;
+            --neon-cyan: #00f0ff;
+            --neon-green: #2ecc71;
+            --neon-purple: #9d4edd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(255, 65, 108, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(157, 78, 221, 0.08) 0%, transparent 60%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.2;
+        }
+
+        /* HEADER */
+        .arena-header {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #ecf0f1;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-back-home:hover {
+            background: rgba(255, 65, 108, 0.2);
+            border-color: var(--neon-red);
+            color: #fff;
+            transform: translateX(-3px);
+        }
+
+        .arena-title-wrap {
+            text-align: center;
+            flex: 1;
+        }
+        .arena-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ff416c, #f5af19);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 65, 108, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .arena-subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+
+        .header-stats-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .stat-pill.luot-dau {
+            border-color: rgba(255, 65, 108, 0.4);
+            background: rgba(255, 65, 108, 0.1);
+            color: #ff6b8b;
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* MODE SWITCHER TABS (2 CHẾ ĐỘ RÕ RÀNG) */
+        .pvp-mode-switcher {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 4px;
+            gap: 6px;
+        }
+        .mode-tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: #94a3b8;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .mode-tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .mode-tab-btn.active {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.45);
+        }
+
+        /* BANNER THÔNG TIN NGƯỜI CHƠI */
+        .hero-banner-card {
+            background: linear-gradient(135deg, rgba(255, 65, 108, 0.15), rgba(157, 78, 221, 0.12));
+            border: 1px solid rgba(255, 65, 108, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            flex-wrap: wrap;
+        }
+        .current-player-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .player-avatar-large {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 3px solid var(--neon-red);
+            box-shadow: 0 0 15px rgba(255, 65, 108, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            background: #1a1a2e;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .player-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .player-info h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .player-tags {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge-rank-tier {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-class-tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .btn-quick-match {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 20px rgba(255, 65, 108, 0.45);
+            transition: all 0.25s;
+        }
+        .btn-quick-match:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(255, 65, 108, 0.65);
+        }
+
+        /* TAB CONTENT SECTIONS */
+        .pvp-section-tab {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ================= CHẾ ĐỘ 1: ĐẤU TỰ CHỌN ================= */
+        .lobby-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .class-filter-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .class-tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .class-tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .class-tab-btn.active {
+            background: linear-gradient(135deg, rgba(255, 65, 108, 0.3), rgba(255, 75, 43, 0.3));
+            border-color: var(--neon-red);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 65, 108, 0.3);
+        }
+
+        .search-student-box {
+            position: relative;
+            min-width: 240px;
+        }
+        .search-student-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 12px 8px 34px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-student-box input:focus {
+            border-color: var(--neon-red);
+        }
+        .search-student-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .opponents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .opponents-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .opponents-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .opponent-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .opponent-card:hover {
+            border-color: rgba(255, 65, 108, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        }
+        .opponent-info-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .opponent-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .opponent-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .opponent-meta {
+            min-width: 0;
+        }
+        .opponent-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .opponent-submeta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .btn-challenge {
+            background: rgba(255, 65, 108, 0.15);
+            border: 1px solid var(--neon-red);
+            color: #ff416c;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .btn-challenge:hover {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 65, 108, 0.5);
+        }
+
+        /* ================= CHẾ ĐỘ 2: 5 PHÒNG THI ĐẤU CỐ ĐỊNH ================= */
+        .fixed-rooms-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--neon-gold);
+            padding: 12px 16px;
+            border-radius: 8px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .fixed-rooms-header-text h4 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            color: var(--neon-gold);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fixed-rooms-header-text p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .btn-refresh-rooms {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-refresh-rooms:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .fixed-rooms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .fixed-room-card {
+            background: var(--bg-card);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .fixed-room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        .fixed-room-card.empty {
+            border-color: rgba(46, 204, 113, 0.35);
+        }
+        .fixed-room-card.waiting {
+            border-color: rgba(241, 196, 15, 0.45);
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.06), rgba(18, 24, 38, 0.9));
+        }
+        .fixed-room-card.fighting {
+            border-color: rgba(255, 65, 108, 0.45);
+            background: linear-gradient(135deg, rgba(255, 65, 108, 0.08), rgba(18, 24, 38, 0.9));
+        }
+
+        .room-main-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 0;
+            flex: 1;
+        }
+        .room-emblem {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+        .room-details {
+            min-width: 0;
+        }
+        .room-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .room-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .room-status-pill {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .room-status-pill.empty {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--neon-green);
+        }
+        .room-status-pill.waiting {
+            background: rgba(241, 196, 15, 0.2);
+            color: var(--neon-gold);
+            animation: pulseWaiting 1.5s infinite alternate;
+        }
+        .room-status-pill.fighting {
+            background: rgba(255, 65, 108, 0.2);
+            color: var(--neon-red);
+        }
+        @keyframes pulseWaiting {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; box-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
+        }
+
+        .room-participants-summary {
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .room-action-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .btn-room-action {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-room-action.join-host {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.35);
+        }
+        .btn-room-action.join-host:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 239, 125, 0.5);
+        }
+        .btn-room-action.challenge-guest {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.45);
+            animation: pulseGlow 2s infinite;
+        }
+        .btn-room-action.challenge-guest:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 65, 108, 0.7);
+        }
+        .btn-room-action.leave-room {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ff6b8b;
+        }
+        .btn-room-action.leave-room:hover {
+            background: rgba(255, 65, 108, 0.2);
+            color: #fff;
+        }
+        .btn-room-action.disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: #64748b;
+            cursor: not-allowed;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* RADAR SCANNER FOR WAITING HOST */
+        .waiting-radar-tag {
+            font-size: 0.75rem;
+            color: var(--neon-gold);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .radar-spinner {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-gold);
+            border-top-color: transparent;
+            animation: spinRadar 0.8s linear infinite;
+        }
+        @keyframes spinRadar {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================= VS SCREEN & BATTLE ARENA ================= */
+        #view-intro {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 480px;
+            text-align: center;
+            gap: 24px;
+        }
+        .vs-stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 700px;
+            flex-wrap: wrap;
+        }
+        .vs-fighter-card {
+            background: rgba(18, 24, 38, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px 20px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: slideInFighter 0.5s ease-out;
+        }
+        .vs-fighter-card.player1 {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+        }
+        .vs-fighter-card.player2 {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 25px rgba(255, 65, 108, 0.25);
+        }
+        .vs-fighter-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            border: 3px solid;
+            overflow: hidden;
+        }
+        .player1 .vs-fighter-avatar { border-color: var(--neon-cyan); }
+        .player2 .vs-fighter-avatar { border-color: var(--neon-red); }
+        .vs-fighter-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .vs-fighter-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .vs-badge-emblem {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f12711, #f5af19);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(241, 39, 17, 0.8);
+            animation: pulseVS 1s infinite alternate;
+        }
+        @keyframes pulseVS {
+            0% { transform: scale(0.92); }
+            100% { transform: scale(1.08); }
+        }
+        .intro-countdown-timer {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--neon-gold);
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
+        }
+
+        /* BATTLE HUD */
+        #view-battle {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .battle-hud {
+            background: rgba(18, 24, 38, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        .fighter-hud-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .fighter-hud-box.right {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+        .hud-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .fighter-hud-box.left .hud-avatar { border-color: var(--neon-cyan); }
+        .fighter-hud-box.right .hud-avatar { border-color: var(--neon-red); }
+        .hud-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .hud-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .hud-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hp-bar-outer {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 7px;
+            overflow: hidden;
+            margin-top: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+        }
+        .hp-bar-inner {
+            height: 100%;
+            width: 100%;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 7px;
+        }
+        .fighter-hud-box.left .hp-bar-inner {
+            background: linear-gradient(90deg, #00f0ff, #2ecc71);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        .fighter-hud-box.right .hp-bar-inner {
+            background: linear-gradient(90deg, #ff4b2b, #ff416c);
+            box-shadow: 0 0 10px rgba(255, 65, 108, 0.5);
+            float: right;
+        }
+        .hp-text {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-top: 2px;
+        }
+
+        .battle-hud-center {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 100px;
+        }
+        .round-counter-tag {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .timer-circle-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid var(--neon-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: var(--neon-gold);
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+        }
+        .timer-circle-box.urgent {
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+            animation: pulseTimer 0.5s infinite alternate;
+        }
+        @keyframes pulseTimer {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.12); }
+        }
+
+        /* QUESTION BOX */
+        .question-card-arena {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .combat-log-bar {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 3px solid var(--neon-gold);
+        }
+
+        .question-prompt {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #f8fafc;
+            font-weight: 500;
+            min-height: 48px;
+        }
+
+        .answers-grid-arena {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 650px) {
+            .answers-grid-arena { grid-template-columns: 1fr; }
+            .battle-hud { grid-template-columns: 1fr; gap: 8px; }
+            .fighter-hud-box.right { flex-direction: row; text-align: left; }
+            .fighter-hud-box.right .hp-bar-inner { float: none; }
+            .fixed-room-card { flex-direction: column; align-items: flex-start; }
+            .room-action-wrap { width: 100%; justify-content: flex-end; }
+        }
+
+        .btn-answer-arena {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-answer-arena:hover:not(:disabled) {
+            background: rgba(255, 65, 108, 0.15);
+            border-color: var(--neon-red);
+            transform: translateY(-2px);
+            color: #fff;
+        }
+        .btn-answer-arena .ans-key {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--neon-gold);
+            flex-shrink: 0;
+        }
+        .btn-answer-arena.correct {
+            background: rgba(46, 204, 113, 0.25) !important;
+            border-color: var(--neon-green) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+        }
+        .btn-answer-arena.wrong {
+            background: rgba(255, 65, 108, 0.25) !important;
+            border-color: var(--neon-red) !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(255, 65, 108, 0.4);
+        }
+
+        .dmg-float {
+            position: absolute;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ff3838;
+            text-shadow: 0 0 10px #ff3838, 2px 2px 0 #000;
+            animation: floatUp 0.8s ease-out forwards;
+            pointer-events: none;
+            z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { transform: translateY(-25px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.9); }
+        }
+
+        /* RESULT VIEW */
+        #view-result {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 460px;
+            text-align: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .result-box-card {
+            background: rgba(18, 24, 38, 0.95);
+            border: 2px solid;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .result-box-card.victory {
+            border-color: var(--neon-gold);
+            box-shadow: 0 0 40px rgba(241, 196, 15, 0.35);
+        }
+        .result-box-card.defeat {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 40px rgba(255, 65, 108, 0.35);
+        }
+        .result-badge-banner {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        .victory .result-badge-banner {
+            background: linear-gradient(135deg, #f1c40f, #ff9f1a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+        }
+        .defeat .result-badge-banner {
+            background: linear-gradient(135deg, #ff416c, #e74c3c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 65, 108, 0.6);
+        }
+        .result-rewards-wrap {
+            display: flex;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .reward-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .reward-pill.exp { border-color: var(--neon-gold); color: var(--neon-gold); }
+        .reward-pill.coin { border-color: #ffd32a; color: #ffd32a; }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-result-action {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-result-action.rematch {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4);
+        }
+        .btn-result-action.rematch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 65, 108, 0.6);
+        }
+        .btn-result-action.home {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-result-action.home:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="arena-header">
+        <a href="index.html" class="btn-back-home" title="Về Sảnh Chính">
+            <i class="fa-solid fa-arrow-left"></i> SẢNH CHÍNH
+        </a>
+
+        <div class="arena-title-wrap">
+            <div class="arena-title">
+                <i class="fa-solid fa-swords" style="color:#ff416c;"></i> ĐẤU TRƯỜNG 1V1
+            </div>
+            <div class="arena-subtitle">TRANH TÀI TOÁN HỌC ĐỐI KHÁNG TRỰC TIẾP</div>
+        </div>
+
+        <div class="header-stats-wrap">
+            <div class="stat-pill luot-dau" id="pill-luot-dau" title="Lượt Thách Đấu trong ngày">
+                <i class="fa-solid fa-khanda"></i>
+                <span id="lbl-so-luot-thach-dau">5/5 Lượt</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <main class="main-container">
+
+        <!-- LOBBY VIEW (CHỌN CHẾ ĐỘ & ĐỐI THỦ) -->
+        <section id="view-lobby">
+            <!-- CURRENT PLAYER STATUS BANNER -->
+            <div class="hero-banner-card">
+                <div class="current-player-profile">
+                    <div class="player-avatar-large" id="my-large-avatar">
+                        <i class="fa-solid fa-user-astronaut"></i>
+                    </div>
+                    <div class="player-info">
+                        <h3 id="my-display-name">Chiến Binh</h3>
+                        <div class="player-tags">
+                            <span class="badge-class-tag" id="my-class-tag"><i class="fa-solid fa-school"></i> Lớp 7A7</span>
+                            <span class="badge-rank-tier" id="my-rank-badge" style="background:rgba(205,127,50,0.2); color:#cd7f32;">ĐỒNG</span>
+                            <span class="badge-class-tag" id="my-exp-tag">⭐ 0 EXP</span>
+                            <span class="badge-class-tag" id="my-coin-tag" style="color:#ffd32a;">💰 50 Xu</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-quick-match" onclick="batDauGhepTranNgauNhien()">
+                    <i class="fa-solid fa-bolt"></i> GHÉP TRẬN NHANH 1V1
+                </button>
+            </div>
+
+            <!-- MODE SWITCHER TABS -->
+            <div class="pvp-mode-switcher">
+                <button class="mode-tab-btn active" id="btn-tab-custom" onclick="chuyenCheDoDau('custom', this)">
+                    <i class="fa-solid fa-user-ninja"></i> ĐẤU TỰ CHỌN
+                </button>
+                <button class="mode-tab-btn" id="btn-tab-rooms" onclick="chuyenCheDoDau('rooms', this)">
+                    <i class="fa-solid fa-dungeon"></i> PHÒNG THI ĐẤU (5 PHÒNG CỐ ĐỊNH)
+                </button>
+            </div>
+
+            <!-- SUB-TAB 1: ĐẤU TỰ CHỌN -->
+            <div class="pvp-section-tab" id="sec-mode-custom">
+                <!-- CONTROLS: TABS & SEARCH -->
+                <div class="lobby-controls">
+                    <div class="class-filter-tabs" id="filter-tabs-container">
+                        <button class="class-tab-btn active" onclick="locDanhSachDoiThu('all', this)">Tất Cả</button>
+                        <button class="class-tab-btn" onclick="locDanhSachDoiThu('7A2', this)">7A2</button>
+                        <button class="class-tab-btn" onclick="locDanhSachDoiThu('7A4', this)">7A4</button>
+                        <button class="class-tab-btn" onclick="locDanhSachDoiThu('7A7', this)">7A7</button>
+                        <button class="class-tab-btn" onclick="locDanhSachDoiThu('9A4', this)">9A4</button>
+                        <button class="class-tab-btn" onclick="locDanhSachDoiThu('9A6', this)">9A6</button>
+                    </div>
+
+                    <div class="search-student-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="input-search-opponent" placeholder="Tìm tên đối thủ..." oninput="timKiemDoiThu(this.value)">
+                    </div>
+                </div>
+
+                <!-- OPPONENTS LIST -->
+                <div class="opponents-grid" id="grid-opponents">
+                    <!-- Nạp tự động qua JS từ danh sách 203 học sinh -->
+                </div>
+            </div>
+
+            <!-- SUB-TAB 2: PHÒNG THI ĐẤU CỐ ĐỊNH (5 PHÒNG) -->
+            <div class="pvp-section-tab" id="sec-mode-rooms" style="display:none;">
+                <div class="fixed-rooms-header">
+                    <div class="fixed-rooms-header-text">
+                        <h4><i class="fa-solid fa-shield-halved"></i> 5 PHÒNG THI ĐẤU TRỰC TIẾP CỐ ĐỊNH TOÀN TRƯỜNG</h4>
+                        <p>Hệ thống cố định 5 phòng thi đấu, không cho tạo phòng rác. Hãy chọn 1 phòng trống để vào làm Chủ Phòng hoặc Thách đấu bạn đang đợi!</p>
+                    </div>
+                    <button class="btn-refresh-rooms" onclick="napLaiTrangThaiPhong(true)">
+                        <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Phòng
+                    </button>
+                </div>
+
+                <div class="fixed-rooms-list" id="fixed-rooms-container">
+                    <!-- Render 5 phòng cố định qua JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: VS INTRO SCREEN -->
+        <section id="view-intro">
+            <div class="vs-stage">
+                <!-- PLAYER 1 (ME) -->
+                <div class="vs-fighter-card player1">
+                    <div class="vs-fighter-avatar" id="intro-p1-avatar">👤</div>
+                    <div class="vs-fighter-name" id="intro-p1-name">Bạn</div>
+                    <span class="badge-rank-tier" id="intro-p1-rank" style="background:#00f0ff22; color:#00f0ff;">CHIẾN BINH</span>
+                </div>
+
+                <!-- VS EMBLEM -->
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <div class="vs-badge-emblem">VS</div>
+                    <div class="intro-countdown-timer" id="lbl-intro-countdown">3</div>
+                </div>
+
+                <!-- PLAYER 2 (OPPONENT) -->
+                <div class="vs-fighter-card player2">
+                    <div class="vs-fighter-avatar" id="intro-p2-avatar">👤</div>
+                    <div class="vs-fighter-name" id="intro-p2-name">Đối Thủ</div>
+                    <span class="badge-rank-tier" id="intro-p2-rank" style="background:#ff416c22; color:#ff416c;">ĐỐI THỦ</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: ARENA BATTLE -->
+        <section id="view-battle">
+            <!-- HUD TOP -->
+            <div class="battle-hud">
+                <!-- FIGHTER 1 (ME) -->
+                <div class="fighter-hud-box left">
+                    <div class="hud-avatar" id="battle-p1-avatar">👤</div>
+                    <div class="hud-details">
+                        <div class="hud-name" id="battle-p1-name">Bạn</div>
+                        <div class="hp-bar-outer">
+                            <div class="hp-bar-inner" id="battle-p1-hp" style="width:100%;"></div>
+                        </div>
+                        <div class="hp-text" id="battle-p1-hp-text">HP: 100 / 100</div>
+                    </div>
+                </div>
+
+                <!-- CENTER ROUND & TIMER -->
+                <div class="battle-hud-center">
+                    <div class="round-counter-tag" id="lbl-round-counter">HIỆP 1 / 5</div>
+                    <div class="timer-circle-box" id="lbl-battle-timer">15</div>
+                </div>
+
+                <!-- FIGHTER 2 (OPPONENT) -->
+                <div class="fighter-hud-box right">
+                    <div class="hud-avatar" id="battle-p2-avatar">👤</div>
+                    <div class="hud-details">
+                        <div class="hud-name" id="battle-p2-name">Đối Thủ</div>
+                        <div class="hp-bar-outer">
+                            <div class="hp-bar-inner" id="battle-p2-hp" style="width:100%;"></div>
+                        </div>
+                        <div class="hp-text" id="battle-p2-hp-text">HP: 100 / 100</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUESTION CARD -->
+            <div class="question-card-arena" id="question-arena-box">
+                <div class="combat-log-bar">
+                    <span id="lbl-combat-log"><i class="fa-solid fa-swords"></i> Trận chiến bắt đầu! Chọn đáp án chính xác để xuất chiêu.</span>
+                    <span id="lbl-combo-badge" style="color:var(--neon-gold); display:none;"><i class="fa-solid fa-fire"></i> COMBO x2!</span>
+                </div>
+
+                <div class="question-prompt" id="lbl-arena-question">
+                    Đang nạp câu hỏi đối kháng...
+                </div>
+
+                <div class="answers-grid-arena" id="arena-answers-box">
+                    <!-- 4 nút đáp án A, B, C, D -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: RESULT SCREEN -->
+        <section id="view-result">
+            <div class="result-box-card" id="card-result-box">
+                <div class="result-badge-banner" id="lbl-result-banner">VICTORY</div>
+                <div style="font-size:0.95rem; color:#cbd5e1;" id="lbl-result-message">
+                    Chúc mừng em đã đánh bại đối thủ với chiến thuật toán học xuất sắc!
+                </div>
+
+                <div class="result-rewards-wrap">
+                    <div class="reward-pill exp" id="pill-reward-exp">
+                        <i class="fa-solid fa-star"></i> +50 EXP
+                    </div>
+                    <div class="reward-pill coin" id="pill-reward-coin">
+                        <i class="fa-solid fa-coins"></i> +10 Xu
+                    </div>
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn-result-action rematch" onclick="taiLaiLobby()">
+                        <i class="fa-solid fa-rotate-right"></i> Đấu Trận Khác
+                    </button>
+                    <button class="btn-result-action home" onclick="location.href='index.html'">
+                        <i class="fa-solid fa-house"></i> Về Sảnh Chính
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- WEB AUDIO API SYNTHESIZER -->
+    <script>
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtxInstance = null;
+
+        function getAudioCtx() {
+            if (!audioCtxInstance) {
+                audioCtxInstance = new AudioCtx();
+            }
+            if (audioCtxInstance.state === 'suspended') {
+                audioCtxInstance.resume();
+            }
+            return audioCtxInstance;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioCtx();
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.06);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.07);
+                } else if (type === 'hit') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.2);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                } else if (type === 'hurt') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.25);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.26);
+                } else if (type === 'victory') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                        gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + i * 0.1);
+                        osc.stop(now + i * 0.1 + 0.45);
+                    });
+                }
+            } catch (e) {}
+        }
+    </script>
+
+    <!-- CORE LOGIC & 5 FIXED ROOMS SYSTEM -->
+    <script>
+        // DỮ LIỆU CỐT LÕI HỌC SINH
+        let tenHocSinhHienTai = '';
+        let lopHocSinhHienTai = '';
+        let khoiHocSinhHienTai = '7';
+        let soLuotConLai = 5;
+        let soLuotToiDa = 5;
+
+        let danhSachTatCaHocSinh = [];
+        let danhSachLocHienTai = [];
+        let doiThuHienTai = null;
+
+        // ĐỊNH NGHĨA 5 PHÒNG THI ĐẤU CỐ ĐỊNH (CỰC KỲ UY DANH & CÂN ĐỐI)
+        const DANH_SACH_5_PHONG_MAC_DINH = [
+            {
+                id: 1,
+                name: "Phòng 01: Đấu Trường Rồng Lửa",
+                icon: "🐉",
+                color: "#ff416c",
+                slogan: "Rực Lửa Tranh Tài"
+            },
+            {
+                id: 2,
+                name: "Phòng 02: Lôi Đình Sơn Trang",
+                icon: "⚡",
+                color: "#f1c40f",
+                slogan: "Chớp Nhoáng Tốc Độ"
+            },
+            {
+                id: 3,
+                name: "Phòng 03: Đỉnh Băng Tuyết",
+                icon: "❄️",
+                color: "#00f0ff",
+                slogan: "Tỉnh Táo & Chuẩn Xác"
+            },
+            {
+                id: 4,
+                name: "Phòng 04: Đấu Trường Phong Thần",
+                icon: "🌪️",
+                color: "#2ecc71",
+                slogan: "Cuồng Phong Bất Tận"
+            },
+            {
+                id: 5,
+                name: "Phòng 05: Đấu Trường Hoàng Gia",
+                icon: "👑",
+                color: "#9d4edd",
+                slogan: "Đỉnh Cao Chiến Vương"
+            }
+        ];
+
+        let state5Phong = [];
+        let phongDangGiuHienTai = null; // id phòng mà học sinh này đang làm chủ
+        let phongListeningInterval = null;
+
+        // DỮ LIỆU TRẬN CHIẾN
+        let battleP1Hp = 100;
+        let battleP2Hp = 100;
+        let currentRound = 0;
+        const TOTAL_ROUNDS = 5;
+        let currentQuestionsList = [];
+        let battleTimerInterval = null;
+        let timeLeftForRound = 15;
+        let roundLocked = false;
+        let aiTimerTimeout = null;
+        let idPhongDangDau = null;
+        let matchCorrectCount = 0;
+        let matchWrongCount = 0;
+
+        // CÂU HỎI MẪU DỰ PHÒNG
+        const BIEU_MAU_CAU_HOI_KHOI7 = [
+            { question: "Kết quả của phép tính: $\\frac{-2}{3} + \\frac{5}{3}$ là:", answers: ["$1$", "$\\frac{-7}{3}$", "$\\frac{3}{3}$", "$-1$"], correct: 0 },
+            { question: "Giá trị tuyệt đối của số thực $-3.5$ là:", answers: ["$3.5$", "$-3.5$", "$0$", "$7$"], correct: 0 },
+            { question: "Nếu hai đường thẳng $a$ và $b$ cùng song song với đường thẳng $c$ thì:", answers: ["$a$ song song với $b$", "$a$ cắt $b$", "$a$ vuông góc với $b$", "$a$ trùng với $b$"], correct: 0 },
+            { question: "Tìm $x$ biết $2x - 6 = 10$:", answers: ["$x = 8$", "$x = 2$", "$x = 4$", "$x = 16$"], correct: 0 },
+            { question: "Tổng ba góc trong một tam giác luôn bằng:", answers: ["$180^\\circ$", "$90^\\circ$", "$360^\\circ$", "$270^\\circ$"], correct: 0 },
+            { question: "Số đối của số hữu tỉ $\\frac{4}{9}$ là:", answers: ["$-\\frac{4}{9}$", "$\\frac{9}{4}$", "$-\\frac{9}{4}$", "$\\frac{4}{-9}$"], correct: 0 },
+            { question: "Căn bậc hai số học của 49 là:", answers: ["$7$", "$-7$", "$49$", "$14$"], correct: 0 }
+        ];
+
+        const BIEU_MAU_CAU_HOI_KHOI9 = [
+            { question: "Căn bậc hai số học của số 81 là:", answers: ["$9$", "$-9$", "$81$", "$\\pm 9$"], correct: 0 },
+            { question: "Trong tam giác vuông, $\\sin \\alpha$ được tính bằng tỉ số giữa:", answers: ["Cạnh đối và cạnh huyền", "Cạnh kề và cạnh huyền", "Cạnh đối và cạnh kề", "Cạnh kề và cạnh đối"], correct: 0 },
+            { question: "Nghiệm của phương trình $3x - 12 = 0$ là:", answers: ["$x = 4$", "$x = -4$", "$x = 9$", "$x = 36$"], correct: 0 },
+            { question: "Hàm số bậc nhất $y = (m - 2)x + 3$ đồng biến trên $\\mathbb{R}$ khi:", answers: ["$m > 2$", "$m < 2$", "$m \\ge 2$", "$m \\ne 2$"], correct: 0 },
+            { question: "Đường kính của đường tròn đi qua trung điểm của một dây không đi qua tâm thì:", answers: ["Vuông góc với dây ấy", "Song song với dây ấy", "Bằng dây ấy", "Trùng với dây ấy"], correct: 0 }
+        ];
+
+        // 1. KHỞI TẠO HỆ THỐNG
+        window.addEventListener('DOMContentLoaded', async () => {
+            xacDinhHocSinhHienTai();
+            napLuotThachDau();
+            napDanhSachDoiThu();
+            renderDanhSachDoiThu(danhSachTatCaHocSinh);
+            
+            // Khởi tạo trạng thái 5 phòng
+            khoiTao5PhongThiDau();
+            napLaiTrangThaiPhong();
+
+            // Lắng nghe thay đổi phòng qua LocalStorage StorageEvent giữa các tab
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'mathhero_pvp_rooms') {
+                    napLaiTrangThaiPhong(false);
+                }
+            });
+
+            // Tự động quét cập nhật phòng mỗi 2.5s
+            setInterval(() => {
+                napLaiTrangThaiPhong(false);
+            }, 2500);
+        });
+
+        // 2. CHUYỂN ĐỔI 2 CHẾ ĐỘ: ĐẤU TỰ CHỌN vs PHÒNG THI ĐẤU
+        function chuyenCheDoDau(mode, btn) {
+            playSound('click');
+            document.querySelectorAll('.mode-tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const secCustom = document.getElementById('sec-mode-custom');
+            const secRooms = document.getElementById('sec-mode-rooms');
+
+            if (mode === 'custom') {
+                secCustom.style.display = 'flex';
+                secRooms.style.display = 'none';
+            } else {
+                secCustom.style.display = 'none';
+                secRooms.style.display = 'flex';
+                napLaiTrangThaiPhong(true);
+            }
+        }
+
+        // 3. XÁC THỰC DANH TÍNH HỌC SINH
+        function xacDinhHocSinhHienTai() {
+            tenHocSinhHienTai = localStorage.getItem('hoc_school_student_name') || sessionStorage.getItem('hoc_school_student_name') || '';
+            lopHocSinhHienTai = localStorage.getItem('hoc_school_student_classroom') || sessionStorage.getItem('hoc_school_student_classroom') || '7A7';
+            let rawClass = localStorage.getItem('hoc_school_student_class') || sessionStorage.getItem('hoc_school_student_class') || 'Khối 7';
+            
+            if (rawClass.includes('9') || lopHocSinhHienTai.includes('9')) {
+                khoiHocSinhHienTai = '9';
+            } else {
+                khoiHocSinhHienTai = '7';
+            }
+
+            if (!tenHocSinhHienTai) {
+                tenHocSinhHienTai = 'Trần Thanh Thiện';
+                lopHocSinhHienTai = '7A7';
+                khoiHocSinhHienTai = '7';
+            }
+
+            document.getElementById('my-display-name').innerText = tenHocSinhHienTai;
+            document.getElementById('my-class-tag').innerHTML = `<i class="fa-solid fa-school"></i> Lớp ${lopHocSinhHienTai.toUpperCase()}`;
+
+            let exp = parseInt(localStorage.getItem('exp_' + tenHocSinhHienTai)) || 0;
+            let coin = parseInt(localStorage.getItem('coin_' + tenHocSinhHienTai)) || 50;
+
+            document.getElementById('my-exp-tag').innerText = `⭐ ${exp} EXP`;
+            document.getElementById('my-coin-tag').innerText = `💰 ${coin} Xu`;
+
+            let rank = getRankByExp(exp);
+            let rankEl = document.getElementById('my-rank-badge');
+            rankEl.innerText = rank.name;
+            rankEl.style.background = rank.bg;
+            rankEl.style.color = rank.color;
+
+            let myAvatar = renderAvatarHocSinh(tenHocSinhHienTai);
+            document.getElementById('my-large-avatar').innerHTML = myAvatar;
+        }
+
+        function getRankByExp(exp) {
+            if (exp < 10) return { name: "Tập Sự", color: "#94a3b8", bg: "rgba(148, 163, 184, 0.15)" };
+            if (exp < 50) return { name: "Đồng", color: "#cd7f32", bg: "rgba(205, 127, 50, 0.2)" };
+            if (exp < 100) return { name: "Bạc", color: "#b4b4b4", bg: "rgba(180, 180, 180, 0.2)" };
+            if (exp < 200) return { name: "Vàng", color: "#f1c40f", bg: "rgba(241, 196, 15, 0.2)" };
+            if (exp < 500) return { name: "Kim Cương", color: "#00f0ff", bg: "rgba(0, 240, 255, 0.25)" };
+            if (exp < 1000) return { name: "Huyền Thoại", color: "#ff0055", bg: "rgba(255, 0, 85, 0.25)" };
+            if (exp < 2000) return { name: "Siêu Huyền Thoại", color: "#ff5100", bg: "rgba(255, 81, 0, 0.25)" };
+            if (exp < 4000) return { name: "Cao Thủ", color: "#9d4edd", bg: "rgba(157, 78, 221, 0.25)" };
+            if (exp < 8000) return { name: "Đại Cao Thủ", color: "#f72585", bg: "rgba(247, 37, 133, 0.3)" };
+            return { name: "Thách Đấu", color: "#ff0000", bg: "rgba(255, 0, 0, 0.35)" };
+        }
+
+        // 4. QUẢN LÝ LƯỢT THÁCH ĐẤU
+        function napLuotThachDau() {
+            soLuotToiDa = parseInt(localStorage.getItem('so_luot_thach_dau_toi_da')) || 5;
+            let homNay = new Date().toLocaleDateString('vi-VN');
+            let raw = null;
+            try {
+                raw = JSON.parse(localStorage.getItem('luot_thach_dau_' + tenHocSinhHienTai));
+            } catch (e) {}
+
+            if (raw && raw.date === homNay) {
+                soLuotConLai = typeof raw.soLuotConLai === 'number' ? raw.soLuotConLai : soLuotToiDa;
+            } else {
+                soLuotConLai = soLuotToiDa;
+                localStorage.setItem('luot_thach_dau_' + tenHocSinhHienTai, JSON.stringify({
+                    date: homNay,
+                    soLuotConLai: soLuotConLai
+                }));
+            }
+
+            document.getElementById('lbl-so-luot-thach-dau').innerText = `${soLuotConLai}/${soLuotToiDa} Lượt`;
+        }
+
+        function truMotLuotDau() {
+            soLuotConLai = Math.max(0, soLuotConLai - 1);
+            let homNay = new Date().toLocaleDateString('vi-VN');
+            localStorage.setItem('luot_thach_dau_' + tenHocSinhHienTai, JSON.stringify({
+                date: homNay,
+                soLuotConLai: soLuotConLai
+            }));
+            document.getElementById('lbl-so-luot-thach-dau').innerText = `${soLuotConLai}/${soLuotToiDa} Lượt`;
+
+            if (window.dongBoHocSinh) {
+                window.dongBoHocSinh(tenHocSinhHienTai);
+            }
+        }
+
+        // 5. QUẢN LÝ 5 PHÒNG CỐ ĐỊNH (HOÀN TOÀN CỐ ĐỊNH - CHỐNG TẠO PHÒNG RÁC)
+        function khoiTao5PhongThiDau() {
+            let saved = null;
+            try {
+                saved = JSON.parse(localStorage.getItem('mathhero_pvp_rooms'));
+            } catch (e) {}
+
+            if (Array.isArray(saved) && saved.length === 5) {
+                state5Phong = saved;
+            } else {
+                state5Phong = DANH_SACH_5_PHONG_MAC_DINH.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    icon: p.icon,
+                    color: p.color,
+                    slogan: p.slogan,
+                    status: 'empty', // 'empty' (0/2), 'waiting' (1/2), 'fighting' (2/2)
+                    host: null,
+                    guest: null,
+                    updatedAt: Date.now()
+                }));
+                luuTrangThai5Phong();
+            }
+        }
+
+        function luuTrangThai5Phong() {
+            localStorage.setItem('mathhero_pvp_rooms', JSON.stringify(state5Phong));
+            // Đẩy Firestore nếu có compat
+            try {
+                if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
+                    const db = window.firebase.firestore();
+                    db.collection('mathhero_global').doc('mathhero_pvp_rooms').set({
+                        rooms: state5Phong,
+                        lastUpdated: Date.now()
+                    }, { merge: true }).catch(() => {});
+                }
+            } catch (e) {}
+        }
+
+        async function napLaiTrangThaiPhong(playSfx = false) {
+            if (playSfx) playSound('click');
+
+            // 1. Thử kéo từ Firestore nếu online
+            try {
+                if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
+                    const db = window.firebase.firestore();
+                    const docSnap = await db.collection('mathhero_global').doc('mathhero_pvp_rooms').get();
+                    if (docSnap.exists && docSnap.data().rooms) {
+                        state5Phong = docSnap.data().rooms;
+                        localStorage.setItem('mathhero_pvp_rooms', JSON.stringify(state5Phong));
+                    }
+                }
+            } catch (e) {}
+
+            // 2. Kéo từ localStorage
+            try {
+                let saved = JSON.parse(localStorage.getItem('mathhero_pvp_rooms'));
+                if (Array.isArray(saved) && saved.length === 5) {
+                    state5Phong = saved;
+                }
+            } catch (e) {}
+
+            // 3. Tự động thanh lọc (auto-cleanup) phòng treo quá 10 phút
+            let bayGio = Date.now();
+            let coThayDoi = false;
+            state5Phong.forEach(room => {
+                if (room.status !== 'empty' && (bayGio - (room.updatedAt || 0) > 10 * 60 * 1000)) {
+                    room.status = 'empty';
+                    room.host = null;
+                    room.guest = null;
+                    room.updatedAt = bayGio;
+                    coThayDoi = true;
+                }
+            });
+            if (coThayDoi) luuTrangThai5Phong();
+
+            // 4. Nếu học sinh đang là Host và phòng chuyển sang 'fighting' -> Tự động vào trận!
+            if (phongDangGiuHienTai) {
+                let p = state5Phong.find(r => r.id === phongDangGiuHienTai);
+                if (p && p.status === 'fighting' && p.guest && p.host && p.host.name === tenHocSinhHienTai) {
+                    let doiThu = p.guest;
+                    let idPhong = p.id;
+                    phongDangGiuHienTai = null;
+                    thachDauVoiDoiThu(doiThu.name, doiThu.classroom || '7A7', idPhong);
+                    return;
+                }
+            }
+
+            render5PhongGiaoDien();
+        }
+
+        function render5PhongGiaoDien() {
+            const container = document.getElementById('fixed-rooms-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            state5Phong.forEach(room => {
+                let card = document.createElement('div');
+                card.className = `fixed-room-card ${room.status}`;
+                card.style.borderLeft = `6px solid ${room.color}`;
+
+                // Status text & pill
+                let statusClass = room.status;
+                let statusLabel = '🟢 TRỐNG (0/2)';
+                if (room.status === 'waiting') statusLabel = '🟡 ĐANG CHỜ ĐỐI THỦ (1/2)';
+                if (room.status === 'fighting') statusLabel = '🔴 ĐANG GIAO TRANH (2/2)';
+
+                // Summary text
+                let summaryHtml = '';
+                let isMeHost = (room.host && room.host.name === tenHocSinhHienTai);
+
+                if (room.status === 'empty') {
+                    summaryHtml = `<span style="color:#94a3b8;"><i class="fa-solid fa-door-open"></i> Phòng đang sẵn sàng đón 2 đấu sĩ vào so tài.</span>`;
+                } else if (room.status === 'waiting') {
+                    if (isMeHost) {
+                        summaryHtml = `<span class="waiting-radar-tag"><span class="radar-spinner"></span> <b>Em đang là Chủ Phòng</b>. Đang phát tín hiệu chờ đấu thủ...</span>`;
+                    } else {
+                        summaryHtml = `<span><i class="fa-solid fa-crown" style="color:var(--neon-gold)"></i> Chủ phòng: <b>${room.host.name}</b> (${room.host.classroom || 'Lớp'}) • ⭐ ${room.host.exp || 0} EXP</span>`;
+                    }
+                } else if (room.status === 'fighting') {
+                    summaryHtml = `<span><i class="fa-solid fa-swords" style="color:var(--neon-red)"></i> Trận đấu: <b>${room.host ? room.host.name : 'Đấu thủ 1'}</b> VS <b>${room.guest ? room.guest.name : 'Đấu thủ 2'}</b></span>`;
+                }
+
+                // Action buttons
+                let actionHtml = '';
+                if (room.status === 'empty') {
+                    actionHtml = `<button class="btn-room-action join-host" onclick="vaoLamChuPhong(${room.id})"><i class="fa-solid fa-shield-halved"></i> Vào Giữ Phòng</button>`;
+                } else if (room.status === 'waiting') {
+                    if (isMeHost) {
+                        actionHtml = `<button class="btn-room-action leave-room" onclick="roiKhoiPhong(${room.id})"><i class="fa-solid fa-right-from-bracket"></i> Rời Phòng</button>`;
+                    } else {
+                        actionHtml = `<button class="btn-room-action challenge-guest" onclick="vaoKhietChienPhong(${room.id})"><i class="fa-solid fa-swords"></i> Vào Khiêu Chiến</button>`;
+                    }
+                } else {
+                    actionHtml = `<button class="btn-room-action disabled" disabled><i class="fa-solid fa-lock"></i> Đang Đấu</button>`;
+                }
+
+                card.innerHTML = `
+                    <div class="room-main-info">
+                        <div class="room-emblem" style="border-color:${room.color}; color:${room.color};">
+                            ${room.icon}
+                        </div>
+                        <div class="room-details">
+                            <div class="room-title-row">
+                                <span class="room-name">${room.name}</span>
+                                <span class="room-status-pill ${statusClass}">${statusLabel}</span>
+                            </div>
+                            <div class="room-participants-summary">
+                                ${summaryHtml}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="room-action-wrap">
+                        ${actionHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // HÀNH ĐỘNG VÀO LÀM CHỦ PHÒNG
+        function vaoLamChuPhong(roomId) {
+            playSound('click');
+            if (soLuotConLai <= 0) {
+                alert("Em đã dùng hết 5 lượt Thách Đấu hôm nay rồi!");
+                return;
+            }
+
+            let room = state5Phong.find(r => r.id === roomId);
+            if (!room) return;
+            if (room.status !== 'empty') {
+                alert("Phòng này vừa có bạn khác vào rồi, hãy chọn phòng khác nhé!");
+                napLaiTrangThaiPhong();
+                return;
+            }
+
+            // Đặt người chơi làm Host
+            room.status = 'waiting';
+            room.host = {
+                name: tenHocSinhHienTai,
+                classroom: lopHocSinhHienTai,
+                exp: parseInt(localStorage.getItem('exp_' + tenHocSinhHienTai)) || 0,
+                joinedAt: Date.now()
+            };
+            room.guest = null;
+            room.updatedAt = Date.now();
+
+            phongDangGiuHienTai = roomId;
+            luuTrangThai5Phong();
+            render5PhongGiaoDien();
+        }
+
+        // HÀNH ĐỘNG RỜI PHÒNG
+        function roiKhoiPhong(roomId) {
+            playSound('click');
+            let room = state5Phong.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (room.host && room.host.name === tenHocSinhHienTai) {
+                room.status = 'empty';
+                room.host = null;
+                room.guest = null;
+                room.updatedAt = Date.now();
+                phongDangGiuHienTai = null;
+                luuTrangThai5Phong();
+                render5PhongGiaoDien();
+            }
+        }
+
+        // HÀNH ĐỘNG VÀO KHIÊU CHIẾN PHÒNG ĐANG CHỜ
+        function vaoKhietChienPhong(roomId) {
+            playSound('click');
+            if (soLuotConLai <= 0) {
+                alert("Em đã dùng hết 5 lượt Thách Đấu hôm nay rồi!");
+                return;
+            }
+
+            let room = state5Phong.find(r => r.id === roomId);
+            if (!room) return;
+            if (room.status !== 'waiting' || !room.host) {
+                alert("Phòng không còn ở trạng thái chờ đối thủ!");
+                napLaiTrangThaiPhong();
+                return;
+            }
+
+            if (room.host.name === tenHocSinhHienTai) {
+                alert("Em đang là chủ phòng này rồi!");
+                return;
+            }
+
+            let doiThu = room.host;
+
+            // Chuyển trạng thái phòng sang 'fighting'
+            room.status = 'fighting';
+            room.guest = {
+                name: tenHocSinhHienTai,
+                classroom: lopHocSinhHienTai,
+                exp: parseInt(localStorage.getItem('exp_' + tenHocSinhHienTai)) || 0,
+                joinedAt: Date.now()
+            };
+            room.updatedAt = Date.now();
+            luuTrangThai5Phong();
+
+            // Vào trận ngay!
+            thachDauVoiDoiThu(doiThu.name, doiThu.classroom || '7A7', roomId);
+        }
+
+        // 6. TẢI VÀ LỌC DANH SÁCH ĐỐI THỦ (CHẾ ĐỘ TỰ CHỌN)
+        function napDanhSachDoiThu() {
+            let dsGoc = [];
+            if (window.DANH_SACH_HOC_SINH_CHUAN && Array.isArray(window.DANH_SACH_HOC_SINH_CHUAN)) {
+                dsGoc = window.DANH_SACH_HOC_SINH_CHUAN;
+            } else {
+                let rawUsers = null;
+                try {
+                    rawUsers = JSON.parse(localStorage.getItem('math_hero_users_v2'));
+                } catch (e) {}
+                if (rawUsers && typeof rawUsers === 'object') {
+                    dsGoc = Object.keys(rawUsers).map(name => ({
+                        hoTen: name,
+                        lop: rawUsers[name].classroom || '7A7',
+                        khoi: rawUsers[name].class || 'Khối 7'
+                    }));
+                }
+            }
+
+            danhSachTatCaHocSinh = dsGoc.filter(hs => hs.hoTen !== tenHocSinhHienTai);
+            danhSachLocHienTai = [...danhSachTatCaHocSinh];
+        }
+
+        function renderAvatarHocSinh(ten) {
+            let av = localStorage.getItem('avatar_' + ten) || localStorage.getItem('equipped_avatar_' + ten);
+            if (av && av.startsWith('http')) {
+                return `<img src="${av}" alt="${ten}">`;
+            }
+            const emojis = ['🥷', '🧙‍♂️', '🧝‍♂️', '🦸‍♂️', '⚔️', '🏹', '🛡️', '⚡', '🐉', '🐺'];
+            let charCodeSum = 0;
+            for (let i = 0; i < ten.length; i++) charCodeSum += ten.charCodeAt(i);
+            return emojis[charCodeSum % emojis.length];
+        }
+
+        function renderDanhSachDoiThu(danhSach) {
+            const grid = document.getElementById('grid-opponents');
+            grid.innerHTML = '';
+
+            if (danhSach.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:30px; color:#94a3b8;">Không tìm thấy đối thủ nào phù hợp.</div>`;
+                return;
+            }
+
+            danhSach.forEach(hs => {
+                let exp = parseInt(localStorage.getItem('exp_' + hs.hoTen)) || 0;
+                let rank = getRankByExp(exp);
+                let avatarHtml = renderAvatarHocSinh(hs.hoTen);
+                let lopDisplay = hs.lop || '7A7';
+
+                const card = document.createElement('div');
+                card.className = 'opponent-card';
+                card.innerHTML = `
+                    <div class="opponent-info-wrap">
+                        <div class="opponent-avatar" style="border-color:${rank.color};">${avatarHtml}</div>
+                        <div class="opponent-meta">
+                            <div class="opponent-name" title="${hs.hoTen}">${hs.hoTen}</div>
+                            <div class="opponent-submeta">
+                                <span style="background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; font-weight:700;">${lopDisplay}</span>
+                                <span style="color:${rank.color}; font-weight:700;">${rank.name}</span>
+                                <span>⭐ ${exp}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-challenge" onclick="thachDauVoiDoiThu('${hs.hoTen.replace(/'/g, "\\'")}', '${lopDisplay}')">
+                        <i class="fa-solid fa-swords"></i> Đấu
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function locDanhSachDoiThu(lop, btn) {
+            playSound('click');
+            document.querySelectorAll('.class-tab-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            if (lop === 'all') {
+                danhSachLocHienTai = [...danhSachTatCaHocSinh];
+            } else {
+                danhSachLocHienTai = danhSachTatCaHocSinh.filter(hs => hs.lop && hs.lop.toUpperCase() === lop.toUpperCase());
+            }
+
+            let tuKhoa = document.getElementById('input-search-opponent').value.trim().toLowerCase();
+            if (tuKhoa) {
+                danhSachLocHienTai = danhSachLocHienTai.filter(hs => hs.hoTen.toLowerCase().includes(tuKhoa));
+            }
+
+            renderDanhSachDoiThu(danhSachLocHienTai);
+        }
+
+        function timKiemDoiThu(query) {
+            let q = query.trim().toLowerCase();
+            let kq = danhSachLocHienTai.filter(hs => hs.hoTen.toLowerCase().includes(q));
+            renderDanhSachDoiThu(kq);
+        }
+
+        function batDauGhepTranNgauNhien() {
+            playSound('click');
+            if (soLuotConLai <= 0) {
+                alert("Em đã dùng hết 5 lượt Thách Đấu hôm nay rồi!");
+                return;
+            }
+
+            let dsUuTien = danhSachTatCaHocSinh.filter(hs => hs.lop && hs.lop.startsWith(khoiHocSinhHienTai));
+            if (dsUuTien.length === 0) dsUuTien = danhSachTatCaHocSinh;
+
+            let randomOpponent = dsUuTien[Math.floor(Math.random() * dsUuTien.length)];
+            if (!randomOpponent) {
+                alert("Đang tìm kiếm đối thủ...");
+                return;
+            }
+
+            thachDauVoiDoiThu(randomOpponent.hoTen, randomOpponent.lop || '7A7');
+        }
+
+        // 7. TIẾN TRÌNH TRẬN ĐẤU (MATCH INTRO -> BATTLE -> RESULT)
+        function thachDauVoiDoiThu(tenDoiThu, lopDoiThu, roomId = null) {
+            playSound('click');
+            if (soLuotConLai <= 0) {
+                alert("Em đã dùng hết 5 lượt Thách Đấu hôm nay rồi!");
+                return;
+            }
+
+            idPhongDangDau = roomId;
+
+            let expDoiThu = parseInt(localStorage.getItem('exp_' + tenDoiThu)) || 0;
+            doiThuHienTai = {
+                hoTen: tenDoiThu,
+                lop: lopDoiThu,
+                exp: expDoiThu,
+                rank: getRankByExp(expDoiThu),
+                avatar: renderAvatarHocSinh(tenDoiThu)
+            };
+
+            khoiChayManHinhIntro();
+        }
+
+        function khoiChayManHinhIntro() {
+            document.getElementById('view-lobby').style.display = 'none';
+            document.getElementById('view-intro').style.display = 'flex';
+            document.getElementById('view-battle').style.display = 'none';
+            document.getElementById('view-result').style.display = 'none';
+
+            // P1
+            document.getElementById('intro-p1-name').innerText = tenHocSinhHienTai;
+            document.getElementById('intro-p1-avatar').innerHTML = renderAvatarHocSinh(tenHocSinhHienTai);
+            let myRank = getRankByExp(parseInt(localStorage.getItem('exp_' + tenHocSinhHienTai)) || 0);
+            document.getElementById('intro-p1-rank').innerText = myRank.name;
+            document.getElementById('intro-p1-rank').style.color = myRank.color;
+
+            // P2
+            document.getElementById('intro-p2-name').innerText = doiThuHienTai.hoTen;
+            document.getElementById('intro-p2-avatar').innerHTML = doiThuHienTai.avatar;
+            document.getElementById('intro-p2-rank').innerText = doiThuHienTai.rank.name;
+            document.getElementById('intro-p2-rank').style.color = doiThuHienTai.rank.color;
+
+            let countdown = 3;
+            let timerEl = document.getElementById('lbl-intro-countdown');
+            timerEl.innerText = countdown;
+
+            let introInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    timerEl.innerText = countdown;
+                    playSound('click');
+                } else if (countdown === 0) {
+                    timerEl.innerText = "CHIẾN!";
+                    playSound('hit');
+                } else {
+                    clearInterval(introInterval);
+                    khoiChayTranDauChinhThuc();
+                }
+            }, 850);
+        }
+
+        function khoiChayTranDauChinhThuc() {
+            document.getElementById('view-intro').style.display = 'none';
+            document.getElementById('view-battle').style.display = 'flex';
+
+            battleP1Hp = 100;
+            battleP2Hp = 100;
+            currentRound = 0;
+            matchCorrectCount = 0;
+            matchWrongCount = 0;
+            capNhatThanhHp();
+
+            document.getElementById('battle-p1-name').innerText = tenHocSinhHienTai;
+            document.getElementById('battle-p1-avatar').innerHTML = renderAvatarHocSinh(tenHocSinhHienTai);
+            document.getElementById('battle-p2-name').innerText = doiThuHienTai.hoTen;
+            document.getElementById('battle-p2-avatar').innerHTML = doiThuHienTai.avatar;
+
+            chuanBiBoDeThiDau();
+            vaoHiepDauMoi();
+        }
+
+        function chuanBiBoDeThiDau() {
+            let duLieuNganHang = null;
+            try {
+                duLieuNganHang = JSON.parse(localStorage.getItem('ngan_hang_de_trac_nghiem'));
+            } catch (e) {}
+
+            let questionsPool = [];
+            if (Array.isArray(duLieuNganHang) && duLieuNganHang.length > 0) {
+                let dePhuHop = duLieuNganHang.filter(bode => {
+                    if (bode.hidden) return false;
+                    if (!bode.grade || bode.grade === 'all') return true;
+                    return bode.grade.includes(khoiHocSinhHienTai);
+                });
+                if (dePhuHop.length > 0) {
+                    dePhuHop.forEach(b => {
+                        if (Array.isArray(b.questions)) {
+                            questionsPool.push(...b.questions);
+                        }
+                    });
+                }
+            }
+
+            if (questionsPool.length < TOTAL_ROUNDS) {
+                let fallbacks = khoiHocSinhHienTai === '9' ? BIEU_MAU_CAU_HOI_KHOI9 : BIEU_MAU_CAU_HOI_KHOI7;
+                questionsPool.push(...fallbacks);
+            }
+
+            for (let i = questionsPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questionsPool[i], questionsPool[j]] = [questionsPool[j], questionsPool[i]];
+            }
+
+            currentQuestionsList = questionsPool.slice(0, TOTAL_ROUNDS);
+        }
+
+        function vaoHiepDauMoi() {
+            if (currentRound >= TOTAL_ROUNDS || battleP1Hp <= 0 || battleP2Hp <= 0) {
+                ketThucTranDau();
+                return;
+            }
+
+            roundLocked = false;
+            currentRound++;
+            document.getElementById('lbl-round-counter').innerText = `HIỆP ${currentRound} / ${TOTAL_ROUNDS}`;
+
+            let qObj = currentQuestionsList[currentRound - 1];
+            renderCauHoiHiepDau(qObj);
+
+            batDauDongHoHiepDau();
+            kichHoatDoiThuTuDong(qObj);
+        }
+
+        function renderCauHoiHiepDau(qObj) {
+            document.getElementById('lbl-arena-question').innerHTML = qObj.question || qObj.cauHoi || "Câu hỏi toán học";
+            document.getElementById('lbl-combat-log').innerHTML = `<i class="fa-solid fa-swords"></i> Hiệp ${currentRound}: Hãy chọn đáp án thật nhanh!`;
+
+            const ansGrid = document.getElementById('arena-answers-box');
+            ansGrid.innerHTML = '';
+
+            let answers = qObj.answers || [qObj.opA, qObj.opB, qObj.opC, qObj.opD] || ["A", "B", "C", "D"];
+            let correctIdx = typeof qObj.correct === 'number' ? qObj.correct : 0;
+
+            let indices = [0, 1, 2, 3].slice(0, answers.length);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            const keys = ['A', 'B', 'C', 'D'];
+            indices.forEach((origIdx, displayIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-answer-arena';
+                btn.id = `btn-ans-${displayIdx}`;
+                btn.innerHTML = `
+                    <span class="ans-key">${keys[displayIdx]}</span>
+                    <span>${answers[origIdx]}</span>
+                `;
+                btn.onclick = () => nguoiChoiChonDapAn(origIdx === correctIdx, btn, displayIdx);
+                ansGrid.appendChild(btn);
+            });
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
+        }
+
+        function batDauDongHoHiepDau() {
+            if (battleTimerInterval) clearInterval(battleTimerInterval);
+            timeLeftForRound = 15;
+            let timerEl = document.getElementById('lbl-battle-timer');
+            timerEl.innerText = timeLeftForRound;
+            timerEl.classList.remove('urgent');
+
+            battleTimerInterval = setInterval(() => {
+                timeLeftForRound--;
+                timerEl.innerText = timeLeftForRound;
+
+                if (timeLeftForRound <= 5) {
+                    timerEl.classList.add('urgent');
+                }
+
+                if (timeLeftForRound <= 0) {
+                    clearInterval(battleTimerInterval);
+                    if (!roundLocked) {
+                        xuLyHetGioHiepDau();
+                    }
+                }
+            }, 1000);
+        }
+
+        function nguoiChoiChonDapAn(laDapAnDung, btnElement, btnIdx) {
+            if (roundLocked) return;
+            roundLocked = true;
+            clearInterval(battleTimerInterval);
+            if (aiTimerTimeout) clearTimeout(aiTimerTimeout);
+
+            document.querySelectorAll('.btn-answer-arena').forEach(b => b.disabled = true);
+
+            if (laDapAnDung) {
+                matchCorrectCount++;
+                btnElement.classList.add('correct');
+                playSound('hit');
+
+                let damage = 25;
+                if (timeLeftForRound >= 10) {
+                    damage = 35;
+                    document.getElementById('lbl-combat-log').innerHTML = `⚡ <b style="color:#00f0ff">XUẤT SẮC!</b> Em phản xạ chớp nhoáng, gây <b style="color:#ff416c">-${damage} HP</b> cho ${doiThuHienTai.hoTen}!`;
+                } else {
+                    document.getElementById('lbl-combat-log').innerHTML = `⚔️ <b style="color:#2ecc71">CHÍNH XÁC!</b> Em tung chiêu trúng đích, gây <b style="color:#ff416c">-${damage} HP</b> cho ${doiThuHienTai.hoTen}!`;
+                }
+
+                battleP2Hp = Math.max(0, battleP2Hp - damage);
+                capNhatThanhHp();
+                hienThiSatThuong(damage, 'right');
+            } else {
+                matchWrongCount++;
+                btnElement.classList.add('wrong');
+                playSound('hurt');
+
+                let damage = 20;
+                battleP1Hp = Math.max(0, battleP1Hp - damage);
+                capNhatThanhHp();
+                hienThiSatThuong(damage, 'left');
+
+                document.getElementById('lbl-combat-log').innerHTML = `⚠️ <b>CHƯA ĐÚNG!</b> ${doiThuHienTai.hoTen} chớp cơ hội phản đòn, em bị trừ <b style="color:#ff416c">-${damage} HP</b>!`;
+            }
+
+            setTimeout(() => {
+                if (battleP1Hp <= 0 || battleP2Hp <= 0 || currentRound >= TOTAL_ROUNDS) {
+                    ketThucTranDau();
+                } else {
+                    vaoHiepDauMoi();
+                }
+            }, 1900);
+        }
+
+        function xuLyHetGioHiepDau() {
+            roundLocked = true;
+            matchWrongCount++;
+            playSound('hurt');
+            let damage = 25;
+            battleP1Hp = Math.max(0, battleP1Hp - damage);
+            capNhatThanhHp();
+            hienThiSatThuong(damage, 'left');
+
+            document.getElementById('lbl-combat-log').innerHTML = `⏰ <b>HẾT GIỜ!</b> Em do dự nên bị ${doiThuHienTai.hoTen} tấn công, trừ <b style="color:#ff416c">-${damage} HP</b>!`;
+
+            setTimeout(() => {
+                if (battleP1Hp <= 0 || currentRound >= TOTAL_ROUNDS) {
+                    ketThucTranDau();
+                } else {
+                    vaoHiepDauMoi();
+                }
+            }, 1900);
+        }
+
+        function kichHoatDoiThuTuDong(qObj) {
+            let reactionTime = 6000 + Math.floor(Math.random() * 6000);
+            let winRate = 0.65;
+            if (doiThuHienTai.exp > 500) winRate = 0.85;
+            else if (doiThuHienTai.exp > 100) winRate = 0.75;
+
+            aiTimerTimeout = setTimeout(() => {
+                if (roundLocked) return;
+                let aiCorrect = Math.random() < winRate;
+
+                if (aiCorrect) {
+                    roundLocked = true;
+                    clearInterval(battleTimerInterval);
+                    document.querySelectorAll('.btn-answer-arena').forEach(b => b.disabled = true);
+
+                    playSound('hurt');
+                    let damage = 20;
+                    battleP1Hp = Math.max(0, battleP1Hp - damage);
+                    capNhatThanhHp();
+                    hienThiSatThuong(damage, 'left');
+
+                    document.getElementById('lbl-combat-log').innerHTML = `⚡ <b>${doiThuHienTai.hoTen}</b> đã xuất chiêu trước và trả lời đúng! Em bị trừ <b style="color:#ff416c">-${damage} HP</b>!`;
+
+                    setTimeout(() => {
+                        if (battleP1Hp <= 0 || currentRound >= TOTAL_ROUNDS) {
+                            ketThucTranDau();
+                        } else {
+                            vaoHiepDauMoi();
+                        }
+                    }, 1900);
+                }
+            }, reactionTime);
+        }
+
+        function hienThiSatThuong(dmg, side) {
+            const targetEl = side === 'left' ? document.getElementById('battle-p1-avatar') : document.getElementById('battle-p2-avatar');
+            if (!targetEl) return;
+
+            const rect = targetEl.getBoundingClientRect();
+            const dmgEl = document.createElement('div');
+            dmgEl.className = 'dmg-float';
+            dmgEl.innerText = `-${dmg}`;
+            dmgEl.style.left = `${rect.left + rect.width / 2 - 20}px`;
+            dmgEl.style.top = `${rect.top}px`;
+            document.body.appendChild(dmgEl);
+
+            setTimeout(() => {
+                dmgEl.remove();
+            }, 800);
+        }
+
+        function capNhatThanhHp() {
+            document.getElementById('battle-p1-hp').style.width = `${battleP1Hp}%`;
+            document.getElementById('battle-p1-hp-text').innerText = `HP: ${battleP1Hp} / 100`;
+
+            document.getElementById('battle-p2-hp').style.width = `${battleP2Hp}%`;
+            document.getElementById('battle-p2-hp-text').innerText = `HP: ${battleP2Hp} / 100`;
+        }
+
+        function ketThucTranDau() {
+            clearInterval(battleTimerInterval);
+            if (aiTimerTimeout) clearTimeout(aiTimerTimeout);
+
+            document.getElementById('view-battle').style.display = 'none';
+            document.getElementById('view-result').style.display = 'flex';
+
+            truMotLuotDau();
+
+            // Nếu đấu phòng, giải phóng phòng về trạng thái trống
+            if (idPhongDangDau) {
+                let room = state5Phong.find(r => r.id === idPhongDangDau);
+                if (room) {
+                    room.status = 'empty';
+                    room.host = null;
+                    room.guest = null;
+                    room.updatedAt = Date.now();
+                    luuTrangThai5Phong();
+                }
+                idPhongDangDau = null;
+            }
+
+            let playerWon = battleP1Hp > battleP2Hp;
+            let resultCard = document.getElementById('card-result-box');
+            let banner = document.getElementById('lbl-result-banner');
+            let msg = document.getElementById('lbl-result-message');
+            let expPill = document.getElementById('pill-reward-exp');
+            let coinPill = document.getElementById('pill-reward-coin');
+
+            let currentExp = parseInt(localStorage.getItem('exp_' + tenHocSinhHienTai)) || 0;
+            let currentCoin = parseInt(localStorage.getItem('coin_' + tenHocSinhHienTai)) || 0;
+
+            if (playerWon) {
+                resultCard.className = 'result-box-card victory';
+                banner.innerText = 'VICTORY - CHIẾN THẮNG!';
+                msg.innerHTML = `Chúc mừng em đã đánh bại <b>${doiThuHienTai.hoTen}</b> với chiến thuật xuất sắc!`;
+                expPill.innerHTML = `<i class="fa-solid fa-star"></i> +50 EXP`;
+                coinPill.innerHTML = `<i class="fa-solid fa-coins"></i> +10 Xu`;
+                playSound('victory');
+
+                currentExp += 50;
+                currentCoin += 10;
+            } else {
+                resultCard.className = 'result-box-card defeat';
+                banner.innerText = 'DEFEAT - THẤT BẠI';
+                msg.innerHTML = `Đối thủ <b>${doiThuHienTai.hoTen}</b> rất mạnh mẽ! Em hãy rèn luyện thêm và phục thù nhé!`;
+                expPill.innerHTML = `<i class="fa-solid fa-star"></i> +15 EXP`;
+                coinPill.innerHTML = `<i class="fa-solid fa-coins"></i> +2 Xu`;
+                playSound('hurt');
+
+                currentExp += 15;
+                currentCoin += 2;
+            }
+
+            localStorage.setItem('exp_' + tenHocSinhHienTai, currentExp);
+            localStorage.setItem('coin_' + tenHocSinhHienTai, currentCoin);
+
+            // Ghi nhận hoạt động vào Bảng Nỗ Lực
+            let expThuong = playerWon ? 50 : 15;
+            if (window.FirebaseSync && typeof window.FirebaseSync.ghiNhatKyHoatDong === 'function') {
+                window.FirebaseSync.ghiNhatKyHoatDong(tenHocSinhHienTai, 'thach_dau', matchCorrectCount, matchWrongCount, expThuong).catch(() => {});
+            }
+
+            if (window.dongBoHocSinh) {
+                window.dongBoHocSinh(tenHocSinhHienTai);
+            }
+        }
+
+        function taiLaiLobby() {
+            playSound('click');
+            document.getElementById('view-result').style.display = 'none';
+            document.getElementById('view-lobby').style.display = 'flex';
+            xacDinhHocSinhHienTai();
+            napLuotThachDau();
+            napLaiTrangThaiPhong();
+        }
+    </script>
+</body>
+</html>

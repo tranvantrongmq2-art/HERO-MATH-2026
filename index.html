@@ -316,8 +316,11 @@
         .stat-badge.luot-vq .stat-val {
             color: #f39c12;
         }
+        .stat-badge.luot-nctd .stat-val {
+            color: #a29bfe;
+        }
         .stat-badge.luot-td .stat-val {
-            color: #f0a830;
+            color: #ff4757;
         }
         .stat-badge.the-card .stat-val {
             color: #b983ff;
@@ -1003,7 +1006,7 @@
         .sign-essay-challenge::before { animation-delay: 1.6s; }
         .sign-boss-fight::before    { animation-delay: 2.4s; }
         .sign-lucky-wheel::before   { animation-delay: 3.2s; }
-        .sign-spirit-pet::before    { animation-delay: 3.6s; }
+        .sign-pvp-arena::before     { animation-delay: 3.6s; }
 
         @keyframes signpostIlluminate {
             0%   { opacity: 0; }
@@ -1133,9 +1136,9 @@
         }
 
         .sign-boss-fight {
-            width: 28%;
+            width: 27%;
             height: 15%;
-            left: 17%;
+            left: 7%;
             top: 34%;
             animation-delay: 1.2s;
             border-color: rgba(255, 65, 108, 0.4);
@@ -1148,9 +1151,9 @@
         }
 
         .sign-lucky-wheel {
-            width: 28%;
+            width: 27%;
             height: 15%;
-            left: 55%;
+            left: 36.5%;
             top: 34%;
             animation-delay: 1.6s;
             border-color: rgba(241, 39, 17, 0.4);
@@ -1160,6 +1163,21 @@
         }
         .sign-lucky-wheel .signpost-title {
             text-shadow: 0 0 12px #f5af19;
+        }
+
+        .sign-pvp-arena {
+            width: 27%;
+            height: 15%;
+            left: 66%;
+            top: 34%;
+            animation-delay: 2.0s;
+            border-color: rgba(255, 75, 43, 0.45);
+        }
+        .sign-pvp-arena .signpost-sub {
+            background: linear-gradient(135deg, #ff416c, #8a2387);
+        }
+        .sign-pvp-arena .signpost-title {
+            text-shadow: 0 0 12px #ff4b2b;
         }
 
         /* ===== LINH THÚ THẦN TIÊN NGAY TẠI VÒNG SÁNG TRUNG TÂM SẢNH CHÍNH ===== */
@@ -2385,9 +2403,14 @@
                     <span class="label-text">Quay</span>
                     <span class="stat-val" id="lbl-luot-vq">–</span>
                 </div>
-                <div class="stat-badge luot-td" id="badge-luot-td">
-                    <span class="stat-icon">⚔️</span>
+                <div class="stat-badge luot-nctd" id="badge-luot-nctd" onclick="location.href='nang-cap-tu-duy.html'" style="cursor:pointer;" title="Nâng Cấp Tư Duy">
+                    <span class="stat-icon">🏔️</span>
                     <span class="label-text">NCTD</span>
+                    <span class="stat-val" id="lbl-luot-nctd">–</span>
+                </div>
+                <div class="stat-badge luot-td" id="badge-luot-td" onclick="location.href='doi-khang.html'" style="cursor:pointer;" title="Đấu Đối Kháng 1v1">
+                    <span class="stat-icon">⚔️</span>
+                    <span class="label-text">1V1</span>
                     <span class="stat-val" id="lbl-luot-td">–</span>
                 </div>
                 <div class="stat-badge the-card" id="badge-the" style="display:none;">
@@ -2463,6 +2486,13 @@
                     <span class="signpost-title">Vòng Quay<br>May Mắn</span>
                     <span class="signpost-sub">NHẬN QUÀ</span>
                     <div class="resize-handle" data-handle-for="sign-lucky-wheel"></div>
+                </a>
+
+                <a href="doi-khang.html" class="signpost-item sign-pvp-arena editable-zone" data-zone-id="sign-pvp-arena" onclick="phatAmThanhClick()">
+                    <span class="zone-label">Đối kháng 1v1</span>
+                    <span class="signpost-title">Đấu Đối Kháng<br>1v1</span>
+                    <span class="signpost-sub">CHIẾN ĐẤU</span>
+                    <div class="resize-handle" data-handle-for="sign-pvp-arena"></div>
                 </a>
 
                 <!-- NÚT BẬT TẮT NHẠC NHỎ GỌN TẠI GÓC BẢN ĐỒ -->
@@ -3654,12 +3684,19 @@
             elVQ.innerText = luotVQ + '/' + soLuotVQMax;
             if (luotVQ <= 0) document.getElementById('badge-luot-vq').classList.add('zero');
 
-            let soLuotTDMax = parseInt(localStorage.getItem('so_luot_vuot_ai_toi_da')) || 3;
-            let rawTD = JSON.parse(localStorage.getItem('luot_vuot_ai_' + tenLuu)) || null;
+            let soLuotNCTDMax = parseInt(localStorage.getItem('so_luot_vuot_ai_toi_da')) || 3;
+            let rawNCTD = JSON.parse(localStorage.getItem('luot_vuot_ai_' + tenLuu)) || null;
+            let luotNCTD = (rawNCTD && rawNCTD.date === homNay) ? rawNCTD.soLuotConLai : soLuotNCTDMax;
+            let elNCTD = document.getElementById('lbl-luot-nctd');
+            if (elNCTD) elNCTD.innerText = luotNCTD + '/' + soLuotNCTDMax;
+            if (luotNCTD <= 0 && document.getElementById('badge-luot-nctd')) document.getElementById('badge-luot-nctd').classList.add('zero');
+
+            let soLuotTDMax = parseInt(localStorage.getItem('so_luot_thach_dau_toi_da')) || 5;
+            let rawTD = JSON.parse(localStorage.getItem('luot_thach_dau_' + tenLuu)) || null;
             let luotTD = (rawTD && rawTD.date === homNay) ? rawTD.soLuotConLai : soLuotTDMax;
             let elTD = document.getElementById('lbl-luot-td');
-            elTD.innerText = luotTD + '/' + soLuotTDMax;
-            if (luotTD <= 0) document.getElementById('badge-luot-td').classList.add('zero');
+            if (elTD) elTD.innerText = luotTD + '/' + soLuotTDMax;
+            if (luotTD <= 0 && document.getElementById('badge-luot-td')) document.getElementById('badge-luot-td').classList.add('zero');
 
             const CARD_KEYS = ['hero_x2exp_stack_', 'hero_5050_stack_', 'hero_rutgon_stack_', 'hero_cohoi2_stack_'];
             const CARD_KEYS_OLD = ['hero_x2exp_', 'hero_5050_', 'hero_rutgon_', 'hero_cohoi2_'];
