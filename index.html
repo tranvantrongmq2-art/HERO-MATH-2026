@@ -636,6 +636,108 @@
             transform: translateY(-1px);
         }
 
+        /* ===== BẢNG NHIỆM VỤ ÔN TẬP KIỂM TRA ĐỊNH KÌ ===== */
+        .exam-mission-board {
+            margin: 4px 10px 6px 10px;
+            background: linear-gradient(135deg, rgba(230, 126, 34, 0.28) 0%, rgba(241, 196, 15, 0.18) 50%, rgba(15, 23, 42, 0.85) 100%);
+            border: 1.5px solid rgba(243, 156, 18, 0.55);
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 16px rgba(243, 156, 18, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 12;
+            overflow: hidden;
+        }
+        .exam-mission-board:hover {
+            transform: translateY(-2px) scale(1.01);
+            border-color: #f1c40f;
+            box-shadow: 0 6px 24px rgba(243, 156, 18, 0.45), 0 0 25px rgba(241, 196, 15, 0.4);
+        }
+        .exam-board-inner {
+            padding: 7px 10px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .exam-board-icon-glow {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            box-shadow: 0 0 12px rgba(243, 156, 18, 0.6);
+            flex-shrink: 0;
+        }
+        .exam-board-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .exam-board-tag {
+            font-size: 0.58rem;
+            font-weight: 800;
+            color: #f1c40f;
+            letter-spacing: 0.4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 1px;
+        }
+        .pulse-fire-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #e74c3c;
+            box-shadow: 0 0 6px #e74c3c;
+            animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+        .exam-board-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+            text-shadow: 0 0 8px rgba(241, 196, 15, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .exam-board-desc {
+            font-size: 0.62rem;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .exam-board-cta {
+            flex-shrink: 0;
+        }
+        .btn-board-go {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 5px 9px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.3px;
+        }
+
+
         /* ----- MODAL HỒ SƠ LINH THÚ ----- */
         .modal-pet-overlay {
             position: fixed;
@@ -2341,6 +2443,7 @@
         <div class="header-navbar editable-zone" data-zone-id="header-navbar">
             <span class="zone-label">Menu trên</span>
             <div class="nav-buttons">
+                <a href="on-tap-kiem-tra.html" class="header-signpost" onclick="phatAmThanhClick()" style="background: linear-gradient(135deg, #e67e22, #f39c12); color:#fff; border-color:#f1c40f;"><i class="fa-solid fa-file-pen"></i> Ôn Thi KTGK</a>
                 <a href="ly-thuyet.html" class="header-signpost" onclick="phatAmThanhClick()">Lý Thuyết</a>
                 <a href="cua-hang.html" class="header-signpost" onclick="phatAmThanhClick()">Cửa Hàng</a>
                 <a href="bang-xep-hang.html" class="header-signpost" onclick="phatAmThanhClick()">BXH</a>
@@ -2413,6 +2516,11 @@
                     <span class="label-text">1V1</span>
                     <span class="stat-val" id="lbl-luot-td">–</span>
                 </div>
+                <div class="stat-badge luot-ktgk" id="badge-luot-ktgk" onclick="location.href='on-tap-kiem-tra.html'" style="cursor:pointer; border-color: rgba(243, 156, 18, 0.6); background: rgba(243, 156, 18, 0.15);" title="Ôn Tập Kiểm Tra Định Kì (28 câu)">
+                    <span class="stat-icon">📝</span>
+                    <span class="label-text">KTGK</span>
+                    <span class="stat-val" id="lbl-luot-ktgk">28C</span>
+                </div>
                 <div class="stat-badge the-card" id="badge-the" style="display:none;">
                     <span class="stat-icon">🪪</span>
                     <span class="label-text">Thẻ</span>
@@ -2421,6 +2529,27 @@
             </div>
 
             <div class="resize-handle" data-handle-for="student-status-card"></div>
+        </div>
+
+        <!-- BẢNG NHIỆM VỤ ÔN TẬP KIỂM TRA ĐỊNH KÌ (TRẮC NGHIỆM 28 CÂU & PHIẾU TÔ CHUẨN) -->
+        <div class="exam-mission-board editable-zone" data-zone-id="exam-mission-board" onclick="phatAmThanhClick(); location.href='on-tap-kiem-tra.html';" title="Bấm để vào phòng thi ôn tập kiểm tra định kì">
+            <span class="zone-label">Nhiệm vụ KTGK</span>
+            <div class="exam-board-inner">
+                <div class="exam-board-icon-glow">
+                    <i class="fa-solid fa-file-pen"></i>
+                </div>
+                <div class="exam-board-content">
+                    <div class="exam-board-tag">
+                        <span class="pulse-fire-dot"></span> NHIỆM VỤ TRỌNG TÂM • KTGK I
+                    </div>
+                    <div class="exam-board-title">ÔN TẬP KIỂM TRA ĐỊNH KÌ</div>
+                    <div class="exam-board-desc">Đề chuẩn 28 câu • Tô phiếu thi THCS Mỹ Quý</div>
+                </div>
+                <div class="exam-board-cta">
+                    <span class="btn-board-go">VÀO THI <i class="fa-solid fa-chevron-right"></i></span>
+                </div>
+            </div>
+            <div class="resize-handle" data-handle-for="exam-mission-board"></div>
         </div>
 
         <!-- KHU VỰC BẢN ĐỒ NHIỆM VỤ (chiếm hết phần còn lại) -->
