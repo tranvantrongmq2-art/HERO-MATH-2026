@@ -26,12 +26,12 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <!-- Nạp Firebase Compat SDK & HeroFirebaseCompat (Chạy 100% trên cả file:/// và web server) -->
+    <script src="./hero-danh-sach-chuan.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="./hero-firebase-compat.js"></script>
     <script src="./hero-sha256.js"></script>
     <script src="./hero-auth.js"></script>
-    <script src="./hero-danh-sach-chuan.js"></script>
     <!-- SheetJS Thư viện đọc và xuất file Excel (.xlsx) hỗ trợ đăng ký hàng loạt (nạp local trước, CDN dự phòng) -->
     <script src="./xlsx.full.min.js"></script>
     <script>
@@ -984,6 +984,76 @@
                 <h4 id="edit-title" style="color:#f39c12; margin:0; font-family:'Montserrat',sans-serif; font-size:1.15rem;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa nội dung</h4>
                 <button onclick="dongEditModal()" style="background:none; border:none; color:#bdc3c7; font-size:1.4rem; cursor:pointer; line-height:1;"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            <div id="edit-visual-editor" class="form-group" style="padding:12px; border:1px solid rgba(142,68,173,0.45); border-radius:8px; background:rgba(142,68,173,0.06);">
+                <strong style="display:block; color:#c084fc; margin-bottom:8px;"><i class="fa-solid fa-square-pen"></i> Nội dung văn bản và xem trước</strong>
+                <label for="edit-content-scope">Chọn câu hỏi / mục lý thuyết đang sửa</label>
+                <select id="edit-content-scope" style="margin-bottom:10px;"></select>
+                <div id="edit-question-fields" style="display:none;">
+                    <label for="edit-question-text">Nội dung câu hỏi (hỗ trợ LaTeX như trang lý thuyết)</label>
+                    <textarea id="edit-question-text" rows="3" placeholder="Nhập nội dung câu hỏi, ví dụ: Tính $\frac{1}{2}+\frac{1}{3}$..."></textarea>
+                    <label for="edit-question-answers" style="margin-top:8px;">Các đáp án (mỗi đáp án một dòng)</label>
+                    <textarea id="edit-question-answers" rows="4" placeholder="Đáp án A&#10;Đáp án B&#10;Đáp án C&#10;Đáp án D"></textarea>
+                    <div style="display:grid; grid-template-columns:minmax(130px,1fr) minmax(180px,2fr); gap:8px; margin-top:8px;">
+                        <div><label for="edit-question-correct">Đáp án đúng</label><select id="edit-question-correct"></select></div>
+                        <div><label for="edit-question-explanation">Lời giải / giải thích</label><textarea id="edit-question-explanation" rows="2"></textarea></div>
+                    </div>
+                    <div style="margin-top:12px; padding:10px; border:1px solid rgba(52,152,219,0.4); border-radius:7px; background:rgba(52,152,219,0.06);">
+                        <strong style="display:block; color:#93c5fd; margin-bottom:6px;">🖼️ HÌNH ẢNH / VIDEO MINH HỌA CHO CÂU NÀY</strong>
+                        <label for="edit-question-image">Link ảnh của câu hỏi</label>
+                        <input id="edit-question-image" type="url" placeholder="Dán link ảnh (VD: https://.../hinh.png)">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                            <button type="button" id="btn-question-image-add" class="btn-action-sm" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-plus"></i> Thêm link</button>
+                            <button type="button" id="btn-question-image-delete" class="btn-action-sm" style="background:#7f1d1d; color:#fff;"><i class="fa-solid fa-trash"></i> Xóa link</button>
+                            <button type="button" id="btn-question-image-save" class="btn-action-sm" style="background:#15803d; color:#fff;"><i class="fa-solid fa-floppy-disk"></i> Lưu link ảnh</button>
+                        </div>
+                        <div id="edit-question-image-preview" style="margin-top:6px;"></div>
+                        <label for="edit-question-video" style="margin-top:8px;">Link video của câu hỏi</label>
+                        <input id="edit-question-video" type="url" placeholder="Dán link video (VD: https://.../video.mp4)">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                            <button type="button" id="btn-question-video-add" class="btn-action-sm" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-plus"></i> Thêm link</button>
+                            <button type="button" id="btn-question-video-delete" class="btn-action-sm" style="background:#7f1d1d; color:#fff;"><i class="fa-solid fa-trash"></i> Xóa link</button>
+                            <button type="button" id="btn-question-video-save" class="btn-action-sm" style="background:#15803d; color:#fff;"><i class="fa-solid fa-floppy-disk"></i> Lưu link video</button>
+                        </div>
+                        <div id="edit-question-video-preview" style="margin-top:6px;"></div>
+                    </div>
+                </div>
+                <div id="edit-theory-fields" style="display:none;">
+                    <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:200px;"><label for="edit-theory-item">Mục nội dung trong bài</label><select id="edit-theory-item"></select></div>
+                        <button type="button" id="btn-edit-theory-add-item" class="btn-action-sm" style="background:#6d28d9; color:#fff;"><i class="fa-solid fa-plus"></i> Thêm nội dung</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:minmax(130px,0.7fr) minmax(180px,2fr); gap:8px; margin-top:8px;">
+                        <div><label for="edit-theory-item-type">Kiểu nội dung</label><select id="edit-theory-item-type"><option value="text">Văn bản</option><option value="formula">Công thức</option><option value="note">Lưu ý</option><option value="image">Hình ảnh</option><option value="video">Video</option></select></div>
+                        <div><label for="edit-theory-item-label">Nhãn (nếu có)</label><input id="edit-theory-item-label" type="text" placeholder="Định nghĩa, Quy tắc..."></div>
+                    </div>
+                    <label for="edit-theory-item-text" style="margin-top:8px;">Văn bản / LaTeX / link media</label>
+                    <textarea id="edit-theory-item-text" rows="4" placeholder="Nhập nội dung, công thức $...$, hoặc link ảnh/video"></textarea>
+                    <div style="margin-top:12px; padding:10px; border:1px solid rgba(52,152,219,0.4); border-radius:7px; background:rgba(52,152,219,0.06);">
+                        <strong style="display:block; color:#93c5fd; margin-bottom:6px;">🖼️ HÌNH ẢNH / VIDEO MINH HỌA CHO MỤC NÀY</strong>
+                        <label for="edit-theory-item-image">Link ảnh minh họa</label>
+                        <input id="edit-theory-item-image" type="url" placeholder="Dán link ảnh (VD: https://.../hinh.png)">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                            <button type="button" id="btn-theory-image-add" class="btn-action-sm" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-plus"></i> Thêm link</button>
+                            <button type="button" id="btn-theory-image-delete" class="btn-action-sm" style="background:#7f1d1d; color:#fff;"><i class="fa-solid fa-trash"></i> Xóa link</button>
+                            <button type="button" id="btn-theory-image-save" class="btn-action-sm" style="background:#15803d; color:#fff;"><i class="fa-solid fa-floppy-disk"></i> Lưu link ảnh</button>
+                        </div>
+                        <div id="edit-theory-item-image-preview" style="margin-top:6px;"></div>
+                        <label for="edit-theory-item-video" style="margin-top:8px;">Link video minh họa</label>
+                        <input id="edit-theory-item-video" type="url" placeholder="Dán link video (VD: https://.../video.mp4)">
+                        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                            <button type="button" id="btn-theory-video-add" class="btn-action-sm" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-plus"></i> Thêm link</button>
+                            <button type="button" id="btn-theory-video-delete" class="btn-action-sm" style="background:#7f1d1d; color:#fff;"><i class="fa-solid fa-trash"></i> Xóa link</button>
+                            <button type="button" id="btn-theory-video-save" class="btn-action-sm" style="background:#15803d; color:#fff;"><i class="fa-solid fa-floppy-disk"></i> Lưu link video</button>
+                        </div>
+                        <div id="edit-theory-item-video-preview" style="margin-top:6px;"></div>
+                        <small style="display:block; color:#8fa3b8; margin-top:6px;">Thêm/Xóa cập nhật bản nháp. Bấm Lưu link để lưu riêng ảnh/video mà không ghi đè phần văn bản chưa lưu.</small>
+                    </div>
+                </div>
+                <div style="margin-top:10px;">
+                    <strong style="display:block; color:#cbd5e1; margin-bottom:5px;">Xem trước như nội dung hiển thị</strong>
+                    <div id="edit-content-preview" style="min-height:48px; max-height:300px; overflow:auto; padding:10px; border:1px solid #2c3a57; border-radius:6px; background:#0e1626; line-height:1.65;"></div>
+                </div>
+            </div>
             <div class="form-group">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <label for="edit-json" style="margin:0;"><i class="fa-solid fa-code"></i> Dữ liệu JSON cấu trúc:</label>
@@ -1243,9 +1313,6 @@
             <div class="header-actions">
                 <a href="quan-ly-hoc-sinh.html" class="btn-header" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: 1px solid #34d399; font-weight: bold;" title="Chuyển đến trang chuyên biệt Quản lý Học sinh">
                     <i class="fa-solid fa-user-graduate"></i> Quản Lý Học Sinh
-                </a>
-                <a href="quan-ly-diem.html" class="btn-header" style="background: linear-gradient(135deg, #0284c7, #00ffff); color: #04101c; border: 1px solid #00ffff; font-weight: bold;" title="Chuyển đến trang Sổ Điểm Điện Tử theo tuần/tháng">
-                    <i class="fa-solid fa-graduation-cap"></i> Sổ Điểm Điện Tử
                 </a>
                 <div id="sync-status-badge" class="status-badge" title="Trạng thái kết nối Cloud Firestore">
                     <i class="fa-solid fa-circle" style="font-size:0.6rem;"></i> <span>Firebase Sẵn Sàng</span>
@@ -2176,17 +2243,13 @@
                 if (typeof fb.taiToanBoHocSinhTuMay === 'function') {
                     const dsHocSinh = await fb.taiToanBoHocSinhTuMay();
                     if (Array.isArray(dsHocSinh)) {
-                        window.__cloudHsCacheExpCoin = {};
                         dsHocSinh.forEach(hs => {
                             const duLieu = hs.data || {};
-                            window.__cloudHsCacheExpCoin[hs.id] = duLieu;
                             Object.keys(duLieu).forEach(key => {
                                 if (key.startsWith('_')) return;
+                                // KHÔNG cho hồ sơ riêng của học sinh ghi đè các key TOÀN CỤC
+                                // (đây là nguyên nhân học sinh đã xóa bị "sống lại")
                                 if (KHOA_TOAN_CUC_CAM_GHI_DE.includes(key)) return;
-                                // [PHƯƠNG ÁN C-A] KHÔNG ghi các key điểm/thông tin riêng của học sinh
-                                // từ Cloud vào localStorage – để học sinh CHƯA ĐĂNG NHẬP trên máy
-                                // này hiện exp=0 / coin=50, không hiện "điểm ma" từ Cloud.
-                                if (/^(exp_|coin_|luot_|ruong_do_|hero_linh_thu_|hero_avatar_selection_|hero_streak_count_|hero_streak_last_date_|dang_nhap_|nhat_ky_hoat_dong_)/.test(key)) return;
                                 localStorage.setItem(key, duLieu[key]);
                             });
                         });
@@ -3891,6 +3954,15 @@
                         ${typeof q.correct === 'number' ? `<div style="color:#2ecc71; font-size:0.88rem; margin-top:4px;"><strong><i class="fa-solid fa-check"></i> Đáp án đúng:</strong> ${String.fromCharCode(65 + q.correct)}</div>` : ''}
                         ${q.explanation ? `<div style="color:#f39c12; font-size:0.88rem; margin-top:4px;"><strong><i class="fa-solid fa-lightbulb"></i> Lời giải:</strong> ${q.explanation}</div>` : ''}
                     `;
+                    if (q.video && laUrlMediaNoiDungHopLe(q.video)) {
+                        const videoLink = document.createElement('a');
+                        videoLink.href = q.video;
+                        videoLink.target = '_blank';
+                        videoLink.rel = 'noopener noreferrer';
+                        videoLink.textContent = '▶ Mở video minh họa';
+                        videoLink.style.cssText = 'display:inline-block; margin:6px 0; color:#60a5fa;';
+                        div.appendChild(videoLink);
+                    }
                     body.appendChild(div);
                 });
             } 
@@ -3912,6 +3984,14 @@
                             div.innerHTML += `<div style="color:#e67e22; margin:6px 0; background:rgba(230,126,34,0.1); padding:6px 10px; border-radius:4px;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Ghi chú:</strong> ${it.text}</div>`;
                         } else if (it.type === 'image') {
                             div.innerHTML += `<div><img src="${it.text}" alt="Hình minh họa" onerror="this.style.display='none'"></div>`;
+                        } else if (it.type === 'video' && laUrlMediaNoiDungHopLe(it.text)) {
+                            const videoLink = document.createElement('a');
+                            videoLink.href = it.text;
+                            videoLink.target = '_blank';
+                            videoLink.rel = 'noopener noreferrer';
+                            videoLink.textContent = '▶ Mở video minh họa';
+                            videoLink.style.cssText = 'display:inline-block; margin:6px 0; color:#60a5fa;';
+                            div.appendChild(videoLink);
                         } else {
                             div.innerHTML += `<div style="margin:4px 0;">${it.label ? `<strong style="color:#2ecc71;">${it.label}:</strong> ` : ''}${it.text || ''}</div>`;
                         }
@@ -3946,12 +4026,562 @@
             document.getElementById('edit-title').innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Sửa: ${item.title || '(Chưa có tên)'}`;
             document.getElementById('edit-json').value = JSON.stringify(item, null, 2);
             document.getElementById('edit-modal').style.display = 'flex';
+            khoiTaoTrinhSuaMedia();
+        }
+
+        function docDuLieuTrinhSuaMedia(hienLoi = true) {
+            try {
+                const data = JSON.parse(document.getElementById('edit-json').value);
+                if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Dữ liệu phải là một đối tượng JSON.');
+                return data;
+            } catch (err) {
+                if (hienLoi) showToast("Vui lòng sửa lỗi JSON trước khi thay đổi link media: " + err.message, "error");
+                return null;
+            }
+        }
+
+        function hienThiMediaXemTruoc(container, url, type) {
+            container.replaceChildren();
+            const mediaUrl = String(url || '').trim();
+            if (!mediaUrl || !laUrlMediaNoiDungHopLe(mediaUrl)) return;
+            const link = document.createElement('a');
+            link.href = mediaUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = `Mở ${type === 'image' ? 'hình ảnh' : 'video'} trong tab mới`;
+            link.style.cssText = 'display:inline-block; color:#60a5fa; margin:4px 0;';
+            container.appendChild(link);
+            if (type === 'image') {
+                const image = document.createElement('img');
+                image.src = mediaUrl;
+                image.alt = 'Xem trước hình ảnh';
+                image.loading = 'lazy';
+                image.style.cssText = 'display:block; max-width:100%; max-height:220px; margin-top:6px; object-fit:contain;';
+                image.onerror = () => { image.style.display = 'none'; };
+                container.appendChild(image);
+            } else {
+                const videoUrl = new URL(mediaUrl);
+                const youtubeHosts = ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'];
+                const vimeoHosts = ['vimeo.com', 'www.vimeo.com', 'player.vimeo.com'];
+                const youtubeId = videoUrl.hostname === 'youtu.be'
+                    ? videoUrl.pathname.slice(1)
+                    : youtubeHosts.includes(videoUrl.hostname) ? videoUrl.searchParams.get('v') : '';
+                const vimeoId = vimeoHosts.includes(videoUrl.hostname)
+                    ? videoUrl.pathname.split('/').filter(Boolean).pop()
+                    : '';
+                if (youtubeId || vimeoId) {
+                    const frame = document.createElement('iframe');
+                    frame.src = youtubeId
+                        ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}`
+                        : `https://player.vimeo.com/video/${encodeURIComponent(vimeoId)}`;
+                    frame.title = 'Video minh họa';
+                    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+                    frame.allowFullscreen = true;
+                    frame.style.cssText = 'display:block; width:100%; aspect-ratio:16/9; margin-top:6px; border:0; background:#000;';
+                    container.appendChild(frame);
+                } else {
+                    const video = document.createElement('video');
+                    video.src = mediaUrl;
+                    video.controls = true;
+                    video.preload = 'metadata';
+                    video.style.cssText = 'display:block; width:100%; max-height:240px; margin-top:6px; background:#000;';
+                    container.appendChild(video);
+                }
+            }
+        }
+
+        function taoNoiDungXemTruoc(parent, text, style) {
+            const block = document.createElement('div');
+            block.textContent = String(text || '');
+            block.style.cssText = style || 'white-space:pre-wrap; overflow-wrap:anywhere; margin:5px 0;';
+            parent.appendChild(block);
+            return block;
+        }
+
+        function capNhatXemTruocTrucQuan(data) {
+            const preview = document.getElementById('edit-content-preview');
+            preview.replaceChildren();
+            document.getElementById('edit-question-image-preview').replaceChildren();
+            document.getElementById('edit-question-video-preview').replaceChildren();
+            document.getElementById('edit-theory-item-image-preview').replaceChildren();
+            document.getElementById('edit-theory-item-video-preview').replaceChildren();
+            if (Array.isArray(data.questions)) {
+                const index = Number(document.getElementById('edit-content-scope').value);
+                const question = data.questions[index];
+                if (!question) {
+                    preview.textContent = 'Chưa có câu hỏi để xem trước.';
+                    return;
+                }
+                taoNoiDungXemTruoc(preview, `Câu ${index + 1}: ${question.question || ''}`, 'white-space:pre-wrap; overflow-wrap:anywhere; font-size:1rem; margin-bottom:8px;');
+                if (Array.isArray(question.answers)) {
+                    question.answers.forEach((answer, answerIndex) => {
+                        const style = answerIndex === Number(question.correct)
+                            ? 'white-space:pre-wrap; overflow-wrap:anywhere; color:#2ecc71; font-weight:bold; margin:5px 0;'
+                            : 'white-space:pre-wrap; overflow-wrap:anywhere; margin:5px 0;';
+                        taoNoiDungXemTruoc(preview, `${String.fromCharCode(65 + answerIndex)}. ${answer || ''}`, style);
+                    });
+                }
+                if (question.image) {
+                    hienThiMediaXemTruoc(document.getElementById('edit-question-image-preview'), question.image, 'image');
+                }
+                if (question.video) {
+                    hienThiMediaXemTruoc(document.getElementById('edit-question-video-preview'), question.video, 'video');
+                }
+                if (question.explanation) taoNoiDungXemTruoc(preview, `Giải thích: ${question.explanation}`, 'white-space:pre-wrap; overflow-wrap:anywhere; color:#f1c40f; margin-top:8px;');
+            } else if (Array.isArray(data.children)) {
+                const sectionIndex = Number(document.getElementById('edit-content-scope').value);
+                const itemIndex = Number(document.getElementById('edit-theory-item').value);
+                const section = data.children[sectionIndex];
+                if (!section || !Array.isArray(section.items) || !section.items.length) {
+                    preview.textContent = 'Chọn một nội dung trong bài để xem trước.';
+                    return;
+                }
+                if (section.title) taoNoiDungXemTruoc(preview, section.title, 'color:#60a5fa; font-weight:bold; font-size:1.05rem; margin-bottom:8px;');
+                section.items.forEach((item, index) => {
+                    const block = document.createElement('div');
+                    block.style.cssText = `padding:6px 8px; margin:4px 0; border-radius:5px; ${index === itemIndex ? 'background:rgba(142,68,173,0.14); border-left:2px solid #c084fc;' : ''}`;
+                    if (item.label) taoNoiDungXemTruoc(block, `${item.label}:`, 'color:#2ecc71; font-weight:bold;');
+                    if (item.type === 'image' || item.type === 'video') {
+                        const mediaPreview = document.createElement('div');
+                        block.appendChild(mediaPreview);
+                        hienThiMediaXemTruoc(mediaPreview, item.text, item.type);
+                    } else {
+                        const text = item.type === 'formula' && item.text && !String(item.text).includes('$')
+                            ? `$$${item.text}$$`
+                            : item.text;
+                        const style = item.type === 'note'
+                            ? 'white-space:pre-wrap; overflow-wrap:anywhere; color:#e67e22;'
+                            : 'white-space:pre-wrap; overflow-wrap:anywhere; font-size:1rem;';
+                        taoNoiDungXemTruoc(block, item.type === 'note' ? `Lưu ý: ${text || ''}` : text, style);
+                    }
+                    const itemImage = item.type === 'image' ? '' : item.image;
+                    const itemVideo = item.type === 'video' ? '' : item.video;
+                    if (itemImage) {
+                        const imagePreview = document.createElement('div');
+                        block.appendChild(imagePreview);
+                        hienThiMediaXemTruoc(imagePreview, itemImage, 'image');
+                        if (index === itemIndex) hienThiMediaXemTruoc(document.getElementById('edit-theory-item-image-preview'), itemImage, 'image');
+                    }
+                    if (itemVideo) {
+                        const videoPreview = document.createElement('div');
+                        block.appendChild(videoPreview);
+                        hienThiMediaXemTruoc(videoPreview, itemVideo, 'video');
+                        if (index === itemIndex) hienThiMediaXemTruoc(document.getElementById('edit-theory-item-video-preview'), itemVideo, 'video');
+                    }
+                    if (index === itemIndex && item.type === 'image') hienThiMediaXemTruoc(document.getElementById('edit-theory-item-image-preview'), item.text, 'image');
+                    if (index === itemIndex && item.type === 'video') hienThiMediaXemTruoc(document.getElementById('edit-theory-item-video-preview'), item.text, 'video');
+                    preview.appendChild(block);
+                });
+            } else {
+                preview.textContent = 'Không có phần nội dung câu hỏi hoặc lý thuyết để xem trước.';
+            }
+            renderMath(preview);
+        }
+
+        function napNoiDungTrucQuan(data) {
+            const questionFields = document.getElementById('edit-question-fields');
+            const theoryFields = document.getElementById('edit-theory-fields');
+            const scopeSelect = document.getElementById('edit-content-scope');
+            questionFields.style.display = Array.isArray(data.questions) ? 'block' : 'none';
+            theoryFields.style.display = Array.isArray(data.children) ? 'block' : 'none';
+            if (Array.isArray(data.questions)) {
+                const index = Number(scopeSelect.value);
+                const question = data.questions[index];
+                if (!question) {
+                    capNhatXemTruocTrucQuan(data);
+                    return;
+                }
+                document.getElementById('edit-question-text').value = question.question || '';
+                document.getElementById('edit-question-answers').value = (question.answers || []).join('\n');
+                document.getElementById('edit-question-explanation').value = question.explanation || '';
+                document.getElementById('edit-question-image').value = question.image || '';
+                document.getElementById('edit-question-video').value = question.video || '';
+                hienThiMediaXemTruoc(document.getElementById('edit-question-image-preview'), question.image, 'image');
+                hienThiMediaXemTruoc(document.getElementById('edit-question-video-preview'), question.video, 'video');
+                const correctSelect = document.getElementById('edit-question-correct');
+                correctSelect.replaceChildren();
+                (question.answers || []).forEach((answer, answerIndex) => {
+                    const option = document.createElement('option');
+                    option.value = String(answerIndex);
+                    option.textContent = `${String.fromCharCode(65 + answerIndex)}${answer ? ` — ${answer}` : ''}`;
+                    correctSelect.appendChild(option);
+                });
+                if (question.answers && question.answers.length) correctSelect.value = String(question.correct || 0);
+            } else if (Array.isArray(data.children)) {
+                const itemSelect = document.getElementById('edit-theory-item');
+                const sectionIndex = Number(scopeSelect.value);
+                const section = data.children[sectionIndex];
+                const items = section && Array.isArray(section.items) ? section.items : [];
+                const previousItem = itemSelect.value;
+                itemSelect.replaceChildren();
+                items.forEach((item, itemIndex) => {
+                    const option = document.createElement('option');
+                    option.value = String(itemIndex);
+                    const kind = item.type === 'image' ? 'Ảnh' : item.type === 'video' ? 'Video' : item.type === 'formula' ? 'Công thức' : item.type === 'note' ? 'Lưu ý' : 'Văn bản';
+                    option.textContent = `${itemIndex + 1}. ${kind}: ${String(item.text || item.label || '').slice(0, 65)}`;
+                    itemSelect.appendChild(option);
+                });
+                if (!items.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Chưa có nội dung — hãy thêm mới';
+                    itemSelect.appendChild(option);
+                } else if (previousItem && Number(previousItem) < items.length) {
+                    itemSelect.value = previousItem;
+                }
+                const selectedItem = items[Number(itemSelect.value)];
+                document.getElementById('edit-theory-item-type').value = selectedItem && selectedItem.type || 'text';
+                document.getElementById('edit-theory-item-label').value = selectedItem && selectedItem.label || '';
+                document.getElementById('edit-theory-item-text').value = selectedItem && selectedItem.text || '';
+                document.getElementById('edit-theory-item-image').value = selectedItem
+                    ? (selectedItem.type === 'image' ? selectedItem.text || '' : selectedItem.image || '')
+                    : '';
+                document.getElementById('edit-theory-item-video').value = selectedItem
+                    ? (selectedItem.type === 'video' ? selectedItem.text || '' : selectedItem.video || '')
+                    : '';
+                hienThiMediaXemTruoc(document.getElementById('edit-theory-item-image-preview'), document.getElementById('edit-theory-item-image').value, 'image');
+                hienThiMediaXemTruoc(document.getElementById('edit-theory-item-video-preview'), document.getElementById('edit-theory-item-video').value, 'video');
+                itemSelect.disabled = !items.length;
+            }
+            capNhatXemTruocTrucQuan(data);
+        }
+
+        function capNhatNoiDungTrucQuan(mutator) {
+            const data = docDuLieuTrinhSuaMedia();
+            if (!data) return;
+            mutator(data);
+            document.getElementById('edit-json').value = JSON.stringify(data, null, 2);
+            capNhatXemTruocTrucQuan(data);
+        }
+
+        function capNhatDanhSachMucNoiDung(data, selectedValue) {
+            const select = document.getElementById('edit-content-scope');
+            const records = Array.isArray(data.questions)
+                ? data.questions.map((question, index) => ({ value: String(index), label: `Câu ${index + 1}: ${String(question.question || '').slice(0, 75)}` }))
+                : (Array.isArray(data.children) ? data.children : []).map((section, index) => ({ value: String(index), label: `Mục ${index + 1}: ${section.title || 'Chưa có tên'}` }));
+            select.replaceChildren();
+            records.forEach(record => {
+                const option = document.createElement('option');
+                option.value = record.value;
+                option.textContent = record.label;
+                select.appendChild(option);
+            });
+            if (!records.length) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = Array.isArray(data.questions) ? 'Chưa có câu hỏi' : 'Chưa có mục lý thuyết';
+                select.appendChild(option);
+            } else if (records.some(record => record.value === selectedValue)) {
+                select.value = selectedValue;
+            }
+        }
+
+        function ganMediaChoMucLyThuyet(item, mediaType, url) {
+            if (item.type === mediaType) {
+                item.text = url;
+            } else if (url) {
+                item[mediaType] = url;
+            } else {
+                delete item[mediaType];
+            }
+        }
+
+        function laUrlMediaNoiDungHopLe(value) {
+            try {
+                const url = new URL(String(value || '').trim());
+                return url.protocol === 'https:' || url.protocol === 'http:';
+            } catch (err) {
+                return false;
+            }
+        }
+
+        function capNhatMediaTrongBanNhap(mediaType, url) {
+            const data = docDuLieuTrinhSuaMedia();
+            if (!data) return false;
+            if (Array.isArray(data.questions)) {
+                const question = data.questions[Number(document.getElementById('edit-content-scope').value)];
+                if (!question) {
+                    showToast("Không tìm thấy câu hỏi đang chọn.", "error");
+                    return false;
+                }
+                if (url) question[mediaType] = url;
+                else delete question[mediaType];
+            } else if (Array.isArray(data.children)) {
+                const section = data.children[Number(document.getElementById('edit-content-scope').value)];
+                const item = section && section.items && section.items[Number(document.getElementById('edit-theory-item').value)];
+                if (!item) {
+                    showToast("Không tìm thấy mục lý thuyết đang chọn.", "error");
+                    return false;
+                }
+                ganMediaChoMucLyThuyet(item, mediaType, url);
+            } else {
+                showToast("Không tìm thấy câu hỏi hoặc mục lý thuyết để gắn link.", "error");
+                return false;
+            }
+            document.getElementById('edit-json').value = JSON.stringify(data, null, 2);
+            capNhatXemTruocTrucQuan(data);
+            return true;
+        }
+
+        function themMediaVaoBanNhap(mediaType) {
+            const prefix = editItemLoai === 'ly_thuyet' ? 'edit-theory-item' : 'edit-question';
+            const input = document.getElementById(`${prefix}-${mediaType}`);
+            const url = input.value.trim();
+            if (!laUrlMediaNoiDungHopLe(url)) {
+                showToast("Hãy nhập link ảnh/video bắt đầu bằng HTTP hoặc HTTPS trước khi thêm.", "error");
+                input.focus();
+                return;
+            }
+            if (!capNhatMediaTrongBanNhap(mediaType, url)) return;
+            hienThiMediaXemTruoc(document.getElementById(`${prefix}-${mediaType}-preview`), url, mediaType);
+            showToast("Đã thêm link vào bản nháp. Bấm Lưu link để lưu riêng media này.", "success");
+        }
+
+        function xoaMediaKhoiBanNhap(mediaType) {
+            const prefix = editItemLoai === 'ly_thuyet' ? 'edit-theory-item' : 'edit-question';
+            const input = document.getElementById(`${prefix}-${mediaType}`);
+            if (!input.value.trim()) {
+                if (!capNhatMediaTrongBanNhap(mediaType, '')) return;
+                showToast("Link đã trống trong bản nháp. Bấm Lưu link để xóa khỏi kho nếu link này đã được lưu trước đó.", "warning");
+                return;
+            }
+            if (!capNhatMediaTrongBanNhap(mediaType, '')) return;
+            input.value = '';
+            hienThiMediaXemTruoc(document.getElementById(`${prefix}-${mediaType}-preview`), '', mediaType);
+            showToast("Đã xóa link khỏi bản nháp. Bấm Lưu link để xác nhận xóa khỏi kho.", "warning");
+        }
+
+        function apDungMediaVaoBanGhi(record, mediaType, url, scopeIndex, itemIndex) {
+            if (Array.isArray(record.questions)) {
+                const question = record.questions[scopeIndex];
+                if (!question) return false;
+                if (url) question[mediaType] = url;
+                else delete question[mediaType];
+                return true;
+            }
+            if (Array.isArray(record.children)) {
+                const section = record.children[scopeIndex];
+                const item = section && Array.isArray(section.items) ? section.items[itemIndex] : null;
+                if (!item) return false;
+                ganMediaChoMucLyThuyet(item, mediaType, url);
+                return true;
+            }
+            return false;
+        }
+
+        async function luuMediaRieng(mediaType, daXacNhanXoa = false) {
+            const prefix = editItemLoai === 'ly_thuyet' ? 'edit-theory-item' : 'edit-question';
+            const input = document.getElementById(`${prefix}-${mediaType}`);
+            const url = input.value.trim();
+            if (url && !laUrlMediaNoiDungHopLe(url)) {
+                showToast("Link ảnh/video phải bắt đầu bằng HTTP hoặc HTTPS hợp lệ.", "error");
+                input.focus();
+                return;
+            }
+            const key = KHO_KEY_MAP[editItemLoai];
+            const list = safeJsonParse(key, []);
+            if (!Array.isArray(list)) {
+                showToast("Kho nội dung không hợp lệ; không thể lưu link.", "error");
+                return;
+            }
+            const recordIndex = list.findIndex(record => record && String(record.id) === String(editItemId));
+            if (recordIndex === -1) {
+                showToast("Không tìm thấy nội dung cần gắn link trong kho.", "error");
+                return;
+            }
+            const existingRecord = list[recordIndex];
+            const scopeIndex = Number(document.getElementById('edit-content-scope').value);
+            const itemIndex = Number(document.getElementById('edit-theory-item').value);
+            const existingUrl = Array.isArray(existingRecord.questions)
+                ? (existingRecord.questions[scopeIndex] || {})[mediaType]
+                : (() => {
+                    const section = existingRecord.children && existingRecord.children[scopeIndex];
+                    const item = section && section.items && section.items[itemIndex];
+                    return item ? (item.type === mediaType ? item.text : item[mediaType]) : '';
+                })();
+            if (!url && existingUrl && !daXacNhanXoa) {
+                customConfirm("Xóa link media này khỏi nội dung đã lưu?", () => luuMediaRieng(mediaType, true));
+                return;
+            }
+            let updatedRecord;
+            try {
+                updatedRecord = JSON.parse(JSON.stringify(existingRecord));
+            } catch (err) {
+                console.error("[Admin] Không thể sao chép nội dung để lưu media:", err);
+                showToast("Không thể chuẩn bị nội dung để lưu link.", "error");
+                return;
+            }
+            if (!apDungMediaVaoBanGhi(updatedRecord, mediaType, url, scopeIndex, itemIndex)) {
+                showToast("Không tìm thấy câu hỏi hoặc mục lý thuyết đang chọn trong kho.", "error");
+                return;
+            }
+            list[recordIndex] = updatedRecord;
+            if (!safeJsonSet(key, list)) return;
+            const synced = await dongBoToanCuc(key);
+
+            const draft = docDuLieuTrinhSuaMedia(false);
+            if (draft && apDungMediaVaoBanGhi(draft, mediaType, url, scopeIndex, itemIndex)) {
+                document.getElementById('edit-json').value = JSON.stringify(draft, null, 2);
+                capNhatXemTruocTrucQuan(draft);
+            }
+            hienThiMediaXemTruoc(document.getElementById(`${prefix}-${mediaType}-preview`), url, mediaType);
+            switch (editItemLoai) {
+                case 'trac_nghiem': hienThiDanhSachThuMucDe(); break;
+                case 'boss': hienThiDanhSachThuMucDeBoss(); break;
+                case 'vuot_ai': hienThiDanhSachThuMucDeVuotAi(); break;
+                case 'ly_thuyet': hienThiDanhSachLyThuyet(); break;
+            }
+            if (synced) {
+                showToast(url ? "Đã lưu link media cho nội dung đang chọn." : "Đã xóa link media đã lưu.", "success");
+            } else {
+                showToast("Đã lưu link trên máy nhưng đồng bộ Cloud thất bại. Hãy thử đồng bộ lại.", "error");
+            }
+        }
+
+        function khoiTaoTrinhSuaMedia() {
+            const scopeSelect = document.getElementById('edit-content-scope');
+            const theoryItemSelect = document.getElementById('edit-theory-item');
+            const jsonInput = document.getElementById('edit-json');
+            const data = docDuLieuTrinhSuaMedia();
+            if (!data) return;
+            capNhatDanhSachMucNoiDung(data, scopeSelect.value);
+            scopeSelect.onchange = () => napNoiDungTrucQuan(docDuLieuTrinhSuaMedia(false) || {});
+            jsonInput.oninput = () => {
+                const edited = docDuLieuTrinhSuaMedia(false);
+                if (!edited) return;
+                const currentScope = scopeSelect.value;
+                capNhatDanhSachMucNoiDung(edited, currentScope);
+                napNoiDungTrucQuan(edited);
+            };
+            theoryItemSelect.onchange = () => napNoiDungTrucQuan(docDuLieuTrinhSuaMedia(false) || {});
+            document.getElementById('btn-edit-theory-add-item').onclick = () => {
+                const data = docDuLieuTrinhSuaMedia();
+                if (!data) return;
+                const section = data.children && data.children[Number(scopeSelect.value)];
+                if (!section) {
+                    showToast("Bài lý thuyết chưa có mục để thêm nội dung.", "error");
+                    return;
+                }
+                if (!Array.isArray(section.items)) section.items = [];
+                section.items.push({ type: 'text', text: '' });
+                jsonInput.value = JSON.stringify(data, null, 2);
+                napNoiDungTrucQuan(data);
+                theoryItemSelect.value = String(section.items.length - 1);
+                napNoiDungTrucQuan(data);
+                document.getElementById('edit-theory-item-text').focus();
+            };
+            document.getElementById('edit-question-text').oninput = event => capNhatNoiDungTrucQuan(data => {
+                const question = data.questions[Number(scopeSelect.value)];
+                if (question) question.question = event.target.value;
+            });
+            document.getElementById('edit-question-answers').oninput = event => capNhatNoiDungTrucQuan(data => {
+                const question = data.questions[Number(scopeSelect.value)];
+                if (question) {
+                    question.answers = event.target.value.split(/\r?\n/).filter((answer, index, all) => answer !== '' || index < all.length - 1);
+                    if (question.correct >= question.answers.length) question.correct = 0;
+                    const correctSelect = document.getElementById('edit-question-correct');
+                    const selectedCorrect = question.correct;
+                    correctSelect.replaceChildren();
+                    question.answers.forEach((answer, answerIndex) => {
+                        const option = document.createElement('option');
+                        option.value = String(answerIndex);
+                        option.textContent = `${String.fromCharCode(65 + answerIndex)}${answer ? ` — ${answer}` : ''}`;
+                        correctSelect.appendChild(option);
+                    });
+                    correctSelect.value = String(selectedCorrect);
+                }
+            });
+            document.getElementById('edit-question-correct').onchange = event => capNhatNoiDungTrucQuan(data => {
+                const question = data.questions[Number(scopeSelect.value)];
+                if (question) question.correct = Number(event.target.value);
+            });
+            document.getElementById('edit-question-explanation').oninput = event => capNhatNoiDungTrucQuan(data => {
+                const question = data.questions[Number(scopeSelect.value)];
+                if (question) question.explanation = event.target.value;
+            });
+            ['image', 'video'].forEach(mediaType => {
+                const mediaInput = document.getElementById(`edit-question-${mediaType}`);
+                mediaInput.oninput = event => {
+                    const url = event.target.value.trim();
+                    const mediaPreview = document.getElementById(`edit-question-${mediaType}-preview`);
+                    hienThiMediaXemTruoc(mediaPreview, laUrlMediaNoiDungHopLe(url) ? url : '', mediaType);
+                    if (url && !laUrlMediaNoiDungHopLe(url)) return;
+                    capNhatNoiDungTrucQuan(data => {
+                        const question = data.questions[Number(scopeSelect.value)];
+                        if (!question) return;
+                        if (url) question[mediaType] = url;
+                        else delete question[mediaType];
+                    });
+                };
+                mediaInput.onblur = event => {
+                    const url = event.target.value.trim();
+                    if (url && !laUrlMediaNoiDungHopLe(url)) {
+                        showToast("Link ảnh/video phải là địa chỉ HTTP hoặc HTTPS hợp lệ.", "error");
+                        const data = docDuLieuTrinhSuaMedia(false);
+                        const question = data && data.questions && data.questions[Number(scopeSelect.value)];
+                        event.target.value = question && question[mediaType] || '';
+                        hienThiMediaXemTruoc(document.getElementById(`edit-question-${mediaType}-preview`), event.target.value, mediaType);
+                    }
+                };
+            });
+            document.getElementById('edit-theory-item-type').onchange = event => capNhatNoiDungTrucQuan(data => {
+                const section = data.children && data.children[Number(scopeSelect.value)];
+                const item = section && section.items && section.items[Number(document.getElementById('edit-theory-item').value)];
+                if (item) item.type = event.target.value;
+            });
+            document.getElementById('edit-theory-item-label').oninput = event => capNhatNoiDungTrucQuan(data => {
+                const section = data.children && data.children[Number(scopeSelect.value)];
+                const item = section && section.items && section.items[Number(document.getElementById('edit-theory-item').value)];
+                if (item) item.label = event.target.value;
+            });
+            document.getElementById('edit-theory-item-text').oninput = event => capNhatNoiDungTrucQuan(data => {
+                const section = data.children && data.children[Number(scopeSelect.value)];
+                const item = section && section.items && section.items[Number(theoryItemSelect.value)];
+                if (item) item.text = event.target.value;
+            });
+            ['image', 'video'].forEach(mediaType => {
+                const mediaInput = document.getElementById(`edit-theory-item-${mediaType}`);
+                mediaInput.oninput = event => {
+                    const url = event.target.value.trim();
+                    const mediaPreview = document.getElementById(`edit-theory-item-${mediaType}-preview`);
+                    hienThiMediaXemTruoc(mediaPreview, laUrlMediaNoiDungHopLe(url) ? url : '', mediaType);
+                    if (url && !laUrlMediaNoiDungHopLe(url)) return;
+                    capNhatNoiDungTrucQuan(data => {
+                        const section = data.children && data.children[Number(scopeSelect.value)];
+                        const item = section && section.items && section.items[Number(theoryItemSelect.value)];
+                        if (item) ganMediaChoMucLyThuyet(item, mediaType, url);
+                    });
+                };
+                mediaInput.onblur = event => {
+                    const url = event.target.value.trim();
+                    if (url && !laUrlMediaNoiDungHopLe(url)) {
+                        showToast("Link ảnh/video phải là địa chỉ HTTP hoặc HTTPS hợp lệ.", "error");
+                        const data = docDuLieuTrinhSuaMedia(false);
+                        const section = data && data.children && data.children[Number(scopeSelect.value)];
+                        const item = section && section.items && section.items[Number(theoryItemSelect.value)];
+                        event.target.value = item
+                            ? (item.type === mediaType ? item.text || '' : item[mediaType] || '')
+                            : '';
+                        hienThiMediaXemTruoc(document.getElementById(`edit-theory-item-${mediaType}-preview`), event.target.value, mediaType);
+                    }
+                };
+            });
+            ['image', 'video'].forEach(mediaType => {
+                document.getElementById(`btn-question-${mediaType}-add`).onclick = () => themMediaVaoBanNhap(mediaType);
+                document.getElementById(`btn-question-${mediaType}-delete`).onclick = () => xoaMediaKhoiBanNhap(mediaType);
+                document.getElementById(`btn-question-${mediaType}-save`).onclick = () => luuMediaRieng(mediaType);
+                document.getElementById(`btn-theory-${mediaType}-add`).onclick = () => themMediaVaoBanNhap(mediaType);
+                document.getElementById(`btn-theory-${mediaType}-delete`).onclick = () => xoaMediaKhoiBanNhap(mediaType);
+                document.getElementById(`btn-theory-${mediaType}-save`).onclick = () => luuMediaRieng(mediaType);
+            });
+            napNoiDungTrucQuan(data);
         }
 
         function dongEditModal() {
             document.getElementById('edit-modal').style.display = 'none';
             editItemLoai = null;
             editItemId = null;
+            document.getElementById('edit-json').oninput = null;
         }
 
         function dinhDangJsonEditor() {
@@ -3959,6 +4589,8 @@
                 const raw = document.getElementById('edit-json').value;
                 const obj = JSON.parse(raw);
                 document.getElementById('edit-json').value = JSON.stringify(obj, null, 2);
+                capNhatDanhSachMucNoiDung(obj, document.getElementById('edit-content-scope').value);
+                napNoiDungTrucQuan(obj);
                 showToast("Đã định dạng JSON chuẩn!", "success");
             } catch (e) {
                 showToast("JSON không hợp lệ, không thể làm đẹp: " + e.message, "error");
@@ -4026,7 +4658,11 @@
             tbody.innerHTML = "";
 
             donDepHocSinhDaXoa();
-            const users = safeJsonParse('math_hero_users_v2', {});
+            let users = safeJsonParse('math_hero_users_v2', {});
+            if (Object.keys(users).length === 0 && window.HERO_DANH_SACH_CHUAN_USERS) {
+                users = window.HERO_DANH_SACH_CHUAN_USERS;
+                safeJsonSet('math_hero_users_v2', users);
+            }
             let userNames = Object.keys(users);
 
             if (userNames.length === 0) {
@@ -4241,9 +4877,7 @@
             users[ten] = {
                 class: lop,
                 classroom: lopCuThe,
-                pass: pass,
-                _ngayTao: Date.now(),
-                _nguonThem: 'giao_vien'
+                pass: pass
             };
             safeJsonSet('math_hero_users_v2', users);
 
@@ -7026,247 +7660,7 @@ BẮT BUỘC trả về DUY NHẤT một mảng JSON thuần túy (không dùng 
                 moAiStudioMode('vuot-ai');
             }
         });
-
-        // ============================================================
-        //  CÔNG CỤ: KIỂM TRA VÀ DỌN DẸP HỌC SINH CŨ KHÔNG HỢP LỆ
-        //  (cho phép đánh dấu "hợp lệ" thủ công những học sinh cũ muốn giữ)
-        // ============================================================
-        var _dsKiemTraOldHsAd = [];
-
-        function _laHopLeTheoLuatMoiAd(ten, hoSo) {
-            try {
-                var _tenChuanHoa = function(s) {
-                    return String(s || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-                };
-                var dsChuan = (typeof window !== 'undefined' && window.HERO_DANH_SACH_CHUAN_USERS) ? window.HERO_DANH_SACH_CHUAN_USERS : null;
-                if (dsChuan && typeof dsChuan === 'object') {
-                    var normTen = _tenChuanHoa(ten);
-                    for (var k in dsChuan) {
-                        if (_tenChuanHoa(k) === normTen) return true;
-                    }
-                }
-                var hs = (hoSo != null && typeof hoSo === 'object') ? hoSo : {};
-                if (String(hs._nguonThem || '').toLowerCase() === 'giao_vien') return true;
-                var mocCaiDat = 0;
-                try { mocCaiDat = parseInt(localStorage.getItem('hero_moc_cai_dat_v2026') || '0', 10) || 0; } catch(e) {}
-                var ngayTao = parseInt(hs._ngayTao || 0, 10) || 0;
-                if (mocCaiDat > 0 && ngayTao >= mocCaiDat) return true;
-                return false;
-            } catch(e) { return false; }
-        }
-
-        function moModalKiemTraHocSinhCuAd() {
-            var users = safeJsonParse('math_hero_users_v2', {});
-            _dsKiemTraOldHsAd = [];
-            Object.keys(users).forEach(function(ten) {
-                if (!_laHopLeTheoLuatMoiAd(ten, users[ten])) {
-                    _dsKiemTraOldHsAd.push({ ten: ten, hoSo: users[ten], checked: false });
-                }
-            });
-            var modal = document.getElementById('modal-kiem-tra-hs-cu-ad');
-            if (!modal) return;
-            if (_dsKiemTraOldHsAd.length === 0) {
-                document.getElementById('old-hs-empty-msg-ad').style.display = 'block';
-                document.getElementById('old-hs-list-body-ad').innerHTML = '';
-                document.getElementById('old-hs-summary-ad').innerText = 'Tuyệt vời! Không có học sinh cũ nào không hợp lệ trong danh sách.';
-                document.getElementById('btn-don-dep-hs-cu-ad').disabled = true;
-                document.getElementById('btn-check-all-old-hs-ad').disabled = true;
-                document.getElementById('btn-uncheck-all-old-hs-ad').disabled = true;
-            } else {
-                document.getElementById('old-hs-empty-msg-ad').style.display = 'none';
-                document.getElementById('btn-don-dep-hs-cu-ad').disabled = false;
-                document.getElementById('btn-check-all-old-hs-ad').disabled = false;
-                document.getElementById('btn-uncheck-all-old-hs-ad').disabled = false;
-                _renderDsKiemTraHsCuAd();
-                document.getElementById('old-hs-summary-ad').innerText =
-                    'Tìm thấy ' + _dsKiemTraOldHsAd.length + ' học sinh cũ KHÔNG hợp lệ (ngoài 203 chuẩn, chưa có đánh dấu).\n' +
-                    '→ Bấm [ Đánh dấu là hợp lệ ] những em muốn giữ lại.\n' +
-                    '→ Những em KHÔNG được đánh dấu sẽ bị XÓA HOÀN TOÀN khỏi danh sách (đưa vào bia mộ).';
-            }
-            modal.style.display = 'flex';
-        }
-
-        function _renderDsKiemTraHsCuAd() {
-            var tbody = document.getElementById('old-hs-list-body-ad');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            _dsKiemTraOldHsAd.forEach(function(item, idx) {
-                var hs = item.hoSo || {};
-                var lop = (typeof hs === 'object') ? (hs.class || '—') : '—';
-                var lopCuThe = (typeof hs === 'object') ? (hs.classroom || '—') : '—';
-                tbody.innerHTML +=
-                    '<tr>' +
-                        '<td style="text-align:center;">' + (idx + 1) + '</td>' +
-                        '<td title="' + String(item.ten).replace(/"/g, '&quot;') + '" style="color:#f1c40f;font-weight:600;">' + item.ten + '</td>' +
-                        '<td style="color:#95a5a6;">' + lop + '</td>' +
-                        '<td style="color:#95a5a6;">' + lopCuThe + '</td>' +
-                        '<td style="text-align:center;">' +
-                            '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">' +
-                                '<input type="checkbox" data-old-hs-ad-idx="' + idx + '" ' + (item.checked ? 'checked' : '') + ' style="width:18px;height:18px;accent-color:#2ecc71;cursor:pointer;">' +
-                                '<span style="color:' + (item.checked ? '#2ecc71' : '#7f8c8d') + ';font-weight:600;">' + (item.checked ? '✓ Giữ lại (hợp lệ)' : 'Không đánh dấu (sẽ xóa)') + '</span>' +
-                            '</label>' +
-                        '</td>' +
-                    '</tr>';
-            });
-            var inputs = tbody.querySelectorAll('input[data-old-hs-ad-idx]');
-            inputs.forEach(function(inp) {
-                inp.addEventListener('change', function() {
-                    var i = parseInt(inp.getAttribute('data-old-hs-ad-idx') || '-1', 10);
-                    if (i >= 0 && i < _dsKiemTraOldHsAd.length) {
-                        _dsKiemTraOldHsAd[i].checked = inp.checked;
-                        var sp = inp.parentElement.querySelector('span');
-                        if (sp) {
-                            sp.innerText = inp.checked ? '✓ Giữ lại (hợp lệ)' : 'Không đánh dấu (sẽ xóa)';
-                            sp.style.color = inp.checked ? '#2ecc71' : '#7f8c8d';
-                        }
-                    }
-                });
-            });
-        }
-
-        function toggleAllOldHsAd(check) {
-            for (var i = 0; i < _dsKiemTraOldHsAd.length; i++) _dsKiemTraOldHsAd[i].checked = !!check;
-            _renderDsKiemTraHsCuAd();
-        }
-
-        async function xacNhanDonDepHsCuAd() {
-            var soLuong = _dsKiemTraOldHsAd.length;
-            if (soLuong === 0) return;
-            var soGiu = _dsKiemTraOldHsAd.filter(function(x) { return x.checked; }).length;
-            var soXoa = soLuong - soGiu;
-            var msg = 'Sẽ giữ lại ' + soGiu + ' học sinh (đánh dấu hợp lệ) và XÓA ' + soXoa + ' học sinh cũ không hợp lệ ra khỏi danh sách.\nThầy có chắc chắn không?';
-            if (soXoa === 0) msg = 'Tất cả ' + soGiu + ' học sinh cũ được đánh dấu là hợp lệ. Không ai bị xóa.\nTiếp tục?';
-            if (!confirm(msg)) return;
-            try {
-                var users = safeJsonParse('math_hero_users_v2', {});
-                var dsDaXoa = safeJsonParse('danh_sach_hs_da_xoa', []);
-                if (!Array.isArray(dsDaXoa)) dsDaXoa = [];
-                var compat = window.HeroFirebaseCompat || window.FirebaseSync;
-                for (var i = 0; i < _dsKiemTraOldHsAd.length; i++) {
-                    var it = _dsKiemTraOldHsAd[i];
-                    if (it.checked) {
-                        if (!users[it.ten]) continue;
-                        if (typeof users[it.ten] !== 'object') {
-                            var mkCu = users[it.ten];
-                            users[it.ten] = { class: 'Khối 7', classroom: '—', pass: mkCu, _hashed: true };
-                        }
-                        users[it.ten]._nguonThem = 'giao_vien';
-                        users[it.ten]._ngayTao = Date.now();
-                        dsDaXoa = dsDaXoa.filter(function(tn) {
-                            return String(tn || '').trim() !== String(it.ten).trim();
-                        });
-                    } else {
-                        delete users[it.ten];
-                        if (dsDaXoa.indexOf(it.ten) === -1) dsDaXoa.push(it.ten);
-                        try {
-                            var tienTo = ['exp_','coin_','da_quay_','avatar_','equipped_avatar_','danh_hieu_chinh_','danh_hieu_da_mo_','khung_avatar_','equipped_border_','ruong_do_','luot_lam_bai_','luot_boss_','luot_vong_quay_','luot_thach_dau_','luot_vuot_ai_','tien_trinh_vuot_ai_','ai_hien_tai_','da_nop_tu_luan_','math_hero_pet_','hero_discipline_pet_','danh_hieu_active_','khung_avatar_active_','math_hero_current_avatar_','math_hero_unlocked_avatars_','hero_streak_count_','hero_streak_history_','hero_streak_last_date_','hero_exp_doc_ly_thuyet_ngay_','hero_nhac_nho_ly_thuyet_ngay_','da_doc_phan_hoi_','moc_cap_nhat_hs_'];
-                            for (var j = 0; j < localStorage.length; j++) {
-                                var k = localStorage.key(j);
-                                if (!k) continue;
-                                var tonTai = tienTo.some(function(tt) { return k === tt + it.ten; });
-                                if (tonTai) { try { localStorage.removeItem(k); j--; } catch(e) {} }
-                            }
-                        } catch(e) {}
-                        if (compat && typeof compat.xoaHocSinhTrenMay === 'function') {
-                            try { compat.xoaHocSinhTrenMay(it.ten); } catch(e) {}
-                        }
-                    }
-                }
-                safeJsonSet('math_hero_users_v2', users);
-                safeJsonSet('danh_sach_hs_da_xoa', dsDaXoa);
-                showToast('⏳ Đang đồng bộ lên Cloud...', 'warning');
-                if (typeof dongBoToanCuc === 'function') {
-                    try { await dongBoToanCuc('math_hero_users_v2'); } catch(e) {}
-                    try { await dongBoToanCuc('danh_sach_hs_da_xoa'); } catch(e) {}
-                } else if (compat && typeof compat.dayCauHinhToanCuc === 'function') {
-                    try { await compat.dayCauHinhToanCuc('math_hero_users_v2'); } catch(e) {}
-                    try { await compat.dayCauHinhToanCuc('danh_sach_hs_da_xoa'); } catch(e) {}
-                }
-                showToast('✅ Đã dọn dẹp thành công! Giữ lại ' + soGiu + ' học sinh, xóa ' + soXoa + ' học sinh.', 'success');
-                document.getElementById('modal-kiem-tra-hs-cu-ad').style.display = 'none';
-                taiLogHocSinh();
-            } catch(e) {
-                console.error(e);
-                showToast('Lỗi dọn dẹp: ' + (e && e.message ? e.message : e), 'error');
-            }
-        }
-
-        // Thêm nút "Kiểm tra & Dọn dẹp học sinh cũ" vào khu vực quản lý chiến binh khi DOM load xong
-        window.addEventListener('DOMContentLoaded', function() {
-            try {
-                var target = null;
-                // Ưu tiên: tìm nút clearToanBoHocSinh (nút xóa sạch tất cả học sinh) để đặt nút mới ở cạnh
-                var allBtns = document.querySelectorAll('button, [onclick]');
-                for (var b = 0; b < allBtns.length; b++) {
-                    var el = allBtns[b];
-                    var onclk = String(el.getAttribute && el.getAttribute('onclick') ? el.getAttribute('onclick') : (el.onclick ? el.onclick.toString() : ''));
-                    var inner = String(el.textContent || el.innerText || '');
-                    if (onclk.indexOf('clearToanBoHocSinh') !== -1 || inner.indexOf('Xóa Sạch') !== -1 || inner.indexOf('XÓA SẠCH') !== -1) {
-                        target = el.parentElement;
-                        break;
-                    }
-                }
-                // Không tìm thấy → tìm thẻ cha gần bảng tbl-admin-hs
-                if (!target) {
-                    var tbl = document.getElementById('tbl-admin-hs');
-                    if (tbl) target = tbl.closest('div, section');
-                }
-                if (target) {
-                    var btn = document.createElement('button');
-                    btn.className = 'btn-action';
-                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2980b9,#3498db);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600;margin:4px;';
-                    btn.title = 'Tìm và dọn dẹp những học sinh cũ không hợp lệ (ngoài danh sách 203 chuẩn), cho phép đánh dấu thủ công những em muốn giữ lại.';
-                    btn.innerHTML = '<i class="fa-solid fa-clipboard-list"></i> Kiểm tra & Dọn dẹp HS Cũ';
-                    btn.onclick = moModalKiemTraHocSinhCuAd;
-                    // Đặt vào cuối target
-                    target.appendChild(btn);
-                }
-            } catch(e) {}
-        });
 </script>
-
-<!-- ========= MODAL KIỂM TRA & DỌN DẸP HỌC SINH CŨ (Admin) ========= -->
-<div id="modal-kiem-tra-hs-cu-ad" class="pwd-overlay" style="display:none;" onclick="if(event.target===this) this.style.display='none';">
-    <div class="pwd-card" style="max-width:980px;width:96%;background:linear-gradient(135deg,#0b1220,#0f172a);border:2px solid #3498db;box-shadow:0 25px 80px rgba(52,152,219,0.35);text-align:left;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid #2c3e50;padding-bottom:12px;">
-            <h3 style="color:#3498db;margin:0;font-size:1.25rem;"><i class="fa-solid fa-clipboard-list-check"></i> Kiểm tra & Dọn dẹp Học Sinh Cũ Không Hợp Lệ</h3>
-            <button onclick="document.getElementById('modal-kiem-tra-hs-cu-ad').style.display='none';" style="background:none;border:none;color:#95a5a6;font-size:1.6rem;cursor:pointer;line-height:1;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <p id="old-hs-summary-ad" style="background:rgba(52,152,219,0.12);color:#ecf0f1;padding:14px;border-radius:10px;font-size:0.95rem;line-height:1.6;margin:0 0 15px;">—</p>
-        <div id="old-hs-empty-msg-ad" style="display:none;padding:40px 20px;text-align:center;color:#95a5a6;">
-            <i class="fa-solid fa-check-circle fa-3x" style="color:#2ecc71;margin-bottom:14px;display:block;"></i>
-            <h4 style="color:#2ecc71;margin:0 0 8px;">Danh sách sạch sẽ!</h4>
-            <p style="margin:0;">Tất cả học sinh hiện tại đều hợp lệ (thuộc 203 chuẩn hoặc đã được Thầy đánh dấu thủ công).</p>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-            <button id="btn-check-all-old-hs-ad" onclick="toggleAllOldHsAd(true)" class="btn-action" style="background:rgba(46,204,113,0.12);color:#2ecc71;border:1px solid #2ecc71;">
-                <i class="fa-solid fa-check-double"></i> Đánh dấu TẤT CẢ là hợp lệ (giữ lại)
-            </button>
-            <button id="btn-uncheck-all-old-hs-ad" onclick="toggleAllOldHsAd(false)" class="btn-action" style="background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid #e74c3c;">
-                <i class="fa-solid fa-rotate-left"></i> Bỏ chọn TẤT CẢ (sẽ xóa hết)
-            </button>
-            <div style="flex:1;"></div>
-            <button id="btn-don-dep-hs-cu-ad" onclick="xacNhanDonDepHsCuAd()" class="btn-action" style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;font-weight:700;padding:12px 20px;">
-                <i class="fa-solid fa-broom"></i> Xác Nhận & Dọn Dẹp Ngay
-            </button>
-        </div>
-        <div style="max-height:52vh;overflow:auto;border:1px solid #2c3e50;border-radius:12px;background:rgba(11,18,32,0.7);">
-            <table style="width:100%;border-collapse:collapse;">
-                <thead style="position:sticky;top:0;z-index:2;">
-                    <tr style="background:#1a2538;color:#95a5a6;font-size:0.85rem;">
-                        <th style="padding:12px 10px;text-align:center;width:60px;">#</th>
-                        <th style="padding:12px 10px;text-align:left;">Họ và Tên</th>
-                        <th style="padding:12px 10px;text-align:left;width:120px;">Khối</th>
-                        <th style="padding:12px 10px;text-align:left;width:120px;">Lớp</th>
-                        <th style="padding:12px 10px;text-align:center;width:260px;">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody id="old-hs-list-body-ad"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<!-- ======== HẾT MODAL KIỂM TRA HỌC SINH CŨ (Admin) ======== -->
 
 <!-- Fallback elements for Admin scripts -->
 <div style="display:none;"><select id="sel-lt-grade"></select><table id="tbl-admin-login"></table><button id="btn-ai-doc-ten-bai"></button></div>

@@ -3067,80 +3067,49 @@
 
   window.khoiPhucDanhSachHocSinhChuan = async function() {
     try {
-      // Helper chuẩn hóa tên (giống logic tombstone của firebase-sync)
-      var _tenChuanHoa = function(s) {
-        return String(s || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-      };
-
       // 1. Thu thập toàn bộ các tài khoản cũ/thừa không thuộc 203 học sinh chuẩn để đưa vào bia mộ
-      var curUsers = {};
+      let curUsers = {};
       try { curUsers = JSON.parse(localStorage.getItem('math_hero_users_v2') || '{}'); } catch(e) {}
-      var dsDaXoa = [];
+      let dsDaXoa = [];
       try { dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]'); } catch(e) {}
       if (!Array.isArray(dsDaXoa)) dsDaXoa = [];
-      var setDaXoaRaw = new Set(dsDaXoa.map(_tenChuanHoa));
 
-      var setChuan = new Set(Object.keys(usersObj).map(function(n) { return _tenChuanHoa(n); }));
-      var dsXoaThem = [];
-      Object.keys(curUsers).forEach(function(oldName) {
-        if (!setChuan.has(_tenChuanHoa(oldName))) {
+      const setChuan = new Set(Object.keys(usersObj).map(n => n.trim().toLowerCase()));
+      const dsXoaThem = [];
+      Object.keys(curUsers).forEach(oldName => {
+        if (!setChuan.has(oldName.trim().toLowerCase())) {
           dsXoaThem.push(oldName);
-          var norm = _tenChuanHoa(oldName);
-          if (!setDaXoaRaw.has(norm)) {
-            dsDaXoa.push(oldName);
-            setDaXoaRaw.add(norm);
-          }
+          if (!dsDaXoa.includes(oldName)) dsDaXoa.push(oldName);
         }
       });
 
-      // 2. Thiết lập đúng 203 học sinh chuẩn, nhưng NHỚ LOẠI BỎ những cái đã nằm trong bia mộ (đã bị thầy xóa)
-      //    → KHÔNG hồi sinh tài khoản đã bị xóa!
-      var usersFinal = {};
-      Object.keys(usersObj).forEach(function(tenChuan) {
-        if (!setDaXoaRaw.has(_tenChuanHoa(tenChuan))) {
-          usersFinal[tenChuan] = usersObj[tenChuan];
-        }
-      });
-      localStorage.setItem('math_hero_users_v2', JSON.stringify(usersFinal));
-      // ⚠️ Bảo toàn bia mộ hiện có, KHÔNG BAO GIỜ reset lại thành mảng rỗng!
+      // 2. Thiết lập đúng 203 học sinh chuẩn
+      localStorage.setItem('math_hero_users_v2', JSON.stringify(usersObj));
       localStorage.setItem('danh_sach_hs_da_xoa', JSON.stringify(dsDaXoa));
       
-      // [PHƯƠNG ÁN C-B] Đọc nhật ký đăng nhập → phân loại học sinh nào CHƯA TỪNG ĐĂNG NHẬP
-      var setDaDangNhapRaw = {};
-      try {
-        var nkDangNhap = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap') || '[]');
-        if (Array.isArray(nkDangNhap)) {
-          nkDangNhap.forEach(function(item) {
-            if (item && item.name) setDaDangNhapRaw[_tenChuanHoa(item.name)] = true;
-          });
-        }
-      } catch(e) {}
-
-      // Khởi tạo / Reset điểm mặc định cho 203 học sinh
-      listArr.forEach(function(hs) {
-        if (!usersFinal[hs.name]) return; // bỏ qua những cái đã bị xóa trong bia mộ
-        var tenChuan = _tenChuanHoa(hs.name);
-        var chuaTungDangNhap = !setDaDangNhapRaw[tenChuan];
-        // [C-B] Nếu học sinh CHƯA TỪNG đăng nhập lần nào → FORCE reset về 0 / 50
-        //       (loại bỏ "điểm ma cũ" còn sót từ Cloud/trước bản vá)
-        if (chuaTungDangNhap) {
-          localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
-          localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
-        } else {
-          // Đã đăng nhập rồi → chỉ tạo key nếu thiếu (giữ nguyên điểm cũ tích lũy)
-          if (!localStorage.getItem('exp_' + hs.name)) localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
-          if (!localStorage.getItem('coin_' + hs.name)) localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
-        }
+      // Khởi tạo điểm mặc định cho 203 học sinh nếu chưa có
+      listArr.forEach(hs => {
+        if (!localStorage.getItem('exp_' + hs.name)) localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
+        if (!localStorage.getItem('coin_' + hs.name)) localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
       });
 
       // 3. Xóa các tài liệu thừa khỏi Firestore collection mathhero_students
-      var compat = window.HeroFirebaseCompat || window.FirebaseSync;
+      const compat = window.HeroFirebaseCompat || window.FirebaseSync;
       if (compat && typeof compat.xoaHocSinhTrenMay === 'function' && dsXoaThem.length > 0) {
-        Promise.allSettled(dsXoaThem.map(function(t) { return compat.xoaHocSinhTrenMay(t); })).catch(function() {});
+        Promise.allSettled(dsXoaThem.map(t => compat.xoaHocSinhTrenMay(t))).catch(() => {});
       }
 
       // 4. Đồng bộ ghi đè lên Cloud
-      if (compat && typeof compat.dayCauHinhToanCuc === 'function') {
+      if (compat && typeof compat.forceGhiDeFirebase === 'function') {
+        await compat.forceGhiDeFirebase('mathhero_global', 'math_hero_users_v2', {
+          value: JSON.stringify(usersObj),
+          _capNhatLanCuoi: new Date().toISOString()
+        });
+        await compat.forceGhiDeFirebase('mathhero_global', 'danh_sach_hs_da_xoa', {
+          value: JSON.stringify(dsDaXoa),
+          _capNhatLanCuoi: new Date().toISOString()
+        });
+      } else if (compat && typeof compat.dayCauHinhToanCuc === 'function') {
         await compat.dayCauHinhToanCuc('math_hero_users_v2');
         await compat.dayCauHinhToanCuc('danh_sach_hs_da_xoa');
       } else if (typeof window.dongBoToanCuc === 'function') {
@@ -3148,64 +3117,49 @@
         await window.dongBoToanCuc('danh_sach_hs_da_xoa');
       }
 
-      return { success: true, count: Object.keys(usersFinal).length };
+      return { success: true, count: Object.keys(usersObj).length };
     } catch(e) {
       console.error('[Khôi phục danh sách chuẩn]', e);
       return { success: false, error: e };
     }
   };
 
-  // TỰ ĐỘNG CHUẨN HÓA 203 HỌC SINH TỪ 5 FILE EXCEL THEO YÊU CẦU CỦA THẦY
-  var FLAG_CHUAN_HOA = 'hero_chuan_hoa_203_hs_v2026';
+  // TỰ ĐỘNG BẢO ĐẢM ĐỦ 203 HỌC SINH TỪ 5 FILE EXCEL (KHÔNG BAO GIỜ THIẾU HỌC SINH)
+  const FLAG_CHUAN_HOA = 'hero_chuan_hoa_203_hs_v2026_full';
   if (typeof localStorage !== 'undefined') {
-    if (localStorage.getItem('hero_chuan_hoa_flag') !== FLAG_CHUAN_HOA) {
-      try {
-        (function() {
-          var _tenChuanHoa = function(s) {
-            return String(s || '').replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim().replace(/\s+/g, ' ').normalize('NFC').toLowerCase();
-          };
-          // Đọc bia mộ hiện có → BẢO TOÀN, KHÔNG reset thành '[]'
-          var dsDaXoaHienTai = [];
-          try { dsDaXoaHienTai = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]'); } catch(e) {}
-          if (!Array.isArray(dsDaXoaHienTai)) dsDaXoaHienTai = [];
-          var setDaXoaRaw = new Set(dsDaXoaHienTai.map(_tenChuanHoa));
+    try {
+      let curUsers = {};
+      try { curUsers = JSON.parse(localStorage.getItem('math_hero_users_v2') || '{}'); } catch(e) {}
+      let dsDaXoa = [];
+      try { dsDaXoa = JSON.parse(localStorage.getItem('danh_sach_hs_da_xoa') || '[]'); } catch(e) {}
+      if (!Array.isArray(dsDaXoa)) dsDaXoa = [];
+      const setDaXoa = new Set(dsDaXoa.map(t => String(t || '').trim().toLowerCase()));
 
-          // Đảm bảo đủ 203 chuẩn, nhưng LOẠI BỎ những cái đã nằm trong bia mộ
-          var usersFinal = {};
-          Object.keys(usersObj).forEach(function(tenChuan) {
-            if (!setDaXoaRaw.has(_tenChuanHoa(tenChuan))) {
-              usersFinal[tenChuan] = usersObj[tenChuan];
-            }
-          });
-          localStorage.setItem('math_hero_users_v2', JSON.stringify(usersFinal));
-          localStorage.setItem('hero_chuan_hoa_flag', FLAG_CHUAN_HOA);
-          console.log('[Hero Math] Đã tự động dọn sạch danh sách cũ và thiết lập 203 học sinh chuẩn từ 5 file Excel (bảo toàn bia mộ).');
+      let changed = false;
+      // Bổ sung đầy đủ 203 học sinh chuẩn nếu localStorage bị thiếu
+      Object.keys(usersObj).forEach(ten => {
+        const lower = ten.trim().toLowerCase();
+        if (!setDaXoa.has(lower)) {
+          if (!curUsers[ten]) {
+            curUsers[ten] = usersObj[ten];
+            changed = true;
+          } else if (typeof curUsers[ten] === 'object' && (!curUsers[ten].classroom || curUsers[ten].classroom === '—') && usersObj[ten].classroom) {
+            curUsers[ten].classroom = usersObj[ten].classroom;
+            changed = true;
+          }
+        }
+      });
 
-          // [PHƯƠNG ÁN C-B] Đọc nhật ký đăng nhập → reset điểm cho những học sinh chưa từng đăng nhập
-          var setDaDangNhapRaw2 = {};
-          try {
-            var nkDangNhap2 = JSON.parse(localStorage.getItem('nhat_ky_dang_nhap') || '[]');
-            if (Array.isArray(nkDangNhap2)) {
-              nkDangNhap2.forEach(function(item) {
-                if (item && item.name) setDaDangNhapRaw2[_tenChuanHoa(item.name)] = true;
-              });
-            }
-          } catch(e) {}
-          
-          listArr.forEach(function(hs) {
-            if (!usersFinal[hs.name]) return;
-            var tenChuan = _tenChuanHoa(hs.name);
-            var chuaTungDangNhap = !setDaDangNhapRaw2[tenChuan];
-            if (chuaTungDangNhap) {
-              localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
-              localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
-            } else {
-              if (!localStorage.getItem('exp_' + hs.name)) localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
-              if (!localStorage.getItem('coin_' + hs.name)) localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
-            }
-          });
-        })();
-      } catch(e) {}
-    }
+      if (changed || localStorage.getItem('hero_chuan_hoa_flag') !== FLAG_CHUAN_HOA) {
+        localStorage.setItem('math_hero_users_v2', JSON.stringify(curUsers));
+        localStorage.setItem('hero_chuan_hoa_flag', FLAG_CHUAN_HOA);
+        console.log('[Hero Math] Đã tự động bảo đảm đủ 203 học sinh chuẩn từ 5 file Excel.');
+        
+        listArr.forEach(hs => {
+          if (!localStorage.getItem('exp_' + hs.name)) localStorage.setItem('exp_' + hs.name, String(hs.exp || 0));
+          if (!localStorage.getItem('coin_' + hs.name)) localStorage.setItem('coin_' + hs.name, String(hs.coin || 50));
+        });
+      }
+    } catch(e) {}
   }
 })();
