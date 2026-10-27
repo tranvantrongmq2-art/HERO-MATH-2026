@@ -3841,10 +3841,7 @@
             }
 
 
-            // Tự động kiểm tra và nhắc nhở xem lý thuyết ngày mới (sau khi tải xong dữ liệu học sinh)
-            setTimeout(() => {
-                kiemTraVaHienThiNhacNhoLyThuyet(tenLuu, lopLuu);
-            }, 1100);
+            // Đã tắt tự động nhắc nhở lý thuyết theo yêu cầu
 
             let playPromise = amThanhNenMedia.play();
             if (playPromise !== undefined) {
@@ -4252,12 +4249,7 @@
 
         // ===== HỆ THỐNG NHẮC NHỞ XEM LÝ THUYẾT NGÀY MỚI =====
         function kiemTraVaHienThiNhacNhoLyThuyet(tenHs, lopHs) {
-            if (!tenHs) return;
-            const homNay = new Date().toISOString().slice(0, 10);
-            const daNhacHomNay = localStorage.getItem('hero_nhac_nho_ly_thuyet_ngay_' + tenHs);
-            if (daNhacHomNay === homNay) {
-                return; // Đã xem hoặc đã bỏ qua hôm nay
-            }
+            return; // Đã tắt thông báo nhắc nhở lý thuyết theo yêu cầu
 
             const modal = document.getElementById('modal-nhac-nho-ly-thuyet');
             if (!modal) return;
